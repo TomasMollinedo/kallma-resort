@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: miresort-postgres
+    restart: unless-stopped
+    ports:
+      - "${PG_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-mi_resort}
+    volumes:
+      # Datos persistentes en un volumen nombrado (no OneDrive)
+      - pgdata:/var/lib/postgresql/data
+      # Scripts de inicialización (opcional)
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-mi_resort}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Opcional: UI para administrar (pgAdmin)
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: miresort-pgadmin
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+
+volumes:
+  pgdata:

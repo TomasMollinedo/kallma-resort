@@ -24,6 +24,7 @@
 # Archivos de entorno (versioná solo los .example)
 **/.env
 **/.env.*.local
+**/.env.db
 !front/.env.example
 !back/.env.example
 !.env.example
