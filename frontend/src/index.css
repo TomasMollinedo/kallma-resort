@@ -1,3 +1,7 @@
+/* 1. Importar la fuente Lora */
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
+
+/* 2. Luego, las directivas de Tailwind */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
