@@ -1,0 +1,47 @@
+# --- Node / JS comunes (aplica dentro de front/ y back/) ---
+**/node_modules/
+**/dist/
+**/build/
+**/.cache/
+**/.vite/
+**/.next/
+**/.nuxt/
+**/.parcel-cache/
+**/.turbo/
+**/coverage/
+**/.nyc_output/
+**/.eslintcache
+**/*.tsbuildinfo
+
+# Logs y temporales
+**/logs/
+**/*.log
+**/tmp/
+**/pids/
+**/pid/
+**/lib-cov/
+
+# Archivos de entorno (versioná solo los .example)
+**/.env
+**/.env.*.local
+!front/.env.example
+!back/.env.example
+!.env.example
+
+# Sistema / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# NPM/Yarn/PNPM debug
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Docker (si usás overrides locales)
+docker-compose.override.yml
+**/.env.docker.local
