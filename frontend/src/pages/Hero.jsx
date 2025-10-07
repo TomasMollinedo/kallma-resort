@@ -1,31 +1,30 @@
 import LogoKallma from '/src/assets/icono-kallma-blanco.svg';
 import '../index.css';
+import { Wind } from "lucide-react";
 
 export default function Hero() {
-  const slogan = "Cabañas Kallma: descanso en la nieve, paz en cada detalle.";
-
   return (
     <section
        className="h-screen bg-cover bg-center relative font-kallma"
       style={{ backgroundImage: "url('/src/assets/fondo.jpg')" }}
     >
       {/* 1. Panel Izquierdo con Efecto Desenfoque y Oscurecimiento */}
-      <div className="absolute top-0 left-0 w-1/2 h-full backdrop-blur-lg bg-black/30"></div>
+      <div className="absolute top-0 left-0 w-[41.5%] h-full backdrop-blur-lg bg-black/30"></div>
 
       {/* 2. Contenido Principal: Logo, Título y Botón */}
       {/* El contenedor principal se centra verticalmente (top-1/2, transform -translate-y-1/2) 
         y se extiende horizontalmente a través de la sección para permitir que el título se divida.
       */}
-      <div className="absolute inset-0 flex items-center justify-center text-white">
+      <div className="absolute inset-0 flex items-center justify-center text-white -translate-y-20">
         
         {/* Contenedor Flex para Título (completo) y Botón - Los alineamos para que el título esté centrado sobre la línea */}
-        <div className="flex items-center" style={{ transform: 'translateX(11%)' }}> {/* Ajuste manual para centrar el título */}
+        <div className="flex items-center" style={{ transform: 'translateX(-8%)' }}> {/* Ajuste manual para centrar el título */}
           
           {/* Logo Kallma - En el lado desenfocado */}
-          <img src={LogoKallma} alt="Logo" className="w-20 h-20 mr-4" /> 
+          <img src={LogoKallma} alt="Logo" className="w-28 h-28 mr-6 mb-2" />
           
           {/* Título Kallma (Dividido Visualmente) */}
-          <h1 className="text-8xl font-bold flex whitespace-nowrap"> 
+          <h1 className="text-9xl font-bold flex whitespace-nowrap"> 
             {/* 'Kal' - Debe verse blanco/claro (en el lado desenfocado) */}
             <span className="text-white">Kal</span>
             {/* 'lma' - Debe verse borroso/oscuro (en el lado enfocado) */}
@@ -34,8 +33,8 @@ export default function Hero() {
 
           {/* Botón "Reservar ahora" - Al lado del título, en el lado enfocado */}
           <button 
-            className="flex items-center ml-10 bg-gray-600/70 hover:bg-gray-500/80 text-white font-medium px-6 py-3 rounded-full shadow-lg transition duration-300"
-            style={{ width: '180px', height: '50px' }}
+            className="flex items-center ml-10 mt-[28px] bg-gray-600/70 hover:bg-gray-500/80 text-white font-medium px-6 py-3 rounded-full shadow-xl hover:shadow-2xl transition duration-300"
+            style={{ width: '200px', height: '50px' }}
           >
             Reservar ahora
             <span className="ml-3">
@@ -47,23 +46,15 @@ export default function Hero() {
         </div>
       </div>
       
-      {/* 3. Slogan en la esquina inferior izquierda (en el panel desenfocado) */}
-      <div className="absolute bottom-6 left-10 text-white text-lg w-1/2 pr-12 flex flex-col items-start space-y-2">
-        
-        {/* Slogan principal */}
-        <p className="ml-6 text-2xl font-semibold flex items-center">
-            {slogan}
-            <span className="ml-2 text-white">
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                </svg>
-            </span>
-        </p>
+       {/* Slogan */}
+    <div className="absolute bottom-32 left-24 ml-6 flex items-end space-x-3 text-xl font-semibold">
+      <div className="flex flex-col leading-snug">
+        <span className="text-gray-200">Cabañas Kallma: descanso en </span>
+        <span className="text-gray-200">la nieve, paz en cada detalle.</span>
       </div>
+      <Wind className="w-10 h-10 text-gray-200" />
+    </div>
 
     </section>
   )
 }
-
-
-
