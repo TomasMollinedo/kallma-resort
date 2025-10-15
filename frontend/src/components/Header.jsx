@@ -1,4 +1,5 @@
-import { Home, Info, MessageCircle } from "lucide-react"  
+import { Link } from "react-router-dom"; 
+import { Home, Info, MessageCircle } from "lucide-react";
 
 export default function Header() {
   return (
@@ -6,12 +7,18 @@ export default function Header() {
       {/* Bloque izquierdo con íconos y texto */}
       <div className="flex items-center space-x-6">
         <div className="flex items-center space-x-4">
-          <button className="border border-white/40 p-2 rounded-full hover:bg-white/20 transition">
+          
+          {/* Ícono Home (usando Link) */}
+          <Link to="/" className="border border-white/40 p-2 rounded-full hover:bg-white/20 transition">
             <Home size={18} />
-          </button>
-          <button className="border border-white/40 p-2 rounded-full hover:bg-white/20 transition">
+          </Link>
+
+          {/* Ícono Info (usando Link) */}
+          <Link to="/informacion" className="border border-white/40 p-2 rounded-full hover:bg-white/20 transition">
             <Info size={18} />
-          </button>
+          </Link>
+
+          {/* Ícono Chat (usando Button para posible Modal/Widget) */}
           <button className="border border-white/40 p-2 rounded-full hover:bg-white/20 transition">
             <MessageCircle size={18} />
           </button>
@@ -24,9 +31,12 @@ export default function Header() {
 
       {/* Menú principal */}
       <nav className="flex items-center space-x-8 text-sm">
-        <a href="#cabanas" className="hover:text-gray-200">Cabañas</a>
-        <a href="#servicios" className="hover:text-gray-200">Servicios</a>
-        <a href="#actividades" className="hover:text-gray-200">Actividades</a>
+        {/* Usando Link para navegar entre páginas */}
+        <Link to="/cabanas" className="hover:text-gray-200">Cabañas</Link>
+        <Link to="/servicios" className="hover:text-gray-200">Servicios</Link>
+        <Link to="/actividades" className="hover:text-gray-200">Actividades</Link>
+
+        {/* Botón Acceder (usando Button para posible Modal/Acción) */}
         <button className="border border-white rounded-full px-6 py-2 hover:bg-white hover:text-black transition">
           Acceder
         </button>
