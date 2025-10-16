@@ -1,8 +1,21 @@
 import { Link, useNavigate } from "react-router-dom"; 
-import { Home, Info, MessageCircle } from "lucide-react";
+import { Home, Info, MessageCircle, User, LogOut } from "lucide-react";
+import { useState } from "react";
+import { useAuth } from "../app/context/AuthContext";
 
 export default function Header() {
   const navigate = useNavigate();
+  const { user, logout, isAuthenticated } = useAuth();
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // Solo mostrar el menú de usuario si es un cliente autenticado
+  const isCliente = isAuthenticated && user?.rol === 'Cliente';
+
+  const handleLogout = () => {
+    logout();
+    setShowDropdown(false);
+    navigate('/');
+  };
 
   return (
     <header className="absolute top-0 left-0 w-full flex justify-between items-center px-10 py-6 text-white z-50 font-lexend">
@@ -29,12 +42,47 @@ export default function Header() {
         <Link to="/servicios" className="hover:text-gray-200">Servicios</Link>
         <Link to="/actividades" className="hover:text-gray-200">Actividades</Link>
 
-        <button
-          onClick={() => navigate("/login")}
-          className="border border-white rounded-full px-6 py-2 hover:bg-white hover:text-black transition"
-        >
-          Acceder
-        </button>
+        {isCliente ? (
+          <div className="relative">
+            <button
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="border border-white rounded-full px-6 py-2 hover:bg-white hover:text-black transition flex items-center gap-2"
+            >
+              <User size={16} />
+              {user.nombre}
+            </button>
+
+            {showDropdown && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 text-gray-800">
+                <button
+                  onClick={() => {
+                    navigate('/dashboard/cliente');
+                    setShowDropdown(false);
+                  }}
+                  className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <User size={16} />
+                  Mi Panel
+                </button>
+                <hr className="my-1" />
+                <button
+                  onClick={handleLogout}
+                  className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-red-600"
+                >
+                  <LogOut size={16} />
+                  Cerrar Sesión
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={() => navigate("/login")}
+            className="border border-white rounded-full px-6 py-2 hover:bg-white hover:text-black transition"
+          >
+            Acceder
+          </button>
+        )}
       </nav>
     </header>
   );
