@@ -1,0 +1,176 @@
+###
+### Ejemplos de peticiones HTTP para probar la API
+### Usa la extensión REST Client de VS Code o copia en Postman/Insomnia
+###
+
+@baseUrl = http://localhost:4000/api
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF91c3VhcmlvIjoxLCJlbWFpbCI6InRlc3RAZW1haWwuY29tIiwibm9tX3JvbCI6IkNsaWVudGUiLCJpYXQiOjE2OTcwNDEyMDB9.abc123
+
+### ============================================
+### HEALTH CHECK
+### ============================================
+
+### Health Check
+GET {{baseUrl}}/health
+
+### ============================================
+### AUTENTICACIÓN (Público)
+### ============================================
+
+### 1. Registrar nuevo usuario (Cliente)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "cliente@example.com",
+  "password": "password123",
+  "nombre": "Juan Pérez",
+  "telefono": "+54 9 11 1234-5678",
+  "dni": "12345678"
+}
+
+### 2. Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "cliente@example.com",
+  "password": "password123"
+}
+
+### ============================================
+### USUARIOS (Requieren autenticación)
+### ============================================
+
+### 3. Obtener mi perfil (Cualquier usuario autenticado)
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{token}}
+
+### 4. Listar todos los usuarios (Solo Admin)
+GET {{baseUrl}}/users?limit=10&offset=0
+Authorization: Bearer {{token}}
+
+### 5. Listar usuarios por rol (Solo Admin)
+GET {{baseUrl}}/users?rol=Cliente
+Authorization: Bearer {{token}}
+
+### 6. Listar usuarios activos (Solo Admin)
+GET {{baseUrl}}/users?esta_activo=true
+Authorization: Bearer {{token}}
+
+### 7. Actualizar usuario - Cambiar nombre (Solo Admin)
+PUT {{baseUrl}}/users/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Juan Carlos Pérez Actualizado"
+}
+
+### 8. Actualizar usuario - Cambiar rol a Operador (Solo Admin)
+PUT {{baseUrl}}/users/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "id_rol_usuario": 2
+}
+
+### 9. Desactivar usuario (Solo Admin)
+PUT {{baseUrl}}/users/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "esta_activo": false
+}
+
+### 10. Actualizar múltiples campos (Solo Admin)
+PUT {{baseUrl}}/users/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Juan Carlos Pérez",
+  "telefono": "+54 9 11 9999-8888",
+  "email": "nuevo.email@example.com",
+  "id_rol_usuario": 3,
+  "esta_activo": true
+}
+
+### ============================================
+### CASOS DE ERROR
+### ============================================
+
+### Error: Token no proporcionado
+GET {{baseUrl}}/users/me
+
+### Error: Token inválido
+GET {{baseUrl}}/users/me
+Authorization: Bearer token_invalido
+
+### Error: Email ya registrado
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "cliente@example.com",
+  "password": "password123",
+  "nombre": "Otro Usuario"
+}
+
+### Error: Credenciales inválidas
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "cliente@example.com",
+  "password": "password_incorrecta"
+}
+
+### Error: Acceso denegado (Cliente intenta listar usuarios)
+GET {{baseUrl}}/users
+Authorization: Bearer {{token}}
+
+### ============================================
+### CRUD DE USUARIOS (Solo Admin)
+### ============================================
+
+### 5. Crear un nuevo usuario (Admin crea Operador)
+POST {{baseUrl}}/users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "email": "operador@kallmaresort.com",
+  "password": "Operador123!",
+  "nombre": "María García",
+  "telefono": "+54 9 11 5555-5555",
+  "dni": "22222222",
+  "id_rol_usuario": 2
+}
+
+### 6. Crear otro Cliente (Admin)
+POST {{baseUrl}}/users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "email": "cliente2@example.com",
+  "password": "Cliente123!",
+  "nombre": "Pedro López",
+  "telefono": "+54 9 11 6666-6666",
+  "dni": "33333333",
+  "id_rol_usuario": 1
+}
+
+### 7. Desactivar usuario (Borrado lógico)
+DELETE {{baseUrl}}/users/2
+Authorization: Bearer {{token}}
+
+### ============================================
+### ROLES DISPONIBLES
+### ============================================
+# 1 = Cliente
+# 2 = Operador  
+# 3 = Administrador
