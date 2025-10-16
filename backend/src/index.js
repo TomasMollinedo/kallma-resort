@@ -10,8 +10,8 @@ app.use(express.json());
 // Health con chequeo a Postgres
 app.get("/api/health", async (_req, res) => {
   try {
-    const r = await db.query("SELECT 1 AS ok");
-    res.json({ ok: true, db: r.rows[0].ok === 1 });
+    const r = await db.query("SELECT * FROM estado_cabana");
+    res.json({ ok: r.rows });
   } catch (e) {
     res.status(500).json({ ok: false, error: String(e) });
   }
