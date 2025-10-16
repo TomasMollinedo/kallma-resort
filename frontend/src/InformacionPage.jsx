@@ -1,5 +1,5 @@
 import React from "react";
-import fondo from "../assets/fondoinfo.svg"; 
+import fondo from "./assets/fondoinfo.svg"; 
 
 export default function InfoPage() {
   return (
