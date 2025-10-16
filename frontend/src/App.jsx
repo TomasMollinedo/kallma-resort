@@ -11,6 +11,8 @@ import ServiciosPage from './Servicios/ServiciosPage.jsx';
 import ActividadesPage from './Actividades/ActividadesPage.jsx'; 
 import InformacionPage from './Pages/InformacionPage.jsx'; 
 import Home from './Pages/Hero.jsx';
+import Login from './app/auth/Login.jsx';
+import Register from './app/auth/Register.jsx';
 
 function App() {
   return (
@@ -34,6 +36,10 @@ function App() {
             
             {/* Rutas adicionales (para los íconos de la izquierda del Header) */}
             <Route path="/informacion" element={<InformacionPage />} />
+            
+            {/* Rutas de autenticación */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
             {/* Opcional: Ruta para manejar páginas no encontradas (404) */}
             <Route path="*" element={
