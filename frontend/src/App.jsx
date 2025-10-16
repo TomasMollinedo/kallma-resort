@@ -11,10 +11,6 @@ import ServiciosPage from './Servicios/ServiciosPage.jsx';
 import ActividadesPage from './Actividades/ActividadesPage.jsx'; 
 import InformacionPage from './InformacionPage.jsx'; 
 import Home from './Hero.jsx';
-import Login from './app/auth/Login.jsx';
-import Register from './app/auth/Register.jsx';
-import InformacionPage from './Pages/InformacionPage.jsx'; 
-import Home from './Pages/Hero.jsx';
 
 // Sistema interno - Autenticación y componentes
 import ProtectedRoute from './app/components/ProtectedRoute';
