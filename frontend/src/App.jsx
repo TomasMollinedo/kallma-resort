@@ -1,47 +1,89 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 
-// Componentes de la estructura (Header, Footer)
+// Sistema interno - Contexto de autenticación
+import { AuthProvider } from './app/context/AuthContext';
+
+// Componentes públicos del catálogo
 import Header from './components/Header';
 import Footer from './components/Footer';
-
-// Componentes de las páginas (Necesitas crear estos archivos)
-// 'Hero' asume que es la página principal (Home)
 import CabanasPage from './Cabañas/CabañasPage.jsx'; 
 import ServiciosPage from './Servicios/ServiciosPage.jsx'; 
 import ActividadesPage from './Actividades/ActividadesPage.jsx'; 
 import InformacionPage from './Pages/InformacionPage.jsx'; 
 import Home from './Pages/Hero.jsx';
-import Login from './app/auth/Login.jsx';
-import Register from './app/auth/Register.jsx';
+
+// Sistema interno - Autenticación y componentes
+import ProtectedRoute from './app/components/ProtectedRoute';
+import Login from './app/auth/login.jsx';
+import Register from './app/auth/register.jsx';
+
+// Sistema interno - Dashboards por rol
+import DashboardCliente from './app/cliente/Dashboard';
+import DashboardAdministrador from './app/admin/Dashboard';
+import DashboardOperador from './app/operador/Dashboard';
+
+// Componente para controlar cuándo mostrar Header y Footer
+function Layout({ children }) {
+  const location = useLocation();
+  
+  // Rutas donde NO se debe mostrar Header y Footer
+  // Cliente mantiene Header/Footer para navegar el catálogo, solo admin y operador no lo tienen
+  const hideHeaderFooterRoutes = ['/login', '/register', '/dashboard/admin', '/dashboard/operador'];
+  const shouldHideHeaderFooter = hideHeaderFooterRoutes.includes(location.pathname);
+
+  return (
+    <div className="min-h-screen">
+      {!shouldHideHeaderFooter && <Header />}
+      <main>{children}</main>
+      {!shouldHideHeaderFooter && <Footer />}
+    </div>
+  );
+}
 
 function App() {
   return (
-    // 1. Envolvemos todo en BrowserRouter para habilitar el enrutamiento
     <BrowserRouter>
-      <div className="min-h-screen">
-        
-        {/* El Header se mantiene *fuera* de Routes para que esté visible en todas las páginas */}
-        <Header /> 
-
-        {/* 2. Definimos las rutas usando Routes y Route */}
-        <main> 
+      <AuthProvider>
+        <Layout>
           <Routes>
-            {/* Ruta para la página de Inicio (tu componente Hero) */}
+            {/* Rutas públicas */}
             <Route path="/" element={<Home />} /> 
-            
-            {/* Rutas de navegación principal */}
             <Route path="/cabanas" element={<CabanasPage />} />
             <Route path="/servicios" element={<ServiciosPage />} />
             <Route path="/actividades" element={<ActividadesPage />} />
-            
-            {/* Rutas adicionales (para los íconos de la izquierda del Header) */}
             <Route path="/informacion" element={<InformacionPage />} />
             
             {/* Rutas de autenticación */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            {/* Opcional: Ruta para manejar páginas no encontradas (404) */}
+            {/* Rutas protegidas - Dashboards por rol */}
+            <Route 
+              path="/dashboard/cliente" 
+              element={
+                <ProtectedRoute allowedRoles={['Cliente']}>
+                  <DashboardCliente />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/admin" 
+              element={
+                <ProtectedRoute allowedRoles={['Administrador']}>
+                  <DashboardAdministrador />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/operador" 
+              element={
+                <ProtectedRoute allowedRoles={['Operador']}>
+                  <DashboardOperador />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* Ruta 404 */}
             <Route path="*" element={
                 <div className="pt-32 text-center text-black">
                     <h1 className="text-4xl font-bold">404</h1>
@@ -49,12 +91,8 @@ function App() {
                 </div>
             } />
           </Routes>
-        </main>
-
-        {/* El Footer también se mantiene fuera de Routes si es común a todas las páginas */}
-        <Footer /> 
-        
-      </div>
+        </Layout>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
