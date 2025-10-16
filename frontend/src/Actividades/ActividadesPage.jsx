@@ -1,5 +1,5 @@
 import './Actividades.css';
-import { actividadesData } from '../Data/actividadesData';
+import { actividadesData } from './actividadesData';
 
 // ----------------------------------------------------------------------
 // 1. DATOS DE LAS ACTIVIDADES 
