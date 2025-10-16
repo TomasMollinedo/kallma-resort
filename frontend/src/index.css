@@ -1,3 +1,29 @@
+/* 1. Importar la fuente Lora */
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
+
+/* 2. Luego, las directivas de Tailwind */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Efecto de rotación 3D */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Fuente principal */
+body {
+  font-family: 'Lora', serif;
+}
