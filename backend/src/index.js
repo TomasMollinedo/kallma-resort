@@ -5,6 +5,8 @@ import { db } from "./config/database.js";
 
 // Importar módulos
 import usersModule from "./modules/users/index.js";
+import zonasModule from "./modules/zonas/index.js";
+import cabanasModule from "./modules/cabanas/index.js";
 
 const app = express();
 app.use(cors());
@@ -22,6 +24,8 @@ app.get("/api/health", async (_req, res) => {
 
 // Montar módulos
 app.use("/api", usersModule);
+app.use("/api", zonasModule);
+app.use("/api", cabanasModule);
 
 // Manejo de rutas no encontradas
 app.use((req, res) => {

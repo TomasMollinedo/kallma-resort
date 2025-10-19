@@ -1,0 +1,324 @@
+### =========================================
+### EJEMPLOS API - MÓDULO ZONAS Y CABAÑAS
+### =========================================
+
+### Variables
+@baseUrl = http://localhost:3000/api
+@adminToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+@operadorToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+### =========================================
+### ZONAS
+### =========================================
+
+### 1. Listar todas las zonas activas (Operador/Admin)
+GET {{baseUrl}}/zonas
+Authorization: Bearer {{operadorToken}}
+
+### 2. Listar todas las zonas (incluye inactivas)
+GET {{baseUrl}}/zonas?esta_activa=false
+Authorization: Bearer {{adminToken}}
+
+### 3. Ver detalle de una zona
+GET {{baseUrl}}/zonas/1
+Authorization: Bearer {{operadorToken}}
+
+### 4. Crear nueva zona (Solo Admin)
+POST {{baseUrl}}/zonas
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "nom_zona": "Zona Montaña",
+  "capacidad_cabanas": 12
+}
+
+### 5. Actualizar zona (Solo Admin)
+PATCH {{baseUrl}}/zonas/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "nom_zona": "Zona Norte Premium",
+  "capacidad_cabanas": 15
+}
+
+### 6. Eliminar zona (Solo Admin)
+DELETE {{baseUrl}}/zonas/1
+Authorization: Bearer {{adminToken}}
+
+### 7. Restaurar zona eliminada (Solo Admin)
+POST {{baseUrl}}/zonas/1/restaurar
+Authorization: Bearer {{adminToken}}
+
+
+### =========================================
+### CABAÑAS
+### =========================================
+
+### 8. Listar todas las cabañas activas (Operador/Admin)
+GET {{baseUrl}}/cabanas
+Authorization: Bearer {{operadorToken}}
+
+### 9. Listar cabañas con filtro por estado
+GET {{baseUrl}}/cabanas?id_est_cab=3
+Authorization: Bearer {{operadorToken}}
+
+### 10. Listar cabañas por código (búsqueda parcial)
+GET {{baseUrl}}/cabanas?cod_cabana=CAB-001
+Authorization: Bearer {{operadorToken}}
+
+### 11. Listar cabañas de una zona específica
+GET {{baseUrl}}/cabanas/zona/1
+Authorization: Bearer {{operadorToken}}
+
+### 12. Ver cabañas reservadas para HOY
+GET {{baseUrl}}/cabanas/reservadas
+Authorization: Bearer {{operadorToken}}
+
+### 13. Ver cabañas reservadas para fecha específica
+GET {{baseUrl}}/cabanas/reservadas?fecha=2025-01-20
+Authorization: Bearer {{operadorToken}}
+
+### 14. Ver detalle de una cabaña
+GET {{baseUrl}}/cabanas/1
+Authorization: Bearer {{operadorToken}}
+
+### 15. Crear nueva cabaña (Solo Admin)
+POST {{baseUrl}}/cabanas
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "cod_cabana": "CAB-015",
+  "id_tipo_cab": 2,
+  "id_est_cab": 3,
+  "id_zona": 1
+}
+
+### 16. Actualizar cabaña completa (Solo Admin)
+PATCH {{baseUrl}}/cabanas/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "cod_cabana": "CAB-001-RENOVADA",
+  "id_tipo_cab": 3,
+  "id_est_cab": 3,
+  "id_zona": 2
+}
+
+### 17. Cambiar estado a Mantenimiento (Operador)
+PATCH {{baseUrl}}/cabanas/1
+Authorization: Bearer {{operadorToken}}
+Content-Type: application/json
+
+{
+  "id_est_cab": 1
+}
+
+### 18. Cambiar estado a Activa (Operador)
+PATCH {{baseUrl}}/cabanas/1
+Authorization: Bearer {{operadorToken}}
+Content-Type: application/json
+
+{
+  "id_est_cab": 3
+}
+
+### 19. Operador intenta modificar otros campos (DEBE FALLAR)
+PATCH {{baseUrl}}/cabanas/1
+Authorization: Bearer {{operadorToken}}
+Content-Type: application/json
+
+{
+  "cod_cabana": "NUEVO-CODIGO"
+}
+
+### 20. Eliminar cabaña - Borrado lógico (Solo Admin)
+DELETE {{baseUrl}}/cabanas/5
+Authorization: Bearer {{adminToken}}
+
+### 21. Restaurar cabaña eliminada (Solo Admin)
+POST {{baseUrl}}/cabanas/5/restaurar
+Authorization: Bearer {{adminToken}}
+
+
+### =========================================
+### CASOS DE ERROR ESPERADOS
+### =========================================
+
+### 22. Operador intenta crear zona (DEBE FALLAR - 403)
+POST {{baseUrl}}/zonas
+Authorization: Bearer {{operadorToken}}
+Content-Type: application/json
+
+{
+  "nom_zona": "Zona Test",
+  "capacidad_cabanas": 5
+}
+
+### 23. Operador intenta cambiar cabaña a Inactiva (DEBE FALLAR - 400)
+PATCH {{baseUrl}}/cabanas/1
+Authorization: Bearer {{operadorToken}}
+Content-Type: application/json
+
+{
+  "id_est_cab": 2
+}
+
+### 24. Crear zona con nombre duplicado (DEBE FALLAR - 409)
+POST {{baseUrl}}/zonas
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "nom_zona": "Zona Norte",
+  "capacidad_cabanas": 8
+}
+
+### 25. Crear cabaña con código duplicado (DEBE FALLAR - 409)
+POST {{baseUrl}}/cabanas
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "cod_cabana": "CAB-001",
+  "id_tipo_cab": 1,
+  "id_est_cab": 3,
+  "id_zona": 1
+}
+
+### 26. Eliminar zona con cabañas activas (DEBE FALLAR - 400)
+DELETE {{baseUrl}}/zonas/1
+Authorization: Bearer {{adminToken}}
+
+### 27. Eliminar cabaña con reservas activas (DEBE FALLAR - 400)
+DELETE {{baseUrl}}/cabanas/1
+Authorization: Bearer {{adminToken}}
+
+
+### =========================================
+### FLUJOS COMPLETOS
+### =========================================
+
+### FLUJO 1: Crear zona y agregar cabaña
+
+# Paso 1: Crear zona
+POST {{baseUrl}}/zonas
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "nom_zona": "Zona Lago",
+  "capacidad_cabanas": 6
+}
+
+###
+
+# Paso 2: Crear cabaña en la nueva zona (usar id_zona de la respuesta anterior)
+POST {{baseUrl}}/cabanas
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "cod_cabana": "LAGO-001",
+  "id_tipo_cab": 3,
+  "id_est_cab": 3,
+  "id_zona": 3
+}
+
+###
+
+# Paso 3: Listar cabañas de la zona
+GET {{baseUrl}}/cabanas/zona/3
+Authorization: Bearer {{operadorToken}}
+
+### 
+
+### FLUJO 2: Operador cambia estado de cabaña para mantenimiento
+
+# Paso 1: Ver estado actual
+GET {{baseUrl}}/cabanas/2
+Authorization: Bearer {{operadorToken}}
+
+###
+
+# Paso 2: Cambiar a mantenimiento
+PATCH {{baseUrl}}/cabanas/2
+Authorization: Bearer {{operadorToken}}
+Content-Type: application/json
+
+{
+  "id_est_cab": 1
+}
+
+###
+
+# Paso 3: Verificar cambio
+GET {{baseUrl}}/cabanas/2
+Authorization: Bearer {{operadorToken}}
+
+###
+
+# Paso 4: Volver a activar
+PATCH {{baseUrl}}/cabanas/2
+Authorization: Bearer {{operadorToken}}
+Content-Type: application/json
+
+{
+  "id_est_cab": 3
+}
+
+###
+
+### FLUJO 3: Admin elimina y restaura cabaña
+
+# Paso 1: Eliminar cabaña
+DELETE {{baseUrl}}/cabanas/10
+Authorization: Bearer {{adminToken}}
+
+###
+
+# Paso 2: Verificar que no aparece en listado activo
+GET {{baseUrl}}/cabanas
+Authorization: Bearer {{adminToken}}
+
+###
+
+# Paso 3: Ver todas incluyendo inactivas
+GET {{baseUrl}}/cabanas?esta_activo=false
+Authorization: Bearer {{adminToken}}
+
+###
+
+# Paso 4: Restaurar cabaña
+POST {{baseUrl}}/cabanas/10/restaurar
+Authorization: Bearer {{adminToken}}
+
+###
+
+# Paso 5: Verificar restauración
+GET {{baseUrl}}/cabanas/10
+Authorization: Bearer {{adminToken}}
+
+
+### =========================================
+### NOTAS
+### =========================================
+# 
+# Estados de Cabaña:
+# - 1: Cerrada por Mantenimiento
+# - 2: Inactiva (borrado lógico)
+# - 3: Activa
+#
+# Tipos de Cabaña:
+# - 1: Esencial (2 personas, $70,000)
+# - 2: Confort (4 personas, $130,000)
+# - 3: Premium (6 personas, $250,000)
+#
+# Roles:
+# - Administrador: acceso total
+# - Operador: puede ver todo, solo cambiar estado de cabañas
+# - Cliente: no interactúa con cabañas directamente
+#
