@@ -10,6 +10,7 @@ import CabanasPage from './Cabañas/CabañasPage.jsx';
 import ServiciosPage from './Servicios/ServiciosPage.jsx'; 
 import ActividadesPage from './Actividades/ActividadesPage.jsx'; 
 import InformacionPage from './InformacionPage.jsx'; 
+import ContactoPage from './ContactoPage.jsx';
 import Home from './Hero.jsx';
 
 // Sistema interno - Autenticación y componentes
@@ -52,6 +53,7 @@ function App() {
             <Route path="/servicios" element={<ServiciosPage />} />
             <Route path="/actividades" element={<ActividadesPage />} />
             <Route path="/informacion" element={<InformacionPage />} />
+            <Route path="/contacto" element={<ContactoPage />} />
             
             {/* Rutas de autenticación */}
             <Route path="/login" element={<Login />} />
