@@ -3,34 +3,7 @@
  * Maneja todas las operaciones CRUD y reglas de negocio
  */
 
-import { db } from "../../../config/database.js";
-
-/**
- * Verifica si una cabaña está reservada para una fecha específica
- * @param {number} idCabana - ID de la cabaña
- * @param {Date} fecha - Fecha a verificar (por defecto HOY)
- * @returns {Promise<boolean>} true si está reservada
- */
-const verificarReservaActiva = async (idCabana, fecha = new Date()) => {
-  try {
-    const query = `
-      SELECT COUNT(*) as total
-      FROM cabanas_reserva cr
-      INNER JOIN reserva r ON cr.id_reserva = r.id_reserva
-      INNER JOIN estado_operativo eo ON r.id_est_op = eo.id_est_op
-      WHERE cr.id_cabana = $1
-        AND r.check_in <= $2
-        AND r.check_out >= $2
-        AND eo.nom_estado NOT IN ('Cancelada')
-    `;
-
-    const result = await db.query(query, [idCabana, fecha]);
-    return parseInt(result.rows[0].total) > 0;
-  } catch (error) {
-    console.error("Error en verificarReservaActiva:", error);
-    return false;
-  }
-};
+import { pool } from "../../../config/database.js";
 
 /**
  * Obtener todas las cabañas con filtros opcionales
@@ -47,12 +20,14 @@ export const obtenerCabanas = async (filters = {}) => {
         tc.nom_tipo_cab,
         tc.capacidad,
         tc.precio_noche,
-        c.id_est_cab,
-        ec.nom_est_cab,
         c.id_zona,
         z.nom_zona,
         c.esta_activo,
+        c.en_mantenimiento,
         c.fecha_creacion,
+        c.fecha_modific,
+        uc.nombre as usuario_creacion,
+        um.nombre as usuario_modificacion,
         -- Verificar si está reservada HOY
         CASE 
           WHEN EXISTS (
@@ -69,20 +44,14 @@ export const obtenerCabanas = async (filters = {}) => {
         END as reservada_hoy
       FROM cabana c
       INNER JOIN tipo_cabana tc ON c.id_tipo_cab = tc.id_tipo_cab
-      INNER JOIN estado_cabana ec ON c.id_est_cab = ec.id_est_cab
       INNER JOIN zonas z ON c.id_zona = z.id_zona
+      INNER JOIN usuario uc ON c.id_usuario_creacion = uc.id_usuario
+      LEFT JOIN usuario um ON c.id_usuario_modific = um.id_usuario
       WHERE 1=1
     `;
 
     const params = [];
     let paramCount = 1;
-
-    // Filtrar por estado de cabaña
-    if (filters.id_est_cab) {
-      query += ` AND c.id_est_cab = $${paramCount}`;
-      params.push(filters.id_est_cab);
-      paramCount++;
-    }
 
     // Filtrar por código de cabaña
     if (filters.cod_cabana) {
@@ -98,19 +67,23 @@ export const obtenerCabanas = async (filters = {}) => {
       paramCount++;
     }
 
-    // Filtrar por estado activo (por defecto solo activas)
+    // Filtrar por estado activo
     if (filters.esta_activo !== undefined) {
       query += ` AND c.esta_activo = $${paramCount}`;
       params.push(filters.esta_activo);
       paramCount++;
-    } else {
-      // Por defecto solo mostrar cabañas activas
-      query += ` AND c.esta_activo = TRUE`;
+    }
+
+    // Filtrar por mantenimiento
+    if (filters.en_mantenimiento !== undefined) {
+      query += ` AND c.en_mantenimiento = $${paramCount}`;
+      params.push(filters.en_mantenimiento);
+      paramCount++;
     }
 
     query += ` ORDER BY c.cod_cabana ASC`;
 
-    const result = await db.query(query, params);
+    const result = await pool.query(query, params);
     return result.rows;
   } catch (error) {
     console.error("Error en obtenerCabanas:", error);
@@ -133,11 +106,14 @@ export const obtenerCabanasPorZona = async (idZona) => {
         tc.nom_tipo_cab,
         tc.capacidad,
         tc.precio_noche,
-        c.id_est_cab,
-        ec.nom_est_cab,
         c.id_zona,
         z.nom_zona,
         c.esta_activo,
+        c.en_mantenimiento,
+        c.fecha_creacion,
+        c.fecha_modific,
+        uc.nombre as usuario_creacion,
+        um.nombre as usuario_modificacion,
         -- Verificar si está reservada HOY
         CASE 
           WHEN EXISTS (
@@ -154,13 +130,14 @@ export const obtenerCabanasPorZona = async (idZona) => {
         END as reservada_hoy
       FROM cabana c
       INNER JOIN tipo_cabana tc ON c.id_tipo_cab = tc.id_tipo_cab
-      INNER JOIN estado_cabana ec ON c.id_est_cab = ec.id_est_cab
       INNER JOIN zonas z ON c.id_zona = z.id_zona
+      INNER JOIN usuario uc ON c.id_usuario_creacion = uc.id_usuario
+      LEFT JOIN usuario um ON c.id_usuario_modific = um.id_usuario
       WHERE c.id_zona = $1 AND c.esta_activo = TRUE
       ORDER BY c.cod_cabana ASC
     `;
 
-    const result = await db.query(query, [idZona]);
+    const result = await pool.query(query, [idZona]);
     return result.rows;
   } catch (error) {
     console.error("Error en obtenerCabanasPorZona:", error);
@@ -179,18 +156,25 @@ export const obtenerCabanasReservadas = async (fecha) => {
       SELECT DISTINCT
         c.id_cabana,
         c.cod_cabana,
+        c.en_mantenimiento,
         tc.nom_tipo_cab,
         z.nom_zona,
         r.cod_reserva,
         r.check_in,
         r.check_out,
-        eo.nom_estado as estado_reserva
+        eo.nom_estado as estado_reserva,
+        c.fecha_creacion,
+        c.fecha_modific,
+        uc.nombre as usuario_creacion,
+        um.nombre as usuario_modificacion
       FROM cabana c
       INNER JOIN cabanas_reserva cr ON c.id_cabana = cr.id_cabana
       INNER JOIN reserva r ON cr.id_reserva = r.id_reserva
       INNER JOIN estado_operativo eo ON r.id_est_op = eo.id_est_op
       INNER JOIN tipo_cabana tc ON c.id_tipo_cab = tc.id_tipo_cab
       INNER JOIN zonas z ON c.id_zona = z.id_zona
+      INNER JOIN usuario uc ON c.id_usuario_creacion = uc.id_usuario
+      LEFT JOIN usuario um ON c.id_usuario_modific = um.id_usuario
       WHERE r.check_in <= $1
         AND r.check_out >= $1
         AND eo.nom_estado NOT IN ('Cancelada')
@@ -198,7 +182,7 @@ export const obtenerCabanasReservadas = async (fecha) => {
       ORDER BY c.cod_cabana ASC
     `;
 
-    const result = await db.query(query, [fecha]);
+    const result = await pool.query(query, [fecha]);
     return result.rows;
   } catch (error) {
     console.error("Error en obtenerCabanasReservadas:", error);
@@ -221,13 +205,14 @@ export const obtenerCabanaPorId = async (idCabana) => {
         tc.nom_tipo_cab,
         tc.capacidad,
         tc.precio_noche,
-        c.id_est_cab,
-        ec.nom_est_cab,
         c.id_zona,
         z.nom_zona,
         c.esta_activo,
+        c.en_mantenimiento,
         c.fecha_creacion,
         c.fecha_modific,
+        uc.nombre as usuario_creacion,
+        um.nombre as usuario_modificacion,
         -- Verificar si está reservada HOY
         CASE 
           WHEN EXISTS (
@@ -244,12 +229,13 @@ export const obtenerCabanaPorId = async (idCabana) => {
         END as reservada_hoy
       FROM cabana c
       INNER JOIN tipo_cabana tc ON c.id_tipo_cab = tc.id_tipo_cab
-      INNER JOIN estado_cabana ec ON c.id_est_cab = ec.id_est_cab
       INNER JOIN zonas z ON c.id_zona = z.id_zona
+      INNER JOIN usuario uc ON c.id_usuario_creacion = uc.id_usuario
+      LEFT JOIN usuario um ON c.id_usuario_modific = um.id_usuario
       WHERE c.id_cabana = $1
     `;
 
-    const result = await db.query(query, [idCabana]);
+    const result = await pool.query(query, [idCabana]);
 
     if (result.rows.length === 0) {
       throw new Error("CABANA_NOT_FOUND");
@@ -272,7 +258,7 @@ export const obtenerCabanaPorId = async (idCabana) => {
  * @returns {Promise<Object>} Cabaña creada
  */
 export const crearCabana = async (cabanaData, idUsuario) => {
-  const client = await db.connect();
+  const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
@@ -297,16 +283,6 @@ export const crearCabana = async (cabanaData, idUsuario) => {
       throw new Error("TIPO_CABANA_NOT_FOUND");
     }
 
-    // Verificar que el estado de cabaña existe
-    const estadoCabana = await client.query(
-      "SELECT id_est_cab FROM estado_cabana WHERE id_est_cab = $1",
-      [cabanaData.id_est_cab]
-    );
-
-    if (estadoCabana.rows.length === 0) {
-      throw new Error("ESTADO_CABANA_NOT_FOUND");
-    }
-
     // Verificar que la zona existe y está activa
     const zona = await client.query(
       "SELECT id_zona FROM zonas WHERE id_zona = $1 AND esta_activa = TRUE",
@@ -320,15 +296,14 @@ export const crearCabana = async (cabanaData, idUsuario) => {
     // Crear la cabaña
     const result = await client.query(
       `INSERT INTO cabana (
-        cod_cabana, id_tipo_cab, id_est_cab, id_zona, 
-        esta_activo, fecha_creacion, id_usuario_creacion
+        cod_cabana, id_tipo_cab, id_zona, 
+        esta_activo, en_mantenimiento, fecha_creacion, id_usuario_creacion
       )
-      VALUES ($1, $2, $3, $4, TRUE, NOW(), $5)
-      RETURNING id_cabana, cod_cabana, id_tipo_cab, id_est_cab, id_zona, esta_activo, fecha_creacion`,
+      VALUES ($1, $2, $3, TRUE, FALSE, NOW(), $4)
+      RETURNING id_cabana, cod_cabana, id_tipo_cab, id_zona, esta_activo, en_mantenimiento, fecha_creacion`,
       [
         cabanaData.cod_cabana,
         cabanaData.id_tipo_cab,
-        cabanaData.id_est_cab,
         cabanaData.id_zona,
         idUsuario,
       ]
@@ -345,9 +320,6 @@ export const crearCabana = async (cabanaData, idUsuario) => {
     }
     if (error.message === "TIPO_CABANA_NOT_FOUND") {
       throw new Error("El tipo de cabaña no existe o no está activo");
-    }
-    if (error.message === "ESTADO_CABANA_NOT_FOUND") {
-      throw new Error("El estado de cabaña no existe");
     }
     if (error.message === "ZONA_NOT_FOUND") {
       throw new Error("La zona no existe o no está activa");
@@ -367,7 +339,7 @@ export const crearCabana = async (cabanaData, idUsuario) => {
  * @returns {Promise<Object>} Cabaña actualizada
  */
 export const actualizarCabanaAdmin = async (idCabana, cabanaData, idUsuario) => {
-  const client = await db.connect();
+  const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
@@ -406,17 +378,6 @@ export const actualizarCabanaAdmin = async (idCabana, cabanaData, idUsuario) => 
       }
     }
 
-    if (cabanaData.id_est_cab) {
-      const estadoCabana = await client.query(
-        "SELECT id_est_cab FROM estado_cabana WHERE id_est_cab = $1",
-        [cabanaData.id_est_cab]
-      );
-
-      if (estadoCabana.rows.length === 0) {
-        throw new Error("ESTADO_CABANA_NOT_FOUND");
-      }
-    }
-
     if (cabanaData.id_zona) {
       const zona = await client.query(
         "SELECT id_zona FROM zonas WHERE id_zona = $1 AND esta_activa = TRUE",
@@ -445,15 +406,21 @@ export const actualizarCabanaAdmin = async (idCabana, cabanaData, idUsuario) => 
       paramCount++;
     }
 
-    if (cabanaData.id_est_cab !== undefined) {
-      campos.push(`id_est_cab = $${paramCount}`);
-      valores.push(cabanaData.id_est_cab);
-      paramCount++;
-    }
-
     if (cabanaData.id_zona !== undefined) {
       campos.push(`id_zona = $${paramCount}`);
       valores.push(cabanaData.id_zona);
+      paramCount++;
+    }
+
+    if (cabanaData.esta_activo !== undefined) {
+      campos.push(`esta_activo = $${paramCount}`);
+      valores.push(cabanaData.esta_activo);
+      paramCount++;
+    }
+
+    if (cabanaData.en_mantenimiento !== undefined) {
+      campos.push(`en_mantenimiento = $${paramCount}`);
+      valores.push(cabanaData.en_mantenimiento);
       paramCount++;
     }
 
@@ -472,7 +439,7 @@ export const actualizarCabanaAdmin = async (idCabana, cabanaData, idUsuario) => 
       UPDATE cabana
       SET ${campos.join(", ")}
       WHERE id_cabana = $${paramCount}
-      RETURNING id_cabana, cod_cabana, id_tipo_cab, id_est_cab, id_zona, esta_activo, fecha_modific
+      RETURNING id_cabana, cod_cabana, id_tipo_cab, id_zona, esta_activo, en_mantenimiento, fecha_modific
     `;
 
     const result = await client.query(query, valores);
@@ -492,9 +459,6 @@ export const actualizarCabanaAdmin = async (idCabana, cabanaData, idUsuario) => 
     if (error.message === "TIPO_CABANA_NOT_FOUND") {
       throw new Error("El tipo de cabaña no existe o no está activo");
     }
-    if (error.message === "ESTADO_CABANA_NOT_FOUND") {
-      throw new Error("El estado de cabaña no existe");
-    }
     if (error.message === "ZONA_NOT_FOUND") {
       throw new Error("La zona no existe o no está activa");
     }
@@ -509,19 +473,19 @@ export const actualizarCabanaAdmin = async (idCabana, cabanaData, idUsuario) => 
 };
 
 /**
- * Actualizar estado de cabaña (Operador)
- * Solo puede cambiar entre Activa (3) y Cerrada por Mantenimiento (1)
+ * Actualizar mantenimiento de cabaña (Operador y Admin)
+ * Cambia el estado de en_mantenimiento
  * @param {number} idCabana - ID de la cabaña a actualizar
- * @param {number} idEstado - Nuevo estado (1 o 3)
+ * @param {boolean} enMantenimiento - Nuevo estado de mantenimiento
  * @param {number} idUsuario - ID del usuario que actualiza
  * @returns {Promise<Object>} Cabaña actualizada
  */
-export const actualizarEstadoCabanaOperador = async (
+export const actualizarMantenimientoCabana = async (
   idCabana,
-  idEstado,
+  enMantenimiento,
   idUsuario
 ) => {
-  const client = await db.connect();
+  const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
@@ -540,43 +504,33 @@ export const actualizarEstadoCabanaOperador = async (
       throw new Error("CABANA_INACTIVE");
     }
 
-    // Verificar que el estado es válido (1 o 3)
-    if (![1, 3].includes(idEstado)) {
-      throw new Error("INVALID_STATE");
-    }
-
-    // Actualizar solo el estado
+    // Actualizar solo el estado de mantenimiento
     const result = await client.query(
       `UPDATE cabana
-       SET id_est_cab = $1, 
+       SET en_mantenimiento = $1, 
            fecha_modific = NOW(),
            id_usuario_modific = $2
        WHERE id_cabana = $3
-       RETURNING id_cabana, cod_cabana, id_tipo_cab, id_est_cab, id_zona, esta_activo, fecha_modific`,
-      [idEstado, idUsuario, idCabana]
+       RETURNING id_cabana, cod_cabana, id_tipo_cab, id_zona, esta_activo, en_mantenimiento, fecha_modific`,
+      [enMantenimiento, idUsuario, idCabana]
     );
 
     await client.query("COMMIT");
     return result.rows[0];
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Error en actualizarEstadoCabanaOperador:", error);
+    console.error("Error en actualizarMantenimientoCabana:", error);
 
     if (error.message === "CABANA_NOT_FOUND") {
       throw new Error("La cabaña no existe");
     }
     if (error.message === "CABANA_INACTIVE") {
       throw new Error(
-        "No se puede cambiar el estado de una cabaña inactiva"
-      );
-    }
-    if (error.message === "INVALID_STATE") {
-      throw new Error(
-        "Estado inválido. Solo puede cambiar a 'Activa' o 'Cerrada por Mantenimiento'"
+        "No se puede cambiar el mantenimiento de una cabaña inactiva"
       );
     }
 
-    throw new Error("Error al actualizar el estado de la cabaña");
+    throw new Error("Error al actualizar el mantenimiento de la cabaña");
   } finally {
     client.release();
   }
@@ -590,7 +544,7 @@ export const actualizarEstadoCabanaOperador = async (
  * @returns {Promise<Object>} Cabaña eliminada
  */
 export const eliminarCabana = async (idCabana, idUsuario) => {
-  const client = await db.connect();
+  const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
@@ -632,7 +586,7 @@ export const eliminarCabana = async (idCabana, idUsuario) => {
            fecha_modific = NOW(),
            id_usuario_modific = $1
        WHERE id_cabana = $2
-       RETURNING id_cabana, cod_cabana, id_tipo_cab, id_est_cab, id_zona, esta_activo, fecha_modific`,
+       RETURNING id_cabana, cod_cabana, id_tipo_cab, id_zona, esta_activo, en_mantenimiento, fecha_modific`,
       [idUsuario, idCabana]
     );
 
@@ -667,7 +621,7 @@ export const eliminarCabana = async (idCabana, idUsuario) => {
  * @returns {Promise<Object>} Cabaña restaurada
  */
 export const restaurarCabana = async (idCabana, idUsuario) => {
-  const client = await db.connect();
+  const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
@@ -693,7 +647,7 @@ export const restaurarCabana = async (idCabana, idUsuario) => {
            fecha_modific = NOW(),
            id_usuario_modific = $1
        WHERE id_cabana = $2
-       RETURNING id_cabana, cod_cabana, id_tipo_cab, id_est_cab, id_zona, esta_activo, fecha_modific`,
+       RETURNING id_cabana, cod_cabana, id_tipo_cab, id_zona, esta_activo, en_mantenimiento, fecha_modific`,
       [idUsuario, idCabana]
     );
 

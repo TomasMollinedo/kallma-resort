@@ -7,7 +7,7 @@ import * as cabanaService from "../services/cabana.service.js";
 import {
   validateCreateCabana,
   validateUpdateCabanaAdmin,
-  validateUpdateCabanaOperador,
+  validateUpdateMantenimientoCabana,
 } from "../schemas/cabana.schemas.js";
 
 /**
@@ -17,14 +17,15 @@ import {
 export const listarCabanas = async (req, res) => {
   try {
     const filters = {
-      id_est_cab: req.query.id_est_cab
-        ? parseInt(req.query.id_est_cab)
-        : undefined,
       cod_cabana: req.query.cod_cabana,
       id_zona: req.query.id_zona ? parseInt(req.query.id_zona) : undefined,
       esta_activo:
         req.query.esta_activo !== undefined
           ? req.query.esta_activo === "true"
+          : undefined,
+      en_mantenimiento:
+        req.query.en_mantenimiento !== undefined
+          ? req.query.en_mantenimiento === "true"
           : undefined,
     };
 
@@ -207,8 +208,8 @@ export const crearCabana = async (req, res) => {
 /**
  * PATCH /api/cabanas/:id
  * Actualizar una cabaña
- * Admin: puede actualizar cualquier campo
- * Operador: solo puede cambiar estado entre Activa y Cerrada por Mantenimiento
+ * Admin: puede actualizar cualquier campo (incluido esta_activo y en_mantenimiento)
+ * Operador: solo puede cambiar en_mantenimiento
  */
 export const actualizarCabana = async (req, res) => {
   try {
@@ -237,14 +238,19 @@ export const actualizarCabana = async (req, res) => {
         });
       }
 
+      // Validar que solo Admin puede cambiar esta_activo
+      if (req.body.esta_activo !== undefined && req.body.esta_activo === false) {
+        // Borrado lógico solo por admin - esto está permitido
+      }
+
       cabana = await cabanaService.actualizarCabanaAdmin(
         idCabana,
         req.body,
         req.user.id_usuario
       );
     } else if (esOperador) {
-      // Operador solo puede cambiar el estado
-      const validation = validateUpdateCabanaOperador(req.body);
+      // Operador solo puede cambiar el mantenimiento
+      const validation = validateUpdateMantenimientoCabana(req.body);
 
       if (!validation.isValid) {
         return res.status(400).json({
@@ -253,9 +259,9 @@ export const actualizarCabana = async (req, res) => {
         });
       }
 
-      cabana = await cabanaService.actualizarEstadoCabanaOperador(
+      cabana = await cabanaService.actualizarMantenimientoCabana(
         idCabana,
-        req.body.id_est_cab,
+        req.body.en_mantenimiento,
         req.user.id_usuario
       );
     } else {

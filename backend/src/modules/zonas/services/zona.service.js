@@ -3,7 +3,7 @@
  * Maneja todas las operaciones CRUD y reglas de negocio
  */
 
-import { db } from "../../../config/database.js";
+import { pool } from "../../../config/database.js";
 
 /**
  * Obtener todas las zonas con filtros opcionales
@@ -38,7 +38,7 @@ export const obtenerZonas = async (filters = {}) => {
 
     query += ` ORDER BY nom_zona ASC`;
 
-    const result = await db.query(query, params);
+    const result = await pool.query(query, params);
     return result.rows;
   } catch (error) {
     console.error("Error en obtenerZonas:", error);
@@ -66,7 +66,7 @@ export const obtenerZonaPorId = async (idZona) => {
       GROUP BY z.id_zona, z.nom_zona, z.capacidad_cabanas, z.esta_activa
     `;
 
-    const result = await db.query(query, [idZona]);
+    const result = await pool.query(query, [idZona]);
 
     if (result.rows.length === 0) {
       throw new Error("ZONA_NOT_FOUND");
@@ -89,7 +89,7 @@ export const obtenerZonaPorId = async (idZona) => {
  * @returns {Promise<Object>} Zona creada
  */
 export const crearZona = async (zonaData, idUsuario) => {
-  const client = await db.connect();
+  const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
@@ -136,7 +136,7 @@ export const crearZona = async (zonaData, idUsuario) => {
  * @returns {Promise<Object>} Zona actualizada
  */
 export const actualizarZona = async (idZona, zonaData, idUsuario) => {
-  const client = await db.connect();
+  const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
@@ -224,7 +224,7 @@ export const actualizarZona = async (idZona, zonaData, idUsuario) => {
  * @returns {Promise<Object>} Zona eliminada
  */
 export const eliminarZona = async (idZona, idUsuario) => {
-  const client = await db.connect();
+  const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
@@ -293,7 +293,7 @@ export const eliminarZona = async (idZona, idUsuario) => {
  * @returns {Promise<Object>} Zona restaurada
  */
 export const restaurarZona = async (idZona, idUsuario) => {
-  const client = await db.connect();
+  const client = await pool.connect();
 
   try {
     await client.query("BEGIN");

@@ -46,23 +46,6 @@ export const validateCreateCabana = (data) => {
     });
   }
 
-  // Validar id_est_cab (obligatorio)
-  if (!data.id_est_cab) {
-    errors.push({
-      field: "id_est_cab",
-      message: "El estado de la cabaña es obligatorio",
-    });
-  } else if (
-    typeof data.id_est_cab !== "number" ||
-    !Number.isInteger(data.id_est_cab) ||
-    data.id_est_cab <= 0
-  ) {
-    errors.push({
-      field: "id_est_cab",
-      message: "El estado de la cabaña debe ser un ID válido",
-    });
-  }
-
   // Validar id_zona (obligatorio)
   if (!data.id_zona) {
     errors.push({
@@ -138,16 +121,22 @@ export const validateUpdateCabanaAdmin = (data) => {
     }
   }
 
-  // Validar id_est_cab si se proporciona
-  if (data.id_est_cab !== undefined) {
-    if (
-      typeof data.id_est_cab !== "number" ||
-      !Number.isInteger(data.id_est_cab) ||
-      data.id_est_cab <= 0
-    ) {
+  // Validar esta_activo si se proporciona
+  if (data.esta_activo !== undefined) {
+    if (typeof data.esta_activo !== "boolean") {
       errors.push({
-        field: "id_est_cab",
-        message: "El estado de la cabaña debe ser un ID válido",
+        field: "esta_activo",
+        message: "El estado activo debe ser un valor booleano",
+      });
+    }
+  }
+
+  // Validar en_mantenimiento si se proporciona
+  if (data.en_mantenimiento !== undefined) {
+    if (typeof data.en_mantenimiento !== "boolean") {
+      errors.push({
+        field: "en_mantenimiento",
+        message: "El estado de mantenimiento debe ser un valor booleano",
       });
     }
   }
@@ -173,47 +162,33 @@ export const validateUpdateCabanaAdmin = (data) => {
 };
 
 /**
- * Valida los datos para actualizar estado de cabaña (Operador)
- * Solo puede cambiar entre "Activa" (id=3) y "Cerrada por Mantenimiento" (id=1)
+ * Valida los datos para actualizar mantenimiento de cabaña (Operador y Admin)
+ * Solo puede cambiar el campo en_mantenimiento
  * @param {Object} data - Datos de la cabaña a validar
  * @returns {Object} { isValid: boolean, errors: Array }
  */
-export const validateUpdateCabanaOperador = (data) => {
+export const validateUpdateMantenimientoCabana = (data) => {
   const errors = [];
 
-  // El operador solo puede cambiar el estado
-  if (!data.id_est_cab) {
+  // El operador solo puede cambiar el mantenimiento
+  if (data.en_mantenimiento === undefined) {
     errors.push({
-      field: "id_est_cab",
-      message: "Debe proporcionar el estado de la cabaña",
+      field: "en_mantenimiento",
+      message: "Debe proporcionar el estado de mantenimiento",
     });
     return { isValid: false, errors };
   }
 
-  if (
-    typeof data.id_est_cab !== "number" ||
-    !Number.isInteger(data.id_est_cab)
-  ) {
+  if (typeof data.en_mantenimiento !== "boolean") {
     errors.push({
-      field: "id_est_cab",
-      message: "El estado de la cabaña debe ser un ID válido",
+      field: "en_mantenimiento",
+      message: "El estado de mantenimiento debe ser un valor booleano (true o false)",
     });
     return { isValid: false, errors };
-  }
-
-  // Verificar que solo puede cambiar a estados permitidos
-  // 1 = Cerrada por Mantenimiento, 3 = Activa
-  const estadosPermitidos = [1, 3];
-  if (!estadosPermitidos.includes(data.id_est_cab)) {
-    errors.push({
-      field: "id_est_cab",
-      message:
-        "Solo puede cambiar el estado a 'Activa' (3) o 'Cerrada por Mantenimiento' (1)",
-    });
   }
 
   // Verificar que no se envíen otros campos
-  const camposPermitidos = ["id_est_cab"];
+  const camposPermitidos = ["en_mantenimiento"];
   const camposEnviados = Object.keys(data);
   const camposNoPermitidos = camposEnviados.filter(
     (campo) => !camposPermitidos.includes(campo)

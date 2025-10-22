@@ -60,8 +60,20 @@ Authorization: Bearer {{adminToken}}
 GET {{baseUrl}}/cabanas
 Authorization: Bearer {{operadorToken}}
 
-### 9. Listar cabañas con filtro por estado
-GET {{baseUrl}}/cabanas?id_est_cab=3
+### 9. Listar solo cabañas activas
+GET {{baseUrl}}/cabanas?esta_activo=true
+Authorization: Bearer {{operadorToken}}
+
+### 9b. Listar solo cabañas inactivas (borradas lógicamente)
+GET {{baseUrl}}/cabanas?esta_activo=false
+Authorization: Bearer {{adminToken}}
+
+### 9c. Listar solo cabañas en mantenimiento
+GET {{baseUrl}}/cabanas?en_mantenimiento=true
+Authorization: Bearer {{operadorToken}}
+
+### 9d. Listar cabañas activas y NO en mantenimiento
+GET {{baseUrl}}/cabanas?esta_activo=true&en_mantenimiento=false
 Authorization: Bearer {{operadorToken}}
 
 ### 10. Listar cabañas por código (búsqueda parcial)
@@ -85,6 +97,7 @@ GET {{baseUrl}}/cabanas/1
 Authorization: Bearer {{operadorToken}}
 
 ### 15. Crear nueva cabaña (Solo Admin)
+# Nota: esta_activo y en_mantenimiento se inicializan automáticamente en TRUE y FALSE
 POST {{baseUrl}}/cabanas
 Authorization: Bearer {{adminToken}}
 Content-Type: application/json
@@ -92,7 +105,6 @@ Content-Type: application/json
 {
   "cod_cabana": "CAB-015",
   "id_tipo_cab": 2,
-  "id_est_cab": 3,
   "id_zona": 1
 }
 
@@ -104,26 +116,43 @@ Content-Type: application/json
 {
   "cod_cabana": "CAB-001-RENOVADA",
   "id_tipo_cab": 3,
-  "id_est_cab": 3,
   "id_zona": 2
 }
 
-### 17. Cambiar estado a Mantenimiento (Operador)
+### 16b. Admin cambia estado de mantenimiento
 PATCH {{baseUrl}}/cabanas/1
-Authorization: Bearer {{operadorToken}}
+Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
-  "id_est_cab": 1
+  "en_mantenimiento": true
 }
 
-### 18. Cambiar estado a Activa (Operador)
+### 16c. Admin desactiva cabaña (borrado lógico)
+PATCH {{baseUrl}}/cabanas/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "esta_activo": false
+}
+
+### 17. Poner cabaña en Mantenimiento (Operador o Admin)
 PATCH {{baseUrl}}/cabanas/1
 Authorization: Bearer {{operadorToken}}
 Content-Type: application/json
 
 {
-  "id_est_cab": 3
+  "en_mantenimiento": true
+}
+
+### 18. Quitar cabaña de Mantenimiento (Operador o Admin)
+PATCH {{baseUrl}}/cabanas/1
+Authorization: Bearer {{operadorToken}}
+Content-Type: application/json
+
+{
+  "en_mantenimiento": false
 }
 
 ### 19. Operador intenta modificar otros campos (DEBE FALLAR)
@@ -158,13 +187,14 @@ Content-Type: application/json
   "capacidad_cabanas": 5
 }
 
-### 23. Operador intenta cambiar cabaña a Inactiva (DEBE FALLAR - 400)
+### 23. Operador intenta desactivar cabaña (DEBE FALLAR - 400)
+# Solo Admin puede cambiar esta_activo a false
 PATCH {{baseUrl}}/cabanas/1
 Authorization: Bearer {{operadorToken}}
 Content-Type: application/json
 
 {
-  "id_est_cab": 2
+  "esta_activo": false
 }
 
 ### 24. Crear zona con nombre duplicado (DEBE FALLAR - 409)
@@ -185,7 +215,6 @@ Content-Type: application/json
 {
   "cod_cabana": "CAB-001",
   "id_tipo_cab": 1,
-  "id_est_cab": 3,
   "id_zona": 1
 }
 
@@ -224,7 +253,6 @@ Content-Type: application/json
 {
   "cod_cabana": "LAGO-001",
   "id_tipo_cab": 3,
-  "id_est_cab": 3,
   "id_zona": 3
 }
 
@@ -250,7 +278,7 @@ Authorization: Bearer {{operadorToken}}
 Content-Type: application/json
 
 {
-  "id_est_cab": 1
+  "en_mantenimiento": true
 }
 
 ###
@@ -261,13 +289,13 @@ Authorization: Bearer {{operadorToken}}
 
 ###
 
-# Paso 4: Volver a activar
+# Paso 4: Sacar de mantenimiento
 PATCH {{baseUrl}}/cabanas/2
 Authorization: Bearer {{operadorToken}}
 Content-Type: application/json
 
 {
-  "id_est_cab": 3
+  "en_mantenimiento": false
 }
 
 ###
@@ -307,18 +335,39 @@ Authorization: Bearer {{adminToken}}
 ### NOTAS
 ### =========================================
 # 
-# Estados de Cabaña:
-# - 1: Cerrada por Mantenimiento
-# - 2: Inactiva (borrado lógico)
-# - 3: Activa
+# Campos de Estado de Cabaña:
+# - esta_activo (boolean):
+#   * true: Cabaña activa
+#   * false: Cabaña inactiva (borrado lógico)
+#   * Solo Admin puede cambiar esta_activo a false
+#
+# - en_mantenimiento (boolean):
+#   * true: Cabaña en mantenimiento
+#   * false: Cabaña operativa
+#   * Admin y Operador pueden cambiar en_mantenimiento
 #
 # Tipos de Cabaña:
 # - 1: Esencial (2 personas, $70,000)
 # - 2: Confort (4 personas, $130,000)
 # - 3: Premium (6 personas, $250,000)
 #
-# Roles:
-# - Administrador: acceso total
-# - Operador: puede ver todo, solo cambiar estado de cabañas
-# - Cliente: no interactúa con cabañas directamente
+# Roles y Permisos:
+# - Administrador: 
+#   * Acceso total a todos los endpoints
+#   * Puede cambiar esta_activo y en_mantenimiento
+#   * Puede crear, actualizar, eliminar y restaurar cabañas
+#
+# - Operador: 
+#   * Puede ver todas las cabañas
+#   * Solo puede cambiar en_mantenimiento
+#   * NO puede cambiar esta_activo (no puede hacer borrado lógico)
+#
+# - Cliente: 
+#   * No interactúa con cabañas directamente
+#
+# Campos de Auditoría (en respuestas GET):
+# - fecha_creacion: Fecha de creación de la cabaña
+# - fecha_modific: Fecha de última modificación (puede ser null)
+# - usuario_creacion: Nombre del usuario que creó la cabaña
+# - usuario_modificacion: Nombre del usuario que modificó (puede ser null)
 #

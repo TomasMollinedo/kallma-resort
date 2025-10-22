@@ -13,6 +13,7 @@ import {
   restaurarZona,
 } from "../controllers/zona.controller.js";
 import {
+  authenticate,
   requireStaff,
   requireAdmin,
 } from "../../users/middlewares/auth.middleware.js";
@@ -24,41 +25,41 @@ const router = Router();
  * Listar zonas activas
  * Acceso: Operador / Admin
  */
-router.get("/", requireStaff, listarZonas);
+router.get("/", authenticate, requireStaff, listarZonas);
 
 /**
  * GET /api/zonas/:id
  * Detalle de zona
  * Acceso: Operador / Admin
  */
-router.get("/:id", requireStaff, obtenerZona);
+router.get("/:id", authenticate, requireStaff, obtenerZona);
 
 /**
  * POST /api/zonas
  * Crear nueva zona
  * Acceso: Solo Admin
  */
-router.post("/", requireAdmin, crearZona);
+router.post("/", authenticate, requireAdmin, crearZona);
 
 /**
  * PATCH /api/zonas/:id
  * Actualizar zona
  * Acceso: Solo Admin
  */
-router.patch("/:id", requireAdmin, actualizarZona);
+router.patch("/:id", authenticate, requireAdmin, actualizarZona);
 
 /**
  * DELETE /api/zonas/:id
  * Eliminar zona (borrado lógico)
  * Acceso: Solo Admin
  */
-router.delete("/:id", requireAdmin, eliminarZona);
+router.delete("/:id", authenticate, requireAdmin, eliminarZona);
 
 /**
  * POST /api/zonas/:id/restaurar
  * Restaurar zona eliminada
  * Acceso: Solo Admin
  */
-router.post("/:id/restaurar", requireAdmin, restaurarZona);
+router.post("/:id/restaurar", authenticate, requireAdmin, restaurarZona);
 
 export default router;

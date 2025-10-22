@@ -8,7 +8,9 @@ export const pool = new Pool({
   user: config.db.user,
   password: config.db.password,
   ssl: false,
+  options: '-c timezone=America/Argentina/Buenos_Aires' //Esto podria ir en .env
 });
+
 
 export const db = {
   query: (text, params) => pool.query(text, params),

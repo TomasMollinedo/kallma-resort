@@ -15,6 +15,7 @@ import {
   restaurarCabana,
 } from "../controllers/cabana.controller.js";
 import {
+  authenticate,
   requireStaff,
   requireAdmin,
 } from "../../users/middlewares/auth.middleware.js";
@@ -27,7 +28,7 @@ const router = Router();
  * Query params: id_est_cab, cod_cabana, id_zona, esta_activo
  * Acceso: Operador / Admin
  */
-router.get("/", requireStaff, listarCabanas);
+router.get("/", authenticate, requireStaff, listarCabanas);
 
 /**
  * GET /api/cabanas/reservadas
@@ -35,28 +36,28 @@ router.get("/", requireStaff, listarCabanas);
  * Query params: fecha (YYYY-MM-DD)
  * Acceso: Operador / Admin
  */
-router.get("/reservadas", requireStaff, listarCabanasReservadas);
+router.get("/reservadas", authenticate, requireStaff, listarCabanasReservadas);
 
 /**
  * GET /api/cabanas/zona/:idZona
  * Listar cabañas por zona
  * Acceso: Operador / Admin
  */
-router.get("/zona/:idZona", requireStaff, listarCabanasPorZona);
+router.get("/zona/:idZona", authenticate, requireStaff, listarCabanasPorZona);
 
 /**
  * GET /api/cabanas/:id
  * Detalle de cabaña
  * Acceso: Operador / Admin
  */
-router.get("/:id", requireStaff, obtenerCabana);
+router.get("/:id", authenticate, requireStaff, obtenerCabana);
 
 /**
  * POST /api/cabanas
  * Crear nueva cabaña
  * Acceso: Solo Admin
  */
-router.post("/", requireAdmin, crearCabana);
+router.post("/", authenticate, requireAdmin, crearCabana);
 
 /**
  * PATCH /api/cabanas/:id
@@ -65,20 +66,20 @@ router.post("/", requireAdmin, crearCabana);
  * Operador: solo puede cambiar estado entre Activa y Cerrada por Mantenimiento
  * Acceso: Operador / Admin
  */
-router.patch("/:id", requireStaff, actualizarCabana);
+router.patch("/:id", authenticate, requireStaff, actualizarCabana);
 
 /**
  * DELETE /api/cabanas/:id
  * Eliminar cabaña (borrado lógico - cambiar a Inactiva)
  * Acceso: Solo Admin
  */
-router.delete("/:id", requireAdmin, eliminarCabana);
+router.delete("/:id", authenticate, requireAdmin, eliminarCabana);
 
 /**
  * POST /api/cabanas/:id/restaurar
  * Restaurar cabaña eliminada
  * Acceso: Solo Admin
  */
-router.post("/:id/restaurar", requireAdmin, restaurarCabana);
+router.post("/:id/restaurar", authenticate, requireAdmin, restaurarCabana);
 
 export default router;
