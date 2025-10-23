@@ -28,8 +28,7 @@ function Layout({ children }) {
   const location = useLocation();
   
   // Rutas donde NO se debe mostrar Header y Footer
-  // Cliente mantiene Header/Footer para navegar el catálogo, solo admin y operador no lo tienen
-  const hideHeaderFooterRoutes = ['/login', '/register', '/dashboard/admin', '/dashboard/operador'];
+  const hideHeaderFooterRoutes = ['/login', '/register', '/dashboard/admin', '/dashboard/operador', '/dashboard/cliente'];
   const shouldHideHeaderFooter = hideHeaderFooterRoutes.includes(location.pathname);
 
   return (

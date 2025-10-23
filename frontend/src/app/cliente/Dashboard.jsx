@@ -1,48 +1,213 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { User, Calendar, CreditCard, ClipboardList, MessageSquare } from 'lucide-react';
+import { User, Calendar, CreditCard, MessageSquare, Save, X, Edit } from 'lucide-react';
+import ClientNavbar from './ClientNavbar';
 
 export default function DashboardCliente() {
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    nombre: user?.nombre || '',
+    dni: user?.dni || '',
+    telefono: user?.telefono || '',
+    email: user?.email || '',
+    password: ''
+  });
+
+  const handleEditClick = () => {
+    setIsEditing(true);
+    setFormData({
+      nombre: user?.nombre || '',
+      dni: user?.dni || '',
+      telefono: user?.telefono || '',
+      email: user?.email || '',
+      password: ''
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setFormData({
+      nombre: user?.nombre || '',
+      dni: user?.dni || '',
+      telefono: user?.telefono || '',
+      email: user?.email || '',
+      password: ''
+    });
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSaveData = async () => {
+    try {
+      // Aquí iría la lógica para guardar en el backend
+      // Por ahora, solo actualizamos el contexto local
+      const updatedUser = {
+        ...user,
+        nombre: formData.nombre,
+        dni: formData.dni,
+        telefono: formData.telefono,
+        email: formData.email
+      };
+      
+      // Actualizar el contexto y localStorage
+      login(updatedUser, localStorage.getItem('token'));
+      setIsEditing(false);
+      
+      alert('Datos actualizados correctamente');
+    } catch (error) {
+      console.error('Error al actualizar datos:', error);
+      alert('Error al actualizar los datos');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100">
-      {/* Espaciado para el Header fijo */}
-      <div className="h-24"></div>
+      {/* Navbar simplificado negro */}
+      <ClientNavbar />
+
+      {/* Espaciado para el navbar fijo */}
+      <div className="h-16"></div>
 
       {/* Contenido Principal */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Tarjeta de Bienvenida */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="bg-orange-100 p-3 rounded-full">
-              <User size={32} className="text-orange-600" />
+        {/* Mensaje de Bienvenida - Movido arriba */}
+        <div className="mb-6 bg-orange-50 border-l-4 border-orange-500 p-4 sm:p-6 rounded-r-xl shadow-md">
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-2">Bienvenido a tu Panel</h3>
+          <p className="text-sm sm:text-base text-gray-700">
+            Desde aquí puedes gestionar tus reservas, revisar pagos y mantener actualizada tu información.
+          </p>
+        </div>
+
+        {/* Tarjeta de Datos del Usuario */}
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="bg-orange-100 p-2 sm:p-3 rounded-full flex-shrink-0">
+                <User size={28} className="text-orange-600 sm:w-8 sm:h-8" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 truncate">
+                  {user?.nombre}
+                </h2>
+                <p className="text-sm sm:text-base text-gray-600 truncate">{user?.email}</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800">
-                ¡Bienvenido, {user?.nombre}!
-              </h2>
-              <p className="text-gray-600">{user?.email}</p>
-            </div>
+            
+            {!isEditing && (
+              <button
+                onClick={handleEditClick}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition w-full sm:w-auto"
+              >
+                <Edit size={18} />
+                <span>Editar Datos</span>
+              </button>
+            )}
           </div>
-          <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
-            <div>
-              <p className="text-gray-600">Teléfono:</p>
-              <p className="font-semibold">{user?.telefono || 'No registrado'}</p>
+
+          {isEditing ? (
+            <div className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">Nombre Completo</label>
+                  <input
+                    type="text"
+                    name="nombre"
+                    value={formData.nombre}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Tu nombre completo"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">DNI</label>
+                  <input
+                    type="text"
+                    name="dni"
+                    value={formData.dni}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Tu DNI"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">Teléfono</label>
+                  <input
+                    type="text"
+                    name="telefono"
+                    value={formData.telefono}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Tu teléfono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Tu email"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">Nueva Contraseña (opcional)</label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Dejar vacío para no cambiar"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-3 justify-end pt-4">
+                <button
+                  onClick={handleCancelEdit}
+                  className="flex items-center gap-2 px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
+                >
+                  <X size={18} />
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveData}
+                  className="flex items-center gap-2 px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+                >
+                  <Save size={18} />
+                  Guardar
+                </button>
+              </div>
             </div>
-            <div>
-              <p className="text-gray-600">DNI:</p>
-              <p className="font-semibold">{user?.dni || 'No registrado'}</p>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-gray-600">DNI:</p>
+                <p className="font-semibold">{user?.dni || 'No registrado'}</p>
+              </div>
+              <div>
+                <p className="text-gray-600">Teléfono:</p>
+                <p className="font-semibold">{user?.telefono || 'No registrado'}</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Acciones Rápidas */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Mis Reservas */}
-          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer">
+          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
             <div className="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
               <Calendar size={24} className="text-blue-600" />
             </div>
@@ -50,13 +215,13 @@ export default function DashboardCliente() {
             <p className="text-gray-600 mb-4">
               Consulta y gestiona tus reservas
             </p>
-            <button className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition">
+            <button className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition font-medium">
               Ver Reservas
             </button>
           </div>
 
-          {/* Historial de Pagos */}
-          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer">
+          {/* Mis Pagos */}
+          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
             <div className="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
               <CreditCard size={24} className="text-green-600" />
             </div>
@@ -64,27 +229,13 @@ export default function DashboardCliente() {
             <p className="text-gray-600 mb-4">
               Revisa tu historial de pagos
             </p>
-            <button className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition">
+            <button className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition font-medium">
               Ver Pagos
             </button>
           </div>
 
-          {/* Mis Datos */}
-          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer">
-            <div className="bg-purple-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
-              <ClipboardList size={24} className="text-purple-600" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Mis Datos</h3>
-            <p className="text-gray-600 mb-4">
-              Actualiza tu información personal
-            </p>
-            <button className="w-full bg-purple-500 text-white py-2 rounded-md hover:bg-purple-600 transition">
-              Editar Datos
-            </button>
-          </div>
-
           {/* Contacto */}
-          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer">
+          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
             <div className="bg-orange-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
               <MessageSquare size={24} className="text-orange-600" />
             </div>
@@ -92,7 +243,10 @@ export default function DashboardCliente() {
             <p className="text-gray-600 mb-4">
               Envía consultas o solicitudes
             </p>
-            <button className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition">
+            <button 
+              onClick={() => navigate('/contacto')}
+              className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition font-medium"
+            >
               Contactar
             </button>
           </div>
@@ -101,7 +255,7 @@ export default function DashboardCliente() {
         {/* Acceso Rápido al Catálogo */}
         <div className="mt-8 bg-white rounded-xl shadow-lg p-6">
           <h3 className="text-xl font-bold text-gray-800 mb-4">Explora Nuestro Resort</h3>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <button
               onClick={() => navigate('/cabanas')}
               className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition font-semibold"
@@ -121,15 +275,6 @@ export default function DashboardCliente() {
               Ver Actividades
             </button>
           </div>
-        </div>
-
-        {/* Información Adicional */}
-        <div className="mt-6 bg-orange-50 border-l-4 border-orange-500 p-6 rounded-r-xl">
-          <h3 className="text-lg font-bold text-gray-800 mb-2">Bienvenido a tu Panel</h3>
-          <p className="text-gray-700">
-            Desde aquí puedes gestionar tus reservas, revisar pagos y mantener actualizada tu información. 
-            Usa el menú superior para navegar por nuestro catálogo de cabañas, servicios y actividades.
-          </p>
         </div>
       </main>
     </div>
