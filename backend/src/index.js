@@ -7,6 +7,7 @@ import { db } from "./config/database.js";
 import usersModule from "./modules/users/index.js";
 import zonasModule from "./modules/zonas/index.js";
 import cabanasModule from "./modules/cabanas/index.js";
+import reservasModule from "./modules/reservas/index.js";
 
 const app = express();
 app.use(cors());
@@ -26,6 +27,7 @@ app.get("/api/health", async (_req, res) => {
 app.use("/api", usersModule);
 app.use("/api", zonasModule);
 app.use("/api", cabanasModule);
+app.use("/api", reservasModule);
 
 // Manejo de rutas no encontradas
 app.use((req, res) => {

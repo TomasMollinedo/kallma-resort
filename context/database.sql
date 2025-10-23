@@ -187,12 +187,18 @@ INSERT INTO tipo_cabana (nom_tipo_cab, capacidad, precio_noche, esta_activo) VAL
 ON CONFLICT (nom_tipo_cab) DO NOTHING;
 
 INSERT INTO estado_operativo (nom_estado) VALUES
-  ('Cancelada'), ('Confirmada')('No aparecio'), ('Finalizada')
+  ('Cancelada'), ('Confirmada'),('No aparecio'), ('Finalizada')
 ON CONFLICT (nom_estado) DO NOTHING;
 
 INSERT INTO medio_pago (nom_medio_pago) VALUES
   ('Efectivo'), ('Tarjeta de débito'), ('Tarjeta de crédito')
 ON CONFLICT (nom_medio_pago) DO NOTHING;
+
+INSERT INTO servicios (nom_servicio, precio_servicio) VALUES
+  ('Gimnasio', 15000.00),
+  ('SPA', 30000.00),
+  ('Restaurante', 45000.00)
+ON CONFLICT (nom_servicio) DO NOTHING;
 
 COMMIT;
 

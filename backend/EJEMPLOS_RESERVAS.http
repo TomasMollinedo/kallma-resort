@@ -1,0 +1,494 @@
+###
+### MÓDULO DE RESERVAS Y DISPONIBILIDAD
+### Ejemplos de requests HTTP para el módulo de Reservas
+### Base URL: http://localhost:3000/api
+###
+
+### Variables
+@baseUrl = http://localhost:3000/api
+@tokenCliente = YOUR_CLIENT_TOKEN_HERE
+@tokenOperador = YOUR_OPERATOR_TOKEN_HERE
+@tokenAdmin = YOUR_ADMIN_TOKEN_HERE
+
+###############################################
+### 1. CONSULTAR DISPONIBILIDAD
+###############################################
+
+### 1.1 Consultar disponibilidad de cabañas (SIN AUTENTICACIÓN)
+POST {{baseUrl}}/reservas/disponibilidad
+Content-Type: application/json
+
+{
+  "check_in": "2025-12-15",
+  "check_out": "2025-12-20",
+  "cant_personas": 4
+}
+
+### 1.2 Consultar disponibilidad para 2 personas (SIN AUTENTICACIÓN)
+POST {{baseUrl}}/reservas/disponibilidad
+Content-Type: application/json
+
+{
+  "check_in": "2025-11-01",
+  "check_out": "2025-11-05",
+  "cant_personas": 2
+}
+
+### 1.3 Error: check_in en el pasado
+POST {{baseUrl}}/reservas/disponibilidad
+Content-Type: application/json
+
+{
+  "check_in": "2024-01-01",
+  "check_out": "2024-01-05",
+  "cant_personas": 2
+}
+
+### 1.4 Error: check_out antes de check_in
+POST {{baseUrl}}/reservas/disponibilidad
+Content-Type: application/json
+
+{
+  "check_in": "2025-12-20",
+  "check_out": "2025-12-15",
+  "cant_personas": 2
+}
+
+### 1.5 Error: Más de 10 personas (máximo permitido)
+POST {{baseUrl}}/reservas/disponibilidad
+Content-Type: application/json
+
+{
+  "check_in": "2025-12-01",
+  "check_out": "2025-12-05",
+  "cant_personas": 15
+}
+
+###############################################
+### 2. CREAR RESERVA
+###############################################
+
+### 2.1 Crear reserva con 1 cabaña y sin servicios
+POST {{baseUrl}}/reservas
+Content-Type: application/json
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "check_in": "2025-12-15",
+  "check_out": "2025-12-20",
+  "cant_personas": 4,
+  "cabanas_ids": [1]
+}
+
+### 2.2 Crear reserva con múltiples cabañas y servicios
+POST {{baseUrl}}/reservas
+Content-Type: application/json
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "check_in": "2025-11-10",
+  "check_out": "2025-11-15",
+  "cant_personas": 8,
+  "cabanas_ids": [1, 2, 3],
+  "servicios_ids": [1, 2]
+}
+
+### 2.3 Crear reserva como operador
+POST {{baseUrl}}/reservas
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "check_in": "2025-12-01",
+  "check_out": "2025-12-05",
+  "cant_personas": 2,
+  "cabanas_ids": [4]
+}
+
+### 2.4 Error: cabaña no existe
+POST {{baseUrl}}/reservas
+Content-Type: application/json
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "check_in": "2025-12-15",
+  "check_out": "2025-12-20",
+  "cant_personas": 4,
+  "cabanas_ids": [999]
+}
+
+### 2.5 Error: array vacío de cabañas
+POST {{baseUrl}}/reservas
+Content-Type: application/json
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "check_in": "2025-12-15",
+  "check_out": "2025-12-20",
+  "cant_personas": 4,
+  "cabanas_ids": []
+}
+
+### 2.6 Error: IDs duplicados
+POST {{baseUrl}}/reservas
+Content-Type: application/json
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "check_in": "2025-12-15",
+  "check_out": "2025-12-20",
+  "cant_personas": 4,
+  "cabanas_ids": [1, 1, 2]
+}
+
+### 2.7 Error: Capacidad insuficiente (suma capacidades < cant_personas)
+# Si cabaña 1 tiene capacidad 2, no puede alojar 6 personas
+POST {{baseUrl}}/reservas
+Content-Type: application/json
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "check_in": "2025-12-15",
+  "check_out": "2025-12-20",
+  "cant_personas": 6,
+  "cabanas_ids": [1]
+}
+
+### 2.8 Error: Más de 10 personas
+POST {{baseUrl}}/reservas
+Content-Type: application/json
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "check_in": "2025-12-15",
+  "check_out": "2025-12-20",
+  "cant_personas": 12,
+  "cabanas_ids": [1, 2, 3]
+}
+
+###############################################
+### 3. LISTAR RESERVAS DEL CLIENTE
+###############################################
+
+### 3.1 Listar todas las reservas del cliente autenticado
+GET {{baseUrl}}/reservas/me
+Authorization: Bearer {{tokenCliente}}
+
+### 3.2 Filtrar por estado operativo (Cancelada = 1)
+GET {{baseUrl}}/reservas/me?id_est_op=1
+Authorization: Bearer {{tokenCliente}}
+
+### 3.3 Filtrar por estado de pago (pagadas)
+GET {{baseUrl}}/reservas/me?esta_pagada=true
+Authorization: Bearer {{tokenCliente}}
+
+### 3.4 Filtrar por estado operativo y estado de pago
+GET {{baseUrl}}/reservas/me?id_est_op=3&esta_pagada=true
+Authorization: Bearer {{tokenCliente}}
+
+###############################################
+### 4. LISTAR TODAS LAS RESERVAS (STAFF)
+###############################################
+
+### 4.1 Listar todas las reservas (Operador)
+GET {{baseUrl}}/reservas
+Authorization: Bearer {{tokenOperador}}
+
+### 4.2 Listar todas las reservas (Admin)
+GET {{baseUrl}}/reservas
+Authorization: Bearer {{tokenAdmin}}
+
+### 4.3 Buscar por código de reserva
+GET {{baseUrl}}/reservas?cod_reserva=RES-20251022
+Authorization: Bearer {{tokenOperador}}
+
+### 4.4 Filtrar por rango de fechas
+GET {{baseUrl}}/reservas?check_in=2025-11-01&check_out=2025-12-31
+Authorization: Bearer {{tokenOperador}}
+
+### 4.5 Filtrar por check_in desde fecha
+GET {{baseUrl}}/reservas?check_in=2025-12-01
+Authorization: Bearer {{tokenOperador}}
+
+### 4.6 Filtrar por estado operativo (Finalizada = 3)
+GET {{baseUrl}}/reservas?id_est_op=3
+Authorization: Bearer {{tokenOperador}}
+
+### 4.7 Filtrar por estado de pago (no pagadas)
+GET {{baseUrl}}/reservas?esta_pagada=false
+Authorization: Bearer {{tokenOperador}}
+
+### 4.8 Filtros combinados
+GET {{baseUrl}}/reservas?check_in=2025-11-01&id_est_op=1&esta_pagada=false
+Authorization: Bearer {{tokenOperador}}
+
+### 4.9 Error: Cliente no puede acceder
+GET {{baseUrl}}/reservas
+Authorization: Bearer {{tokenCliente}}
+
+###############################################
+### 5. DETALLE DE RESERVA
+###############################################
+
+### 5.1 Ver detalle de reserva propia (Cliente)
+GET {{baseUrl}}/reservas/1
+Authorization: Bearer {{tokenCliente}}
+
+### 5.2 Ver detalle de cualquier reserva (Operador)
+GET {{baseUrl}}/reservas/1
+Authorization: Bearer {{tokenOperador}}
+
+### 5.3 Ver detalle de cualquier reserva (Admin)
+GET {{baseUrl}}/reservas/1
+Authorization: Bearer {{tokenAdmin}}
+
+### 5.4 Error: Cliente intenta ver reserva de otro
+GET {{baseUrl}}/reservas/999
+Authorization: Bearer {{tokenCliente}}
+
+### 5.5 Error: ID inválido
+GET {{baseUrl}}/reservas/abc
+Authorization: Bearer {{tokenOperador}}
+
+### 5.6 Error: Reserva no existe
+GET {{baseUrl}}/reservas/99999
+Authorization: Bearer {{tokenOperador}}
+
+###############################################
+### 6. ACTUALIZAR ESTADO - CLIENTE
+###############################################
+
+### 6.1 Cliente cancela su reserva (dentro de plazo)
+PATCH {{baseUrl}}/reservas/1/status
+Content-Type: application/json
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "id_est_op": 1
+}
+
+### 6.2 Error: Cliente intenta cambiar a otro estado
+PATCH {{baseUrl}}/reservas/1/status
+Content-Type: application/json
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "id_est_op": 3
+}
+
+### 6.3 Error: Cliente intenta modificar estado de pago
+PATCH {{baseUrl}}/reservas/1/status
+Content-Type: application/json
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "id_est_op": 1,
+  "esta_pagada": true
+}
+
+### 6.4 Error: Cancelación fuera de plazo (menos de 24h)
+# Este test fallará si la reserva es para mañana o antes
+PATCH {{baseUrl}}/reservas/1/status
+Content-Type: application/json
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "id_est_op": 1
+}
+
+### 6.5 Error: Cliente intenta modificar reserva de otro
+PATCH {{baseUrl}}/reservas/999/status
+Content-Type: application/json
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "id_est_op": 1
+}
+
+###############################################
+### 7. ACTUALIZAR ESTADO - OPERADOR/ADMIN
+###############################################
+
+### 7.1 Operador marca como "No aparecio" (id_est_op = 2)
+PATCH {{baseUrl}}/reservas/1/status
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "id_est_op": 2
+}
+
+### 7.2 Operador marca como "Finalizada" (id_est_op = 3)
+PATCH {{baseUrl}}/reservas/1/status
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "id_est_op": 3
+}
+
+### 7.3 Admin marca como pagada
+PATCH {{baseUrl}}/reservas/1/status
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "esta_pagada": true,
+  "monto_pagado": 700000.00
+}
+
+### 7.4 Admin actualiza estado operativo y financiero
+PATCH {{baseUrl}}/reservas/1/status
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "id_est_op": 3,
+  "esta_pagada": true,
+  "monto_pagado": 700000.00
+}
+
+### 7.5 Operador registra pago parcial
+PATCH {{baseUrl}}/reservas/1/status
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "esta_pagada": false,
+  "monto_pagado": 350000.00
+}
+
+### 7.6 Admin marca como no pagada
+PATCH {{baseUrl}}/reservas/1/status
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "esta_pagada": false,
+  "monto_pagado": 0
+}
+
+### 7.7 Error: ID de estado no existe
+PATCH {{baseUrl}}/reservas/1/status
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "id_est_op": 999
+}
+
+### 7.8 Error: Monto pagado negativo
+PATCH {{baseUrl}}/reservas/1/status
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "monto_pagado": -100
+}
+
+###############################################
+### 8. CASOS DE PRUEBA COMPLEJOS
+###############################################
+
+### 8.1 Flujo completo: Disponibilidad → Crear → Ver → Cancelar
+# Paso 1: Consultar disponibilidad
+POST {{baseUrl}}/reservas/disponibilidad
+Content-Type: application/json
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "check_in": "2026-01-15",
+  "check_out": "2026-01-20",
+  "cant_personas": 4
+}
+
+### Paso 2: Crear reserva con cabañas disponibles
+POST {{baseUrl}}/reservas
+Content-Type: application/json
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "check_in": "2026-01-15",
+  "check_out": "2026-01-20",
+  "cant_personas": 4,
+  "cabanas_ids": [1, 2],
+  "servicios_ids": [1]
+}
+
+### Paso 3: Ver detalle de la reserva creada
+GET {{baseUrl}}/reservas/1
+Authorization: Bearer {{tokenCliente}}
+
+### Paso 4: Cancelar la reserva
+PATCH {{baseUrl}}/reservas/1/status
+Content-Type: application/json
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "id_est_op": 1
+}
+
+### 8.2 Verificar que cabaña cancelada vuelve a estar disponible
+POST {{baseUrl}}/reservas/disponibilidad
+Content-Type: application/json
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "check_in": "2026-01-15",
+  "check_out": "2026-01-20",
+  "cant_personas": 4
+}
+
+###############################################
+### 9. TESTS DE SEGURIDAD
+###############################################
+
+### 9.1 Error: Acceso sin token
+GET {{baseUrl}}/reservas/me
+
+### 9.2 Error: Token inválido
+GET {{baseUrl}}/reservas/me
+Authorization: Bearer token_invalido_123
+
+### 9.3 Error: Cliente accediendo a endpoint de staff
+GET {{baseUrl}}/reservas
+Authorization: Bearer {{tokenCliente}}
+
+###############################################
+### 10. NOTAS
+###############################################
+
+# ESTADOS OPERATIVOS:
+# 1 = Cancelada
+# 2 = Confirmada (ESTADO POR DEFECTO para reservas nuevas)
+# 3 = No aparecio
+# 4 = Finalizada
+
+# RESTRICCIONES:
+# - Cliente solo puede cancelar (estado 1) hasta 24h antes del check-in
+# - Operador/Admin pueden cambiar a estados 3 y 4
+# - Solo Operador/Admin pueden modificar estado financiero
+
+# VALIDACIONES:
+# - Máximo 10 personas por reserva
+# - Suma de capacidades de cabañas debe ser >= cant_personas (validado en backend)
+# - check_in no puede ser en el pasado
+# - check_out debe ser posterior a check_in
+
+# CÓDIGOS DE RESERVA:
+# Formato: RES-YYYYMMDD-XXXXX
+# Ejemplo: RES-20251022-00001
+
+# DISPONIBILIDAD:
+# - Endpoint público (sin autenticación)
+# - No incluye cabañas en mantenimiento
+# - No incluye cabañas ya reservadas en ese rango
+# - Excluye reservas canceladas del cálculo
+
+# FLUJO SIN FRICCIÓN:
+# 1. Usuario consulta disponibilidad SIN LOGIN
+# 2. Usuario selecciona cabañas y servicios
+# 3. Usuario se autentica SOLO al confirmar reserva
+# 4. Sistema crea reserva con estado "Confirmada"
+
+###
