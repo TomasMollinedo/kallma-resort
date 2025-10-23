@@ -21,12 +21,8 @@ BEGIN
     CREATE TYPE tipo_cabana_enum AS ENUM ('Esencial','Confort','Premium');
   END IF;
 
-  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'estado_cabana_enum') THEN
-    CREATE TYPE estado_cabana_enum AS ENUM ('Cerrada por Mantenimiento','Inactiva','Activa');
-  END IF;
-
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'estado_operativo_enum') THEN
-    CREATE TYPE estado_operativo_enum AS ENUM ('Cancelada','No aparecio','Finalizada');
+    CREATE TYPE estado_operativo_enum AS ENUM ('Cancelada','Confirmada','No aparecio','Finalizada');
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'medio_pago_enum') THEN
@@ -53,11 +49,6 @@ CREATE TABLE IF NOT EXISTS tipo_cabana (
   esta_activo   BOOLEAN NOT NULL DEFAULT TRUE
 );
 
--- (3) ESTADO_CABAÑA
-CREATE TABLE IF NOT EXISTS estado_cabana (
-  id_est_cab   SERIAL PRIMARY KEY,
-  nom_est_cab  estado_cabana_enum NOT NULL UNIQUE
-);
 
 -- (6) ESTADO_OPERATIVO
 CREATE TABLE IF NOT EXISTS estado_operativo (
@@ -111,9 +102,9 @@ CREATE TABLE IF NOT EXISTS cabana (
   id_cabana            SERIAL PRIMARY KEY,
   cod_cabana           VARCHAR(50) NOT NULL UNIQUE,
   id_tipo_cab          INTEGER NOT NULL REFERENCES tipo_cabana(id_tipo_cab) ON DELETE RESTRICT ON UPDATE CASCADE,
-  id_est_cab           INTEGER NOT NULL REFERENCES estado_cabana(id_est_cab) ON DELETE RESTRICT ON UPDATE CASCADE,
   id_zona              INTEGER NOT NULL REFERENCES zonas(id_zona) ON DELETE RESTRICT ON UPDATE CASCADE,
   esta_activo          BOOLEAN NOT NULL DEFAULT TRUE,
+  en_mantenimiento     BOOLEAN NOT NULL DEFAULT FALSE,
   fecha_creacion       TIMESTAMPTZ NOT NULL,
   id_usuario_creacion  INTEGER NOT NULL REFERENCES usuario(id_usuario) ON DELETE RESTRICT ON UPDATE CASCADE,
   id_usuario_modific   INTEGER     REFERENCES usuario(id_usuario) ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -124,8 +115,8 @@ CREATE TABLE IF NOT EXISTS cabana (
 CREATE TABLE IF NOT EXISTS reserva (
   id_reserva           SERIAL PRIMARY KEY,
   cod_reserva          VARCHAR(50) NOT NULL UNIQUE,
-  check_in             TIMESTAMPTZ NOT NULL,
-  check_out            TIMESTAMPTZ NOT NULL,
+  check_in             DATE NOT NULL,
+  check_out            DATE NOT NULL,
   cant_personas        INTEGER NOT NULL CHECK (cant_personas > 0),
   id_est_op            INTEGER NOT NULL REFERENCES estado_operativo(id_est_op) ON DELETE RESTRICT ON UPDATE CASCADE,
   esta_pagada          BOOLEAN NOT NULL DEFAULT FALSE,
@@ -195,17 +186,19 @@ INSERT INTO tipo_cabana (nom_tipo_cab, capacidad, precio_noche, esta_activo) VAL
   ('Premium',  6, 250000.00, TRUE)
 ON CONFLICT (nom_tipo_cab) DO NOTHING;
 
-INSERT INTO estado_cabana (nom_est_cab) VALUES
-  ('Cerrada por Mantenimiento'), ('Inactiva'), ('Activa')
-ON CONFLICT (nom_est_cab) DO NOTHING;
-
 INSERT INTO estado_operativo (nom_estado) VALUES
-  ('Cancelada'), ('No aparecio'), ('Finalizada')
+  ('Cancelada'), ('Confirmada'),('No aparecio'), ('Finalizada')
 ON CONFLICT (nom_estado) DO NOTHING;
 
 INSERT INTO medio_pago (nom_medio_pago) VALUES
   ('Efectivo'), ('Tarjeta de débito'), ('Tarjeta de crédito')
 ON CONFLICT (nom_medio_pago) DO NOTHING;
+
+INSERT INTO servicios (nom_servicio, precio_servicio) VALUES
+  ('Gimnasio', 15000.00),
+  ('SPA', 30000.00),
+  ('Restaurante', 45000.00)
+ON CONFLICT (nom_servicio) DO NOTHING;
 
 COMMIT;
 
