@@ -22,7 +22,7 @@ BEGIN
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'estado_operativo_enum') THEN
-    CREATE TYPE estado_operativo_enum AS ENUM ('Cancelada','No aparecio','Finalizada');
+    CREATE TYPE estado_operativo_enum AS ENUM ('Cancelada','Confirmada','No aparecio','Finalizada');
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'medio_pago_enum') THEN
@@ -187,7 +187,7 @@ INSERT INTO tipo_cabana (nom_tipo_cab, capacidad, precio_noche, esta_activo) VAL
 ON CONFLICT (nom_tipo_cab) DO NOTHING;
 
 INSERT INTO estado_operativo (nom_estado) VALUES
-  ('Cancelada'), ('No aparecio'), ('Finalizada')
+  ('Cancelada'), ('Confirmada')('No aparecio'), ('Finalizada')
 ON CONFLICT (nom_estado) DO NOTHING;
 
 INSERT INTO medio_pago (nom_medio_pago) VALUES
