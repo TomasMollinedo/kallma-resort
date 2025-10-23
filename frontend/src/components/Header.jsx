@@ -27,9 +27,9 @@ export default function Header() {
           <Link to="/informacion" className="border border-white/40 p-2 rounded-full hover:bg-white/20 transition">
             <Info size={18} />
           </Link>
-          <button className="border border-white/40 p-2 rounded-full hover:bg-white/20 transition">
+          <Link to="/contacto" className="border border-white/40 p-2 rounded-full hover:bg-white/20 transition">
             <MessageCircle size={18} />
-          </button>
+          </Link>
         </div>
         <p className="text-sm leading-tight">
           <span className="font-semibold">¿Necesitás ayuda?</span><br />

@@ -10,6 +10,7 @@ import CabanasPage from './Cabañas/CabañasPage.jsx';
 import ServiciosPage from './Servicios/ServiciosPage.jsx'; 
 import ActividadesPage from './Actividades/ActividadesPage.jsx'; 
 import InformacionPage from './InformacionPage.jsx'; 
+import ContactoPage from './ContactoPage.jsx';
 import Home from './Hero.jsx';
 
 // Sistema interno - Autenticación y componentes
@@ -27,8 +28,7 @@ function Layout({ children }) {
   const location = useLocation();
   
   // Rutas donde NO se debe mostrar Header y Footer
-  // Cliente mantiene Header/Footer para navegar el catálogo, solo admin y operador no lo tienen
-  const hideHeaderFooterRoutes = ['/login', '/register', '/dashboard/admin', '/dashboard/operador'];
+  const hideHeaderFooterRoutes = ['/login', '/register', '/dashboard/admin', '/dashboard/operador', '/dashboard/cliente'];
   const shouldHideHeaderFooter = hideHeaderFooterRoutes.includes(location.pathname);
 
   return (
@@ -52,6 +52,7 @@ function App() {
             <Route path="/servicios" element={<ServiciosPage />} />
             <Route path="/actividades" element={<ActividadesPage />} />
             <Route path="/informacion" element={<InformacionPage />} />
+            <Route path="/contacto" element={<ContactoPage />} />
             
             {/* Rutas de autenticación */}
             <Route path="/login" element={<Login />} />
