@@ -23,6 +23,10 @@ import DashboardCliente from './app/cliente/Dashboard';
 import DashboardAdministrador from './app/admin/Dashboard';
 import DashboardOperador from './app/operador/Dashboard';
 
+// Módulo de Reservas
+import ReservaInicio from './Reserva/ReservaInicio';
+import ReservaServicios from './Reserva/ReservaServicios';
+
 // Componente para controlar cuándo mostrar Header y Footer
 function Layout({ children }) {
   const location = useLocation();
@@ -57,6 +61,11 @@ function App() {
             {/* Rutas de autenticación */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+
+            {/* Rutas de Reservas */}
+            <Route path="/reserva" element={<ReservaInicio />} />
+            <Route path="/reservar" element={<ReservaInicio />} />
+            <Route path="/reserva/servicios" element={<ReservaServicios />} />
 
             {/* Rutas protegidas - Dashboards por rol */}
             <Route 

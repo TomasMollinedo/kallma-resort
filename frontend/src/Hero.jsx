@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import LogoKallma from '/src/assets/icono-kallma-blanco.svg';
 import './index.css';
 import { Wind } from "lucide-react";
 
 export default function Hero() {
+  const navigate = useNavigate();
   const [weather, setWeather] = useState(null);
   const [error, setError] = useState(null);
 
@@ -35,6 +37,7 @@ export default function Hero() {
             <span className="text-gray-800/60">lma</span>
           </h1>
           <button
+            onClick={() => navigate('/reserva')}
             className="flex items-center bg-gray-300/70 hover:bg-gray-400/80 text-gray-800 font-medium px-5 py-2.5 md:px-6 md:py-3 rounded-full shadow-xl hover:shadow-2xl transition duration-300 mb-8"
             style={{ width: '200px', height: '50px' }}
           >
@@ -83,6 +86,7 @@ export default function Hero() {
           <div className="flex items-center -translate-y-20">
             <h1 className="text-9xl font-bold text-gray-800/60" style={{ letterSpacing: 'normal' }}>lma</h1>
             <button
+              onClick={() => navigate('/reserva')}
               className="flex items-center ml-10 mt-[28px] bg-gray-600/70 hover:bg-gray-500/80 text-white font-medium px-6 py-3 rounded-full shadow-xl hover:shadow-2xl transition duration-300"
               style={{ width: '200px', height: '50px' }}
             >

@@ -49,7 +49,7 @@ export default function CabanaCard({ cabana, isFlipped, onFlip }) {
             ← Volver
           </button>
           <Link
-            to={`/reservar?cabana=${cabana.slug}`}
+            to={`/reserva?cabana=${cabana.slug}`}
             className="px-4 py-2 bg-orange-500 text-white rounded-full text-sm font-semibold hover:bg-orange-400 transition"
           >
             Reservar
