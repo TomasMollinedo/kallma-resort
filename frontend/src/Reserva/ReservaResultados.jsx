@@ -2,10 +2,18 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Users, DollarSign, Home } from 'lucide-react';
 import Fondo from '../assets/fondo.jpg';
+import cabanaEsencialImg from '../assets/Cabaña1.webp';
+import cabanaConfortImg from '../assets/Cabaña2.webp';
+import cabanaPremiumImg from '../assets/Cabaña3.webp';
 
 export default function ReservaResultados({ cabanas, searchParams, onNuevaBusqueda }) {
   const navigate = useNavigate();
   const [cabanasSeleccionadas, setCabanasSeleccionadas] = useState([]);
+  const imagenesPorTipo = {
+    Esencial: cabanaEsencialImg,
+    Confort: cabanaConfortImg,
+    Premium: cabanaPremiumImg,
+  };
 
   // Calcular capacidad total de las cabañas seleccionadas
   const capacidadSeleccionada = cabanasSeleccionadas.reduce(
@@ -138,9 +146,18 @@ export default function ReservaResultados({ cabanas, searchParams, onNuevaBusque
                     <div className="md:flex">
                       {/* Imagen */}
                       <div className="md:w-1/3 h-64 md:h-auto bg-gray-200">
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">
-                          <Home size={64} />
-                        </div>
+                        {imagenesPorTipo[cabana.nom_tipo_cab] ? (
+                          <img
+                            src={imagenesPorTipo[cabana.nom_tipo_cab]}
+                            alt={`Cabaña ${cabana.nom_tipo_cab}`}
+                            loading="lazy"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                            <Home size={64} />
+                          </div>
+                        )}
                       </div>
 
                       {/* Información */}
@@ -175,10 +192,6 @@ export default function ReservaResultados({ cabanas, searchParams, onNuevaBusque
                             <span>{cabana.capacidad} {cabana.capacidad === 1 ? 'persona' : 'personas'}</span>
                           </div>
                         </div>
-
-                        <p className="text-gray-600 text-sm mb-4">
-                          Cabaña ideal para grupos pequeños y familias. Incluye todas las comodidades necesarias para una estadía confortable en la montaña.
-                        </p>
 
                         {/* Botón de selección */}
                         <div className="flex justify-end">
