@@ -1,19 +1,10 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, Calendar, Users } from 'lucide-react';
 import { consultarDisponibilidad } from './reservaService';
 import ReservaResultados from './ReservaResultados';
 import Fondo from '../assets/fondo.jpg';
 
 export default function ReservaInicio() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  
-  // Obtener datos de la URL si vienen desde otra página
-  const queryParams = new URLSearchParams(location.search);
-  const cabanaSlug = queryParams.get('cabana');
-  const servicioSlug = queryParams.get('servicio');
-  
   const [formData, setFormData] = useState({
     check_in: '',
     check_out: '',
@@ -147,16 +138,6 @@ export default function ReservaInicio() {
             Reservas <span className="text-4xl">✨</span>
           </h1>
           <p className="text-gray-700 text-xl font-light">Nueva reserva</p>
-          {cabanaSlug && (
-            <p className="text-orange-600 text-lg font-medium mt-2">
-              Reserva preseleccionada: {cabanaSlug}
-            </p>
-          )}
-          {servicioSlug && (
-            <p className="text-orange-600 text-lg font-medium mt-2">
-              Servicio de interés: {servicioSlug}
-            </p>
-          )}
         </div>
 
         {/* Panel de búsqueda */}

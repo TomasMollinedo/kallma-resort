@@ -1,9 +1,7 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 export default function ServiciosCard({ servicio, isFlipped, onFlip }) {
-  const navigate = useNavigate();
-
   return (
     <div
       className={`relative w-full h-[450px] cursor-pointer transition-transform duration-700 transform-style-preserve-3d ${
@@ -38,15 +36,13 @@ export default function ServiciosCard({ servicio, isFlipped, onFlip }) {
         </div>
         <div className="flex justify-between items-center mt-4">
           <button className="text-sm text-gray-500 hover:text-orange-500 transition">← Volver</button>
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/reserva?servicio=${servicio.slug}`);
-            }}
+          <Link
+            to="/reserva"
+            onClick={(e) => e.stopPropagation()}
             className="px-4 py-2 bg-orange-500 text-white rounded-full text-sm font-semibold hover:bg-orange-400 transition"
           >
             Contratar servicio
-          </button>
+          </Link>
         </div>
       </div>
     </div>
