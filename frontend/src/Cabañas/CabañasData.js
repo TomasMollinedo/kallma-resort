@@ -1,12 +1,12 @@
-import Cabaña1 from '../Assets/Cabaña1.svg';
-import Cabaña2 from '../Assets/Cabaña2.svg';
-import Cabaña3 from '../Assets/Cabaña3.svg';
+import cabana1 from '../assets/Cabaña1.webp';
+import cabana2 from '../assets/Cabaña2.webp';
+import cabana3 from '../assets/Cabaña3.webp';
 
 export const cabanas = [
   {
     slug: 'esencial', 
     titulo: 'Esencial', 
-    imagen: Cabaña1, 
+    imagen: cabana1, 
     caracteristicas: 'Acogedora y funcional. Ideal para parejas o exploradores solitarios. Vista al bosque.',
     precio: 70.000, 
     capacidad: '2 personas', 
@@ -15,7 +15,7 @@ export const cabanas = [
   {
     slug: 'confort', 
     titulo: 'Confort', 
-    imagen: Cabaña2,
+    imagen: cabana2,
     caracteristicas: 'Espacio familiar con todas las comodidades. Perfecta para el descanso después de un día de actividades.',
     precio: 130.000, 
     capacidad: '4 personas', 
@@ -24,7 +24,7 @@ export const cabanas = [
   {
     slug: 'premium', 
     titulo: 'Premium', 
-    imagen: Cabaña3,
+    imagen: cabana3,
     caracteristicas: 'Lujo y diseño en A-Frame. Vistas panorámicas inigualables. Experiencia exclusiva en la montaña.',
     precio: 250.000, 
     capacidad: '6 personas', 

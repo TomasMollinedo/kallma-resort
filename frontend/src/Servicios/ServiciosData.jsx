@@ -1,6 +1,6 @@
-import gimnasio from '../assets/gym.jpg';
-import spa from '../assets/spa.jpg';
-import restaurante from '../assets/restaurante.jpg';
+import gimnasio from '../assets/gym.webp';
+import spa from '../assets/spa.webp';
+import restaurante from '../assets/restaurante.webp';
 
 export const servicios = [
   {

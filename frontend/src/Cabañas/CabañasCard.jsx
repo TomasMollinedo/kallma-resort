@@ -14,6 +14,7 @@ export default function CabanaCard({ cabana, isFlipped, onFlip }) {
         <img
           src={cabana.imagen}
           alt={cabana.titulo}
+          loading="lazy"
           className="w-full h-full object-cover brightness-90 hover:brightness-100 transition"
         />
         <div className="absolute bottom-0 w-full bg-white/70 backdrop-blur-md p-4 flex justify-between items-center">
@@ -59,4 +60,3 @@ export default function CabanaCard({ cabana, isFlipped, onFlip }) {
     </div>
   );
 }
-

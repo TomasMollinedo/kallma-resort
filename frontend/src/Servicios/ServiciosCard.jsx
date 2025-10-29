@@ -12,6 +12,7 @@ export default function ServiciosCard({ servicio, isFlipped, onFlip }) {
         <img
           src={servicio.imagen}
           alt={servicio.titulo}
+          loading="lazy"
           className="w-full h-full object-cover brightness-90 hover:brightness-100 transition"
         />
         <div className="absolute bottom-0 w-full bg-white/70 backdrop-blur-md p-4 flex justify-between items-center">
