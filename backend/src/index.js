@@ -8,6 +8,7 @@ import usersModule from "./modules/users/index.js";
 import zonasModule from "./modules/zonas/index.js";
 import cabanasModule from "./modules/cabanas/index.js";
 import reservasModule from "./modules/reservas/index.js";
+import serviciosModule from "./modules/servicios/index.js";
 
 const app = express();
 app.use(cors());
@@ -28,6 +29,7 @@ app.use("/api", usersModule);
 app.use("/api", zonasModule);
 app.use("/api", cabanasModule);
 app.use("/api", reservasModule);
+app.use("/api", serviciosModule);
 
 // Manejo de rutas no encontradas
 app.use((req, res) => {
