@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 export default function ServiciosCard({ servicio, isFlipped, onFlip }) {
   return (
@@ -36,9 +37,13 @@ export default function ServiciosCard({ servicio, isFlipped, onFlip }) {
         </div>
         <div className="flex justify-between items-center mt-4">
           <button className="text-sm text-gray-500 hover:text-orange-500 transition">← Volver</button>
-          <button className="px-4 py-2 bg-orange-500 text-white rounded-full text-sm font-semibold hover:bg-orange-400 transition">
+          <Link
+            to="/reserva"
+            onClick={(e) => e.stopPropagation()}
+            className="px-4 py-2 bg-orange-500 text-white rounded-full text-sm font-semibold hover:bg-orange-400 transition"
+          >
             Contratar servicio
-          </button>
+          </Link>
         </div>
       </div>
     </div>
