@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getMyProfile, getAllUsers, createUser, updateUser, deleteUser } from "../controllers/user.controller.js";
+import { getMyProfile, getUserById, getAllUsers, createUser, updateUser, deleteUser } from "../controllers/user.controller.js";
 import { authenticate, requireAdmin } from "../middlewares/auth.middleware.js";
 
 const router = Router();
@@ -13,10 +13,18 @@ router.get("/me", authenticate, getMyProfile);
 
 /**
  * @route   GET /api/users
- * @desc    Listar todos los usuarios (con filtros opcionales)
+ * @desc    Listar todos los usuarios (con filtros y búsqueda)
+ * @query   nombre, email, dni, rol, esta_activo, limit, offset
  * @access  Privado (Solo Administradores)
  */
 router.get("/", authenticate, requireAdmin, getAllUsers);
+
+/**
+ * @route   GET /api/users/:id
+ * @desc    Obtener detalles de un usuario específico
+ * @access  Privado (Solo Administradores)
+ */
+router.get("/:id", authenticate, requireAdmin, getUserById);
 
 /**
  * @route   POST /api/users
@@ -26,11 +34,11 @@ router.get("/", authenticate, requireAdmin, getAllUsers);
 router.post("/", authenticate, requireAdmin, createUser);
 
 /**
- * @route   PUT /api/users/:id
- * @desc    Actualizar datos de un usuario
+ * @route   PATCH /api/users/:id
+ * @desc    Actualizar datos de un usuario (actualización parcial)
  * @access  Privado (Solo Administradores)
  */
-router.put("/:id", authenticate, requireAdmin, updateUser);
+router.patch("/:id", authenticate, requireAdmin, updateUser);
 
 /**
  * @route   DELETE /api/users/:id

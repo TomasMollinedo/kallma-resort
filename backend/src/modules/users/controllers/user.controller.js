@@ -39,6 +39,46 @@ export const getMyProfile = async (req, res) => {
 };
 
 /**
+ * GET /api/users/:id
+ * Obtener detalles de un usuario específico (solo Admin)
+ */
+export const getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validar que el ID sea un número
+    if (isNaN(id)) {
+      return res.status(400).json({
+        ok: false,
+        error: "ID de usuario inválido",
+      });
+    }
+
+    const user = await userService.getUserById(parseInt(id));
+
+    res.json({
+      ok: true,
+      data: user,
+    });
+  } catch (error) {
+    console.error("Error en getUserById controller:", error);
+
+    if (error.message === "USER_NOT_FOUND") {
+      return res.status(404).json({
+        ok: false,
+        error: "Usuario no encontrado",
+      });
+    }
+
+    res.status(500).json({
+      ok: false,
+      error: "Error al obtener el usuario",
+      details: config.env === "development" ? error.message : undefined,
+    });
+  }
+};
+
+/**
  * GET /api/users
  * Listar todos los usuarios (solo Admin)
  */
@@ -73,7 +113,7 @@ export const getAllUsers = async (req, res) => {
 };
 
 /**
- * PUT /api/users/:id
+ * PATCH /api/users/:id
  * Actualizar usuario (solo Admin)
  */
 export const updateUser = async (req, res) => {

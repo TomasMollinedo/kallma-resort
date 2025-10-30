@@ -39,9 +39,10 @@ export const getUserById = async (userId) => {
 
 /**
  * Lista todos los usuarios con filtros opcionales
+ * Incluye búsqueda por nombre, email y DNI
  */
 export const getAllUsers = async (filters = {}) => {
-  const { rol, esta_activo, limit = 100, offset = 0 } = filters;
+  const { rol, esta_activo, nombre, email, dni, limit = 100, offset = 0 } = filters;
 
   let query = `
     SELECT u.id_usuario, u.email, u.nombre, u.telefono, u.dni, 
@@ -54,12 +55,35 @@ export const getAllUsers = async (filters = {}) => {
   const params = [];
   let paramCount = 1;
 
+  // Búsqueda por nombre (parcial, case-insensitive)
+  if (nombre) {
+    query += ` AND u.nombre ILIKE $${paramCount}`;
+    params.push(`%${nombre}%`);
+    paramCount++;
+  }
+
+  // Búsqueda por email (parcial, case-insensitive)
+  if (email) {
+    query += ` AND u.email ILIKE $${paramCount}`;
+    params.push(`%${email}%`);
+    paramCount++;
+  }
+
+  // Búsqueda por DNI (parcial)
+  if (dni) {
+    query += ` AND u.dni ILIKE $${paramCount}`;
+    params.push(`%${dni}%`);
+    paramCount++;
+  }
+
+  // Filtrar por rol
   if (rol) {
     query += ` AND r.nom_rol = $${paramCount}`;
     params.push(rol);
     paramCount++;
   }
 
+  // Filtrar por estado activo
   if (esta_activo !== undefined) {
     query += ` AND u.esta_activo = $${paramCount}`;
     params.push(esta_activo === "true" || esta_activo === true);
@@ -72,7 +96,7 @@ export const getAllUsers = async (filters = {}) => {
 
   const result = await pool.query(query, params);
 
-  // Contar total
+  // Contar total con los mismos filtros
   let countQuery = `
     SELECT COUNT(*) as total
     FROM usuario u
@@ -82,6 +106,25 @@ export const getAllUsers = async (filters = {}) => {
 
   const countParams = [];
   let countParamCount = 1;
+
+  // Aplicar mismos filtros al conteo
+  if (nombre) {
+    countQuery += ` AND u.nombre ILIKE $${countParamCount}`;
+    countParams.push(`%${nombre}%`);
+    countParamCount++;
+  }
+
+  if (email) {
+    countQuery += ` AND u.email ILIKE $${countParamCount}`;
+    countParams.push(`%${email}%`);
+    countParamCount++;
+  }
+
+  if (dni) {
+    countQuery += ` AND u.dni ILIKE $${countParamCount}`;
+    countParams.push(`%${dni}%`);
+    countParamCount++;
+  }
 
   if (rol) {
     countQuery += ` AND r.nom_rol = $${countParamCount}`;

@@ -116,15 +116,18 @@ export const validateUpdateUserData = (data) => {
 
 /**
  * Valida filtros de listado de usuarios
+ * Incluye búsqueda por nombre, email y DNI
  */
 export const validateUserFilters = (filters) => {
   const errors = [];
   const validRoles = ["Cliente", "Operador", "Administrador"];
 
+  // Validar rol
   if (filters.rol && !validRoles.includes(filters.rol)) {
     errors.push({ field: "rol", message: `Rol debe ser uno de: ${validRoles.join(", ")}` });
   }
 
+  // Validar estado activo
   if (filters.esta_activo !== undefined) {
     const value = filters.esta_activo;
     if (value !== "true" && value !== "false" && value !== true && value !== false) {
@@ -132,6 +135,34 @@ export const validateUserFilters = (filters) => {
     }
   }
 
+  // Validar búsqueda por nombre (opcional)
+  if (filters.nombre !== undefined) {
+    if (typeof filters.nombre !== "string") {
+      errors.push({ field: "nombre", message: "El nombre debe ser un texto" });
+    } else if (filters.nombre.length > 200) {
+      errors.push({ field: "nombre", message: "El nombre no puede exceder 200 caracteres" });
+    }
+  }
+
+  // Validar búsqueda por email (opcional)
+  if (filters.email !== undefined) {
+    if (typeof filters.email !== "string") {
+      errors.push({ field: "email", message: "El email debe ser un texto" });
+    } else if (filters.email.length > 320) {
+      errors.push({ field: "email", message: "El email no puede exceder 320 caracteres" });
+    }
+  }
+
+  // Validar búsqueda por DNI (opcional)
+  if (filters.dni !== undefined) {
+    if (typeof filters.dni !== "string") {
+      errors.push({ field: "dni", message: "El DNI debe ser un texto" });
+    } else if (filters.dni.length > 50) {
+      errors.push({ field: "dni", message: "El DNI no puede exceder 50 caracteres" });
+    }
+  }
+
+  // Validar paginación
   if (filters.limit !== undefined) {
     const limit = parseInt(filters.limit);
     if (isNaN(limit) || limit < 1 || limit > 1000) {

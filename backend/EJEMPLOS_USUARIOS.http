@@ -1,0 +1,656 @@
+###
+### MÓDULO DE USUARIOS Y AUTENTICACIÓN
+### Ejemplos de requests HTTP para el módulo de Usuarios
+### Base URL: http://localhost:3000/api
+###
+### NOTAS IMPORTANTES:
+### - Endpoints públicos: /auth/register, /auth/login (sin token)
+### - Endpoints protegidos: /users/* (requieren token de Admin)
+### - Motor de búsqueda por nombre, email y DNI (ILIKE, case-insensitive)
+### - Actualización con PATCH (consistente con otros módulos)
+###
+
+### Variables
+@baseUrl = http://localhost:3000/api
+@tokenAdmin = YOUR_ADMIN_TOKEN_HERE
+@tokenOperador = YOUR_OPERATOR_TOKEN_HERE
+@tokenCliente = YOUR_CLIENT_TOKEN_HERE
+
+###############################################
+### 1. AUTENTICACIÓN (ENDPOINTS PÚBLICOS)
+###############################################
+
+### 1.1 Registrar nuevo usuario (Cliente por defecto)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "cliente.nuevo@example.com",
+  "password": "Cliente123!",
+  "nombre": "Juan Carlos Pérez",
+  "telefono": "+54 9 11 1234-5678",
+  "dni": "12345678"
+}
+
+### Respuesta esperada (201):
+# {
+#   "ok": true,
+#   "message": "Usuario registrado exitosamente",
+#   "data": {
+#     "user": {
+#       "id_usuario": 5,
+#       "email": "cliente.nuevo@example.com",
+#       "nombre": "Juan Carlos Pérez",
+#       "telefono": "+54 9 11 1234-5678",
+#       "dni": "12345678",
+#       "rol": "Cliente",
+#       "esta_activo": true
+#     },
+#     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+#   }
+# }
+
+### 1.2 Login de usuario
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@kallmaresort.com",
+  "password": "Admin123!"
+}
+
+### Respuesta esperada (200):
+# {
+#   "ok": true,
+#   "message": "Login exitoso",
+#   "data": {
+#     "user": {
+#       "id_usuario": 1,
+#       "email": "admin@kallmaresort.com",
+#       "nombre": "Administrador del Sistema",
+#       "rol": "Administrador",
+#       "esta_activo": true
+#     },
+#     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+#   }
+# }
+
+### 1.3 Error: Email ya registrado
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "admin@kallmaresort.com",
+  "password": "password123",
+  "nombre": "Test User"
+}
+
+### Respuesta esperada (409):
+# {
+#   "ok": false,
+#   "error": "El email ya está registrado"
+# }
+
+### 1.4 Error: Credenciales inválidas
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@kallmaresort.com",
+  "password": "wrongpassword"
+}
+
+### Respuesta esperada (401):
+# {
+#   "ok": false,
+#   "error": "Credenciales inválidas"
+# }
+
+###############################################
+### 2. PERFIL DE USUARIO
+###############################################
+
+### 2.1 Ver mi perfil (cualquier usuario autenticado)
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{tokenCliente}}
+
+### Respuesta esperada (200):
+# {
+#   "ok": true,
+#   "data": {
+#     "id_usuario": 5,
+#     "email": "cliente@example.com",
+#     "nombre": "Juan Carlos Pérez",
+#     "telefono": "+54 9 11 1234-5678",
+#     "dni": "12345678",
+#     "rol": "Cliente",
+#     "esta_activo": true,
+#     "fecha_creacion": "2024-10-16T10:00:00.000Z"
+#   }
+# }
+
+### 2.2 Error: Token no proporcionado
+GET {{baseUrl}}/users/me
+
+### Respuesta esperada (401):
+# {
+#   "ok": false,
+#   "error": "Token no proporcionado. Formato esperado: 'Bearer <token>'"
+# }
+
+###############################################
+### 3. LISTAR USUARIOS (SOLO ADMIN)
+###############################################
+
+### 3.1 Listar todos los usuarios
+GET {{baseUrl}}/users
+Authorization: Bearer {{tokenAdmin}}
+
+### 3.2 Filtrar por rol: Solo Clientes
+GET {{baseUrl}}/users?rol=Cliente
+Authorization: Bearer {{tokenAdmin}}
+
+### 3.3 Filtrar por rol: Solo Operadores
+GET {{baseUrl}}/users?rol=Operador
+Authorization: Bearer {{tokenAdmin}}
+
+### 3.4 Filtrar por rol: Solo Administradores
+GET {{baseUrl}}/users?rol=Administrador
+Authorization: Bearer {{tokenAdmin}}
+
+### 3.5 Filtrar usuarios activos
+GET {{baseUrl}}/users?esta_activo=true
+Authorization: Bearer {{tokenAdmin}}
+
+### 3.6 Filtrar usuarios inactivos (desactivados)
+GET {{baseUrl}}/users?esta_activo=false
+Authorization: Bearer {{tokenAdmin}}
+
+### 3.7 Filtrar con paginación
+GET {{baseUrl}}/users?limit=10&offset=0
+Authorization: Bearer {{tokenAdmin}}
+
+### 3.8 Filtros combinados
+GET {{baseUrl}}/users?rol=Cliente&esta_activo=true&limit=20
+Authorization: Bearer {{tokenAdmin}}
+
+###############################################
+### 4. BÚSQUEDA DE USUARIOS (SOLO ADMIN)
+### NUEVA FUNCIONALIDAD: Motor de búsqueda
+###############################################
+
+### 4.1 Buscar por nombre (parcial, case-insensitive)
+GET {{baseUrl}}/users?nombre=Juan
+Authorization: Bearer {{tokenAdmin}}
+
+### 4.2 Buscar por email (parcial, case-insensitive)
+GET {{baseUrl}}/users?email=@gmail.com
+Authorization: Bearer {{tokenAdmin}}
+
+### 4.3 Buscar por DNI (parcial)
+GET {{baseUrl}}/users?dni=12345
+Authorization: Bearer {{tokenAdmin}}
+
+### 4.4 Búsqueda combinada: nombre + rol
+GET {{baseUrl}}/users?nombre=María&rol=Operador
+Authorization: Bearer {{tokenAdmin}}
+
+### 4.5 Búsqueda combinada: email + estado activo
+GET {{baseUrl}}/users?email=@kallmaresort.com&esta_activo=true
+Authorization: Bearer {{tokenAdmin}}
+
+### 4.6 Búsqueda completa con múltiples filtros
+GET {{baseUrl}}/users?nombre=Juan&rol=Cliente&esta_activo=true&limit=5
+Authorization: Bearer {{tokenAdmin}}
+
+### Respuesta esperada (200):
+# {
+#   "ok": true,
+#   "data": [
+#     {
+#       "id_usuario": 5,
+#       "email": "juan@example.com",
+#       "nombre": "Juan Carlos Pérez",
+#       "telefono": "+54 9 11 1234-5678",
+#       "dni": "12345678",
+#       "rol": "Cliente",
+#       "esta_activo": true,
+#       "fecha_creacion": "2024-10-16T10:00:00.000Z"
+#     }
+#   ],
+#   "pagination": {
+#     "total": 1,
+#     "limit": 100,
+#     "offset": 0,
+#     "hasMore": false
+#   }
+# }
+
+###############################################
+### 5. OBTENER DETALLES DE USUARIO (SOLO ADMIN)
+### NUEVO ENDPOINT: GET /api/users/:id
+###############################################
+
+### 5.1 Obtener detalles de usuario por ID
+GET {{baseUrl}}/users/5
+Authorization: Bearer {{tokenAdmin}}
+
+### Respuesta esperada (200):
+# {
+#   "ok": true,
+#   "data": {
+#     "id_usuario": 5,
+#     "email": "cliente@example.com",
+#     "nombre": "Juan Carlos Pérez",
+#     "telefono": "+54 9 11 1234-5678",
+#     "dni": "12345678",
+#     "rol": "Cliente",
+#     "esta_activo": true,
+#     "fecha_creacion": "2024-10-16T10:00:00.000Z"
+#   }
+# }
+
+### 5.2 Error: Usuario no encontrado
+GET {{baseUrl}}/users/999
+Authorization: Bearer {{tokenAdmin}}
+
+### Respuesta esperada (404):
+# {
+#   "ok": false,
+#   "error": "Usuario no encontrado"
+# }
+
+### 5.3 Error: ID inválido
+GET {{baseUrl}}/users/abc
+Authorization: Bearer {{tokenAdmin}}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "error": "ID de usuario inválido"
+# }
+
+### 5.4 Error: Acceso denegado (sin ser Admin)
+GET {{baseUrl}}/users/5
+Authorization: Bearer {{tokenCliente}}
+
+### Respuesta esperada (403):
+# {
+#   "ok": false,
+#   "error": "Acceso denegado. Se requiere uno de los siguientes roles: Administrador",
+#   "rolActual": "Cliente"
+# }
+
+###############################################
+### 6. CREAR USUARIO (SOLO ADMIN)
+###############################################
+
+### 6.1 Crear usuario con rol Cliente
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "email": "nuevo.cliente@example.com",
+  "password": "Cliente123!",
+  "nombre": "María González",
+  "telefono": "+54 9 11 2222-2222",
+  "dni": "22222222",
+  "id_rol_usuario": 1
+}
+
+### 6.2 Crear usuario con rol Operador
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "email": "operador@kallmaresort.com",
+  "password": "Operador123!",
+  "nombre": "Carlos Martínez",
+  "telefono": "+54 9 11 3333-3333",
+  "dni": "33333333",
+  "id_rol_usuario": 2
+}
+
+### 6.3 Crear usuario con rol Administrador
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "email": "admin2@kallmaresort.com",
+  "password": "Admin123!",
+  "nombre": "Ana López",
+  "telefono": "+54 9 11 4444-4444",
+  "dni": "44444444",
+  "id_rol_usuario": 3
+}
+
+### 6.4 Error: Email ya existe
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "email": "admin@kallmaresort.com",
+  "password": "password123",
+  "nombre": "Test",
+  "id_rol_usuario": 1
+}
+
+### Respuesta esperada (409):
+# {
+#   "ok": false,
+#   "error": "El email ya está registrado"
+# }
+
+### 6.5 Error: Rol inválido
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "email": "test@example.com",
+  "password": "password123",
+  "nombre": "Test User",
+  "id_rol_usuario": 999
+}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "error": "El rol especificado no existe"
+# }
+
+###############################################
+### 7. ACTUALIZAR USUARIO (SOLO ADMIN)
+### CAMBIO: Ahora usa PATCH en lugar de PUT
+###############################################
+
+### 7.1 Actualizar nombre y teléfono
+PATCH {{baseUrl}}/users/5
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "nombre": "Juan Carlos Pérez Actualizado",
+  "telefono": "+54 9 11 9999-9999"
+}
+
+### 7.2 Actualizar solo email
+PATCH {{baseUrl}}/users/5
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "email": "nuevo.email@example.com"
+}
+
+### 7.3 Cambiar contraseña
+PATCH {{baseUrl}}/users/5
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "password": "NuevaPassword123!"
+}
+
+### 7.4 Cambiar rol de Cliente a Operador
+PATCH {{baseUrl}}/users/5
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "id_rol_usuario": 2
+}
+
+### 7.5 Desactivar usuario (cambiar estado)
+PATCH {{baseUrl}}/users/5
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "esta_activo": false
+}
+
+### 7.6 Reactivar usuario
+PATCH {{baseUrl}}/users/5
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "esta_activo": true
+}
+
+### 7.7 Actualización completa
+PATCH {{baseUrl}}/users/5
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "nombre": "Juan Carlos Pérez Final",
+  "telefono": "+54 9 11 8888-8888",
+  "dni": "88888888",
+  "email": "final@example.com",
+  "id_rol_usuario": 1,
+  "esta_activo": true
+}
+
+### 7.8 Error: Email ya existe
+PATCH {{baseUrl}}/users/5
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "email": "admin@kallmaresort.com"
+}
+
+### Respuesta esperada (409):
+# {
+#   "ok": false,
+#   "error": "El email ya está en uso por otro usuario"
+# }
+
+### 7.9 Error: Usuario no encontrado
+PATCH {{baseUrl}}/users/999
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "nombre": "Test"
+}
+
+### Respuesta esperada (404):
+# {
+#   "ok": false,
+#   "error": "Usuario no encontrado"
+# }
+
+###############################################
+### 8. ELIMINAR USUARIO (SOLO ADMIN)
+### Borrado lógico: esta_activo = false
+###############################################
+
+### 8.1 Desactivar usuario (borrado lógico)
+DELETE {{baseUrl}}/users/5
+Authorization: Bearer {{tokenAdmin}}
+
+### Respuesta esperada (200):
+# {
+#   "ok": true,
+#   "message": "Usuario desactivado exitosamente"
+# }
+
+### 8.2 Error: Usuario no encontrado
+DELETE {{baseUrl}}/users/999
+Authorization: Bearer {{tokenAdmin}}
+
+### Respuesta esperada (404):
+# {
+#   "ok": false,
+#   "error": "Usuario no encontrado"
+# }
+
+### 8.3 Error: Usuario ya está inactivo
+DELETE {{baseUrl}}/users/5
+Authorization: Bearer {{tokenAdmin}}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "error": "El usuario ya está inactivo"
+# }
+
+###############################################
+### 9. VALIDACIONES Y ERRORES
+###############################################
+
+### 9.1 Registro con email inválido
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "email-invalido",
+  "password": "password123",
+  "nombre": "Test User"
+}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "error": "Datos de entrada inválidos",
+#   "errors": [
+#     {
+#       "field": "email",
+#       "message": "Formato de email inválido"
+#     }
+#   ]
+# }
+
+### 9.2 Registro con contraseña corta
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "123",
+  "nombre": "Test User"
+}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "error": "Datos de entrada inválidos",
+#   "errors": [
+#     {
+#       "field": "password",
+#       "message": "La contraseña debe tener al menos 6 caracteres"
+#     }
+#   ]
+# }
+
+### 9.3 Crear usuario sin campos obligatorios
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "nombre": "Test User"
+}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "error": "Datos de entrada inválidos",
+#   "errors": [
+#     {
+#       "field": "email",
+#       "message": "Email es obligatorio"
+#     },
+#     {
+#       "field": "password",
+#       "message": "Password es obligatorio"
+#     },
+#     {
+#       "field": "id_rol_usuario",
+#       "message": "ID de rol es obligatorio"
+#     }
+#   ]
+# }
+
+###############################################
+### 10. TESTING DE ROLES Y PERMISOS
+###############################################
+
+### 10.1 Cliente intenta listar usuarios (debe fallar)
+GET {{baseUrl}}/users
+Authorization: Bearer {{tokenCliente}}
+
+### Respuesta esperada (403):
+# {
+#   "ok": false,
+#   "error": "Acceso denegado. Se requiere uno de los siguientes roles: Administrador",
+#   "rolActual": "Cliente"
+# }
+
+### 10.2 Operador intenta crear usuario (debe fallar)
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "email": "test@example.com",
+  "password": "password123",
+  "nombre": "Test User",
+  "id_rol_usuario": 1
+}
+
+### Respuesta esperada (403):
+# {
+#   "ok": false,
+#   "error": "Acceso denegado. Se requiere uno de los siguientes roles: Administrador",
+#   "rolActual": "Operador"
+# }
+
+### 10.3 Token expirado
+GET {{baseUrl}}/users/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.EXPIRED_TOKEN
+
+### Respuesta esperada (401):
+# {
+#   "ok": false,
+#   "error": "Token expirado. Por favor, inicie sesión nuevamente."
+# }
+
+###############################################
+### NOTAS FINALES
+###############################################
+#
+# 1. ROLES DISPONIBLES:
+#    - 1 = Cliente
+#    - 2 = Operador
+#    - 3 = Administrador
+#
+# 2. BÚSQUEDA PARCIAL:
+#    - Usa ILIKE (case-insensitive)
+#    - Busca en cualquier parte del campo
+#    - Ejemplo: "juan" encuentra "Juan", "JUAN", "Juanita", etc.
+#
+# 3. MÉTODO PATCH:
+#    - Permite actualización parcial
+#    - Solo los campos enviados se actualizan
+#    - Consistente con módulos de Cabañas, Zonas, Reservas
+#
+# 4. NUEVO ENDPOINT GET /users/:id:
+#    - Obtiene detalles completos de un usuario
+#    - Solo para Administradores
+#    - Retorna 404 si no existe
+#
+# 5. SEGURIDAD:
+#    - Tokens JWT con expiración
+#    - Contraseñas hasheadas con bcrypt
+#    - Borrado lógico (no se eliminan datos)
+#    - Auditoría completa
+#
+###############################################

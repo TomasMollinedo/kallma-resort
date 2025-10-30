@@ -26,6 +26,8 @@ El módulo de **Autenticación y Usuarios** proporciona todas las funcionalidade
 ✅ Autenticación basada en tokens JWT  
 ✅ Autorización por roles (Cliente, Operador, Administrador)  
 ✅ CRUD completo de usuarios (solo Admin)  
+✅ **Motor de búsqueda** por nombre, email y DNI (case-insensitive)  
+✅ Actualización parcial con **PATCH** (consistente con otros módulos)  
 ✅ Borrado lógico (soft delete)  
 ✅ Auditoría completa  
 ✅ Validación de datos en todas las capas  
@@ -189,14 +191,21 @@ Authorization: Bearer <token>
 ```
 
 **Query Params (opcionales):**
+- `nombre`: **Búsqueda parcial** por nombre (case-insensitive con ILIKE)
+- `email`: **Búsqueda parcial** por email (case-insensitive con ILIKE)
+- `dni`: **Búsqueda parcial** por DNI
 - `rol`: Filtrar por rol (Cliente, Operador, Administrador)
 - `esta_activo`: Filtrar por estado (true/false)
 - `limit`: Límite de resultados (default: 100, max: 1000)
 - `offset`: Desplazamiento para paginación (default: 0)
 
-**Ejemplo:**
+**Ejemplos:**
 ```
 GET /api/users?rol=Cliente&esta_activo=true&limit=10&offset=0
+GET /api/users?nombre=Juan
+GET /api/users?email=@gmail.com
+GET /api/users?dni=12345
+GET /api/users?nombre=Juan&rol=Cliente&esta_activo=true
 ```
 
 **Response (200):**
@@ -224,7 +233,41 @@ GET /api/users?rol=Cliente&esta_activo=true&limit=10&offset=0
 }
 ```
 
-#### 5. POST `/api/users`
+#### 5. GET `/api/users/:id`
+Obtiene los detalles completos de un usuario específico.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Ejemplo:**
+```
+GET /api/users/5
+```
+
+**Response (200):**
+```json
+{
+  "ok": true,
+  "data": {
+    "id_usuario": 5,
+    "email": "usuario@example.com",
+    "nombre": "Juan Pérez",
+    "telefono": "+54 9 11 1234-5678",
+    "dni": "12345678",
+    "rol": "Cliente",
+    "esta_activo": true,
+    "fecha_creacion": "2024-10-16T10:00:00.000Z"
+  }
+}
+```
+
+**Errores:**
+- `400`: ID inválido
+- `404`: Usuario no encontrado
+
+#### 6. POST `/api/users`
 Crea un nuevo usuario (cualquier rol).
 
 **Headers:**
@@ -266,8 +309,10 @@ Authorization: Bearer <token>
 }
 ```
 
-#### 6. PUT `/api/users/:id`
-Actualiza un usuario existente.
+#### 7. PATCH `/api/users/:id`
+Actualiza un usuario existente (actualización parcial).
+
+**Nota**: Se cambió de PUT a PATCH para seguir las mismas prácticas que los módulos de Cabañas, Zonas, Reservas y Servicios.
 
 **Headers:**
 ```
@@ -304,7 +349,7 @@ Authorization: Bearer <token>
 }
 ```
 
-#### 7. DELETE `/api/users/:id`
+#### 8. DELETE `/api/users/:id`
 Desactiva un usuario (borrado lógico).
 
 **Headers:**
@@ -564,8 +609,16 @@ SELECT id_rol_usuario, nom_rol FROM rol_usuario;
 
 ```javascript
 {
+  // Filtros de búsqueda (ILIKE, case-insensitive)
+  nombre: "opcional, búsqueda parcial por nombre",
+  email: "opcional, búsqueda parcial por email",
+  dni: "opcional, búsqueda parcial por DNI",
+  
+  // Filtros exactos
   rol: "opcional, uno de: Cliente, Operador, Administrador",
   esta_activo: "opcional, true o false",
+  
+  // Paginación
   limit: "opcional, 1-1000, default 100",
   offset: "opcional, >= 0, default 0"
 }
@@ -632,10 +685,31 @@ curl -X POST http://localhost:4000/api/users \
   }'
 ```
 
-### 6. Actualizar Usuario (como Admin)
+### 6. Obtener Detalles de Usuario (como Admin)
 
 ```bash
-curl -X PUT http://localhost:4000/api/users/2 \
+curl -X GET http://localhost:4000/api/users/5 \
+  -H "Authorization: Bearer TU_TOKEN_ADMIN"
+```
+
+### 7. Buscar Usuarios por Nombre (como Admin)
+
+```bash
+curl -X GET "http://localhost:4000/api/users?nombre=Juan" \
+  -H "Authorization: Bearer TU_TOKEN_ADMIN"
+```
+
+### 8. Buscar Usuarios por Email (como Admin)
+
+```bash
+curl -X GET "http://localhost:4000/api/users?email=@gmail.com" \
+  -H "Authorization: Bearer TU_TOKEN_ADMIN"
+```
+
+### 9. Actualizar Usuario (como Admin)
+
+```bash
+curl -X PATCH http://localhost:4000/api/users/2 \
   -H "Authorization: Bearer TU_TOKEN_ADMIN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -644,7 +718,7 @@ curl -X PUT http://localhost:4000/api/users/2 \
   }'
 ```
 
-### 7. Desactivar Usuario (como Admin)
+### 10. Desactivar Usuario (como Admin)
 
 ```bash
 curl -X DELETE http://localhost:4000/api/users/2 \
