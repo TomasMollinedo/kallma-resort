@@ -32,8 +32,8 @@ export default function Login() {
         // Parsear los datos de la reserva pendiente
         const reservaData = JSON.parse(pendingReservation);
         
-        // Redirigir de vuelta a la página de servicios con los datos
-        navigate('/reserva/servicios', { 
+        // Redirigir de vuelta a la página de pago con los datos (nuevo flujo)
+        navigate('/reserva/pago', { 
           state: reservaData,
           replace: true 
         });

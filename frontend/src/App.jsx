@@ -26,6 +26,7 @@ import DashboardOperador from './app/operador/Dashboard';
 // Módulo de Reservas
 import ReservaInicio from './Reserva/ReservaInicio';
 import ReservaServicios from './Reserva/ReservaServicios';
+import ReservaPago from './Reserva/ReservaPago';
 
 // Componente para controlar cuándo mostrar Header y Footer
 function Layout({ children }) {
@@ -66,6 +67,7 @@ function App() {
             <Route path="/reserva" element={<ReservaInicio />} />
             <Route path="/reservar" element={<ReservaInicio />} />
             <Route path="/reserva/servicios" element={<ReservaServicios />} />
+            <Route path="/reserva/pago" element={<ReservaPago />} />
 
             {/* Rutas protegidas - Dashboards por rol */}
             <Route 

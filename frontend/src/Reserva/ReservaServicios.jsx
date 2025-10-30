@@ -73,54 +73,17 @@ export default function ReservaServicios() {
 
   const precioFinal = precioTotal + precioServicios;
 
-  const handleConfirmar = () => {
-    // Si no está autenticado, guardar el estado y redirigir a login
-    if (!isAuthenticated) {
-      localStorage.setItem('pendingReservation', JSON.stringify({
+  const handleContinuarAPago = () => {
+    // Navegar a la pantalla de pago con todos los datos
+    navigate('/reserva/pago', {
+      state: {
         cabanasSeleccionadas,
         searchParams,
         precioTotal,
-        serviciosSeleccionados
-      }));
-      navigate('/login', { state: { from: '/reserva/servicios' } });
-      return;
-    }
-
-    // Si está autenticado, crear la reserva directamente
-    handleCompletarReserva();
-  };
-
-  const handleCompletarReserva = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const reservaData = {
-        check_in: searchParams.check_in,
-        check_out: searchParams.check_out,
-        cant_personas: searchParams.cant_personas,
-        cabanas_ids: cabanasSeleccionadas.map(c => c.id_cabana),
-        servicios_ids: serviciosSeleccionados.length > 0 ? serviciosSeleccionados : []
-      };
-
-      const response = await crearReserva(reservaData, token);
-      
-      setSuccess(true);
-      
-      // Limpiar datos guardados
-      localStorage.removeItem('pendingReservation');
-      
-      // Redirigir al dashboard después de 3 segundos
-      setTimeout(() => {
-        navigate('/dashboard/cliente');
-      }, 3000);
-
-    } catch (err) {
-      console.error('Error al crear reserva:', err);
-      setError(err.error || 'Error al crear la reserva. Por favor, intente nuevamente.');
-    } finally {
-      setLoading(false);
-    }
+        serviciosSeleccionados,
+        precioServicios
+      }
+    });
   };
 
   const handleVolver = () => {
@@ -132,45 +95,6 @@ export default function ReservaServicios() {
   // Si no hay datos, no renderizar nada (el useEffect redirigirá)
   if (!cabanasSeleccionadas || !searchParams) {
     return null;
-  }
-
-  // Pantalla de éxito
-  if (success) {
-    return (
-      <div className="relative min-h-screen pt-24 pb-20 font-[Lora] flex items-center justify-center">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `url(${Fondo})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            filter: 'blur(40px)',
-            zIndex: 0,
-          }}
-        />
-        <div className="relative z-10 bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-12 max-w-2xl mx-6 text-center">
-          <div className="mb-6">
-            <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Check size={48} className="text-white" />
-            </div>
-            <h2 className="text-4xl font-bold text-gray-900 mb-3">
-              ¡Reserva Exitosa!
-            </h2>
-            <p className="text-gray-600 text-lg">
-              Tu reserva ha sido confirmada correctamente.
-            </p>
-          </div>
-          <div className="bg-gray-50 rounded-xl p-6 mb-6">
-            <p className="text-gray-700 mb-2">
-              Recibirás un correo electrónico con los detalles de tu reserva.
-            </p>
-            <p className="text-gray-700">
-              Serás redirigido a tu panel en unos segundos...
-            </p>
-          </div>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -230,7 +154,7 @@ export default function ReservaServicios() {
                 <AlertCircle size={48} className="text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600 mb-4">No hay servicios disponibles en este momento.</p>
                 <button
-                  onClick={handleConfirmar}
+                  onClick={handleContinuarAPago}
                   className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-full"
                 >
                   Continuar sin servicios
@@ -284,7 +208,7 @@ export default function ReservaServicios() {
             {!loadingServicios && serviciosDisponibles.length > 0 && (
               <div className="mt-6 text-center">
                 <button
-                  onClick={handleConfirmar}
+                  onClick={handleContinuarAPago}
                   className="text-gray-600 hover:text-gray-800 text-sm underline"
                 >
                   Continuar sin servicios adicionales
@@ -355,27 +279,20 @@ export default function ReservaServicios() {
                 </div>
               </div>
 
-              {/* Botón de confirmar */}
+              {/* Botón de continuar */}
               <button
-                onClick={handleConfirmar}
-                disabled={loading || loadingServicios}
+                onClick={handleContinuarAPago}
+                disabled={loadingServicios}
                 className="w-full mt-6 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white font-bold py-4 rounded-full shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-                    Procesando...
-                  </>
-                ) : (
-                  <>
-                    <Check size={20} />
-                    {isAuthenticated ? 'Completar Reserva' : 'Continuar (Login requerido)'}
-                  </>
-                )}
+                <>
+                  <Check size={20} />
+                  Continuar al Pago →
+                </>
               </button>
 
               <p className="text-xs text-gray-500 text-center mt-4">
-                {isAuthenticated ? 'Al confirmar aceptas nuestros términos y condiciones' : 'Necesitas iniciar sesión para completar la reserva'}
+                Siguiente: Ingresa los datos de tu tarjeta para pagar la seña
               </p>
             </div>
           </div>
