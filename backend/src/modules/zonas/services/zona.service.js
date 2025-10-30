@@ -26,14 +26,11 @@ export const obtenerZonas = async (filters = {}) => {
     const params = [];
     let paramCount = 1;
 
-    // Filtrar por estado activo (por defecto solo activas)
+    // Filtrar por estado activo si se especifica
     if (filters.esta_activa !== undefined) {
       query += ` AND esta_activa = $${paramCount}`;
       params.push(filters.esta_activa);
       paramCount++;
-    } else {
-      // Por defecto solo mostrar zonas activas
-      query += ` AND esta_activa = TRUE`;
     }
 
     query += ` ORDER BY nom_zona ASC`;

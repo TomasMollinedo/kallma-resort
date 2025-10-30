@@ -42,7 +42,7 @@ export default function UsersManagement({ onBack }) {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRol, setSelectedRol] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('true'); // Por defecto: Activos
   
   // Estados de modales (los implementaremos después)
   const [showFormModal, setShowFormModal] = useState(false);
@@ -124,7 +124,7 @@ export default function UsersManagement({ onBack }) {
   const handleClearFilters = () => {
     setSearchTerm('');
     setSelectedRol('');
-    setSelectedStatus('');
+    setSelectedStatus('true'); // Volver a mostrar activos
     setPagination(prev => ({ ...prev, offset: 0 }));
     // El useEffect se encargará de recargar cuando cambien selectedRol y selectedStatus
   };
@@ -377,9 +377,9 @@ export default function UsersManagement({ onBack }) {
                 }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               >
-                <option value="">Todos los estados</option>
-                <option value="true">Activos</option>
-                <option value="false">Inactivos</option>
+                <option value="true">Solo Activos</option>
+                <option value="false">Solo Inactivos</option>
+                <option value="">Todos</option>
               </select>
             </div>
           </div>

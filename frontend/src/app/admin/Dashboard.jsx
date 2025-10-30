@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Shield, LogOut, Home, Users, Building, Calendar, DollarSign, Settings } from 'lucide-react';
+import UsersManagement from './UsersManagement';
+import CabanasZonasManagement from './CabanasZonasManagement';
 
 export default function DashboardAdministrador() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState('dashboard'); // dashboard, users, cabanas
 
   const handleLogout = () => {
     logout();
@@ -15,6 +18,15 @@ export default function DashboardAdministrador() {
   const handleGoHome = () => {
     navigate('/');
   };
+
+  // Si estamos en una sección específica, mostrar el componente correspondiente
+  if (activeSection === 'users') {
+    return <UsersManagement onBack={() => setActiveSection('dashboard')} />;
+  }
+
+  if (activeSection === 'cabanas') {
+    return <CabanasZonasManagement onBack={() => setActiveSection('dashboard')} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-purple-100">
@@ -115,7 +127,10 @@ export default function DashboardAdministrador() {
             <p className="text-gray-600 mb-4">
               Administra usuarios, roles y permisos del sistema
             </p>
-            <button className="w-full bg-purple-500 text-white py-2 rounded-md hover:bg-purple-600 transition">
+            <button 
+              onClick={() => setActiveSection('users')}
+              className="w-full bg-purple-500 text-white py-2 rounded-md hover:bg-purple-600 transition"
+            >
               Gestionar Usuarios
             </button>
           </div>
@@ -129,7 +144,10 @@ export default function DashboardAdministrador() {
             <p className="text-gray-600 mb-4">
               Administra el inventario y estado de las cabañas
             </p>
-            <button className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition">
+            <button 
+              onClick={() => setActiveSection('cabanas')}
+              className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition"
+            >
               Gestionar Cabañas
             </button>
           </div>

@@ -209,10 +209,24 @@ modules/cabanas/
 └── index.js
 ```
 
-### Estados de Cabaña
-1. **Cerrada por Mantenimiento** (id=1)
-2. **Inactiva** (id=2) - Borrado lógico
-3. **Activa** (id=3)
+### Estados de Cabaña (Modelo Real con Booleanos)
+
+La tabla `cabana` usa **dos campos booleanos** para manejar estados:
+
+1. **`esta_activo`** (BOOLEAN):
+   - `TRUE` = Cabaña activa (puede ser usada)
+   - `FALSE` = Cabaña inactiva (borrado lógico)
+
+2. **`en_mantenimiento`** (BOOLEAN):
+   - `TRUE` = Cabaña cerrada por mantenimiento
+   - `FALSE` = Cabaña operativa
+
+**Combinaciones posibles:**
+- `esta_activo=TRUE` + `en_mantenimiento=FALSE` → **Activa y disponible**
+- `esta_activo=TRUE` + `en_mantenimiento=TRUE` → **Activa pero en mantenimiento**
+- `esta_activo=FALSE` → **Eliminada (borrado lógico)**
+
+**NOTA:** La documentación anterior mencionaba `id_est_cab` pero el código real usa estos campos booleanos.
 
 ### Endpoints
 
@@ -222,10 +236,10 @@ modules/cabanas/
 **Acceso:** Operador / Admin
 
 **Query Parameters:**
-- `id_est_cab` (opcional): ID del estado
 - `cod_cabana` (opcional): Código de cabaña (búsqueda parcial)
 - `id_zona` (opcional): ID de la zona
-- `esta_activo` (opcional): `true` | `false`
+- `esta_activo` (opcional): `true` | `false` - Filtrar por estado activo/inactivo
+- `en_mantenimiento` (opcional): `true` | `false` - Filtrar por mantenimiento
 
 **Response:**
 ```json
@@ -239,12 +253,14 @@ modules/cabanas/
       "nom_tipo_cab": "Esencial",
       "capacidad": 2,
       "precio_noche": 70000.00,
-      "id_est_cab": 3,
-      "nom_est_cab": "Activa",
       "id_zona": 1,
       "nom_zona": "Zona Norte",
       "esta_activo": true,
+      "en_mantenimiento": false,
       "fecha_creacion": "2025-01-15T10:00:00.000Z",
+      "fecha_modific": "2025-01-16T14:30:00.000Z",
+      "usuario_creacion": "Juan Admin",
+      "usuario_modificacion": "María Operadora",
       "reservada_hoy": true
     }
   ],
@@ -270,12 +286,17 @@ modules/cabanas/
     {
       "id_cabana": 1,
       "cod_cabana": "CAB-001",
+      "en_mantenimiento": false,
       "nom_tipo_cab": "Esencial",
       "nom_zona": "Zona Norte",
       "cod_reserva": "RES-001",
       "check_in": "2025-01-15T12:00:00.000Z",
       "check_out": "2025-01-17T10:00:00.000Z",
-      "estado_reserva": "Finalizada"
+      "estado_reserva": "Finalizada",
+      "fecha_creacion": "2025-01-10T09:00:00.000Z",
+      "fecha_modific": null,
+      "usuario_creacion": "Admin Sistema",
+      "usuario_modificacion": null
     }
   ],
   "total": 1,
@@ -325,13 +346,14 @@ modules/cabanas/
     "nom_tipo_cab": "Esencial",
     "capacidad": 2,
     "precio_noche": 70000.00,
-    "id_est_cab": 3,
-    "nom_est_cab": "Activa",
     "id_zona": 1,
     "nom_zona": "Zona Norte",
     "esta_activo": true,
+    "en_mantenimiento": false,
     "fecha_creacion": "2025-01-15T10:00:00.000Z",
-    "fecha_modific": null,
+    "fecha_modific": "2025-01-16T10:30:00.000Z",
+    "usuario_creacion": "Admin Principal",
+    "usuario_modificacion": "Juan Operador",
     "reservada_hoy": true
   }
 }
@@ -349,10 +371,13 @@ modules/cabanas/
 {
   "cod_cabana": "CAB-002",
   "id_tipo_cab": 2,
-  "id_est_cab": 3,
   "id_zona": 1
 }
 ```
+
+**NOTA:** Los campos `esta_activo` y `en_mantenimiento` se inicializan automáticamente:
+- `esta_activo`: TRUE (por defecto)
+- `en_mantenimiento`: FALSE (por defecto)
 
 **Response:**
 ```json
@@ -363,9 +388,9 @@ modules/cabanas/
     "id_cabana": 2,
     "cod_cabana": "CAB-002",
     "id_tipo_cab": 2,
-    "id_est_cab": 3,
     "id_zona": 1,
     "esta_activo": true,
+    "en_mantenimiento": false,
     "fecha_creacion": "2025-01-17T10:00:00.000Z"
   }
 }
@@ -374,7 +399,6 @@ modules/cabanas/
 **Validaciones:**
 - `cod_cabana`: obligatorio, máximo 50 caracteres, único
 - `id_tipo_cab`: obligatorio, debe existir y estar activo
-- `id_est_cab`: obligatorio, debe existir
 - `id_zona`: obligatorio, debe existir y estar activa
 
 ---
@@ -383,23 +407,24 @@ modules/cabanas/
 **Descripción:** Actualizar una cabaña.
 
 **Acceso:** 
-- **Admin:** Puede actualizar cualquier campo
-- **Operador:** Solo puede cambiar el estado entre `Activa` (3) ↔ `Cerrada por Mantenimiento` (1)
+- **Admin:** Puede actualizar cualquier campo (código, tipo, zona, mantenimiento, estado activo)
+- **Operador:** Solo puede cambiar `en_mantenimiento` entre `true` ↔ `false`
 
-**Body Admin:**
+**Body Admin (puede actualizar cualquier combinación):**
 ```json
 {
   "cod_cabana": "CAB-002-PREMIUM",
   "id_tipo_cab": 3,
-  "id_est_cab": 1,
-  "id_zona": 2
+  "id_zona": 2,
+  "en_mantenimiento": true,
+  "esta_activo": true
 }
 ```
 
-**Body Operador:**
+**Body Operador (SOLO puede cambiar mantenimiento):**
 ```json
 {
-  "id_est_cab": 1
+  "en_mantenimiento": true
 }
 ```
 
@@ -412,18 +437,18 @@ modules/cabanas/
     "id_cabana": 2,
     "cod_cabana": "CAB-002-PREMIUM",
     "id_tipo_cab": 3,
-    "id_est_cab": 1,
     "id_zona": 2,
     "esta_activo": true,
+    "en_mantenimiento": true,
     "fecha_modific": "2025-01-17T11:00:00.000Z"
   }
 }
 ```
 
 **Restricciones Operador:**
-- Solo puede modificar `id_est_cab`
-- Solo puede cambiar a estados: 1 (Cerrada por Mantenimiento) o 3 (Activa)
-- No puede cambiar cabañas inactivas
+- Solo puede modificar `en_mantenimiento` (true/false)
+- NO puede modificar: `cod_cabana`, `id_tipo_cab`, `id_zona`, `esta_activo`
+- No puede cambiar cabañas inactivas (`esta_activo=FALSE`)
 
 ---
 
@@ -444,9 +469,9 @@ modules/cabanas/
     "id_cabana": 2,
     "cod_cabana": "CAB-002-PREMIUM",
     "id_tipo_cab": 3,
-    "id_est_cab": 1,
     "id_zona": 2,
     "esta_activo": false,
+    "en_mantenimiento": false,
     "fecha_modific": "2025-01-17T12:00:00.000Z"
   }
 }
@@ -468,9 +493,9 @@ modules/cabanas/
     "id_cabana": 2,
     "cod_cabana": "CAB-002-PREMIUM",
     "id_tipo_cab": 3,
-    "id_est_cab": 1,
     "id_zona": 2,
     "esta_activo": true,
+    "en_mantenimiento": false,
     "fecha_modific": "2025-01-17T13:00:00.000Z"
   }
 }
@@ -486,16 +511,18 @@ modules/cabanas/
 3. ✅ No se puede eliminar una zona con cabañas activas
 4. ✅ Los nombres de zona deben ser únicos (case-insensitive)
 5. ✅ La capacidad debe ser >= 0
+6. ⚠️ **SIN campos de auditoría** (fecha_creacion, fecha_modific, usuarios) - Solo campos básicos
 
-### Cabañas
-1. ✅ Solo Admin puede crear cabañas
-2. ✅ Admin puede actualizar cualquier campo de la cabaña
-3. ✅ Admin puede hacer borrado lógico (cambiar a Inactiva)
-4. ✅ Operador solo puede cambiar estado entre **Activa** ↔ **Cerrada por Mantenimiento**
-5. ✅ No se puede eliminar cabaña con reservas activas
-6. ✅ Los códigos de cabaña deben ser únicos
-7. ✅ Indicador `reservada_hoy`: verifica si la cabaña tiene una reserva activa para la fecha actual
-8. ✅ Cliente no interactúa directamente con cabañas
+### Cabañas (Modelo Real con Campos Booleanos)
+1. ✅ Solo Admin puede crear cabañas (con `esta_activo=TRUE` y `en_mantenimiento=FALSE` por defecto)
+2. ✅ Admin puede actualizar cualquier campo: `cod_cabana`, `id_tipo_cab`, `id_zona`, `esta_activo`, `en_mantenimiento`
+3. ✅ Admin puede hacer borrado lógico (`esta_activo` → FALSE)
+4. ✅ Operador solo puede cambiar `en_mantenimiento` entre TRUE ↔ FALSE (NO puede cambiar otros campos)
+5. ✅ No se puede eliminar cabaña con reservas activas (check_out >= hoy)
+6. ✅ Los códigos de cabaña deben ser únicos (case-insensitive)
+7. ✅ Indicador `reservada_hoy`: verifica si la cabaña tiene una reserva activa para HOY
+8. ✅ **Auditoría completa**: fecha_creacion, fecha_modific, usuario_creacion, usuario_modificacion
+9. ✅ Cliente no interactúa directamente con cabañas (solo a través de reservas)
 
 ### Verificación de Reservas
 - Una cabaña está **reservada** para una fecha si:
