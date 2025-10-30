@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Check, AlertCircle, Home, Calendar, Users, DollarSign } from 'lucide-react';
-import { crearReserva } from './reservaService';
+import { ArrowLeft, Check, AlertCircle, Home, Calendar, Users, DollarSign, Loader2 } from 'lucide-react';
+import { crearReserva, obtenerServicios } from './reservaService';
 import { useAuth } from '../app/context/AuthContext';
 import Fondo from '../assets/fondo.jpg';
 
@@ -12,49 +12,44 @@ export default function ReservaServicios() {
   
   const { cabanasSeleccionadas, searchParams, precioTotal } = location.state || {};
 
+  const [serviciosDisponibles, setServiciosDisponibles] = useState([]);
   const [serviciosSeleccionados, setServiciosSeleccionados] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingServicios, setLoadingServicios] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
-  // Servicios disponibles (mock - preparado para integración futura)
-  const serviciosDisponibles = [
-    {
-      id: 1,
-      nombre: 'Spa & Wellness',
-      descripcion: 'Acceso al spa con masajes relajantes y tratamientos de bienestar',
-      precio: 5000,
-      icono: '💆'
-    },
-    {
-      id: 2,
-      nombre: 'Restaurante Gourmet',
-      descripcion: 'Desayuno, almuerzo y cena con menú de autor',
-      precio: 8000,
-      icono: '🍽️'
-    },
-    {
-      id: 3,
-      nombre: 'Excursiones',
-      descripcion: 'Guías especializados para trekking y actividades outdoor',
-      precio: 6000,
-      icono: '🥾'
-    }
-  ];
+  // Calcular noches
+  const noches = searchParams ? Math.ceil(
+    (new Date(searchParams.check_out) - new Date(searchParams.check_in)) / (1000 * 60 * 60 * 24)
+  ) : 0;
 
+  // Verificar que llegaron los datos necesarios
   useEffect(() => {
-    // Verificar que llegaron los datos necesarios
     if (!cabanasSeleccionadas || !searchParams) {
       navigate('/reserva');
     }
+  }, [cabanasSeleccionadas, searchParams, navigate]);
 
-    // Verificar autenticación
-    if (!isAuthenticated) {
-      // Guardar el estado para retomar después del login
-      localStorage.setItem('pendingReservation', JSON.stringify(location.state));
-      navigate('/login', { state: { from: '/reserva/servicios' } });
+  // Cargar servicios del backend (público - sin autenticación)
+  useEffect(() => {
+    const cargarServicios = async () => {
+      try {
+        setLoadingServicios(true);
+        const response = await obtenerServicios();
+        setServiciosDisponibles(response.data || []);
+      } catch (err) {
+        console.error('Error al cargar servicios:', err);
+        setError('No se pudieron cargar los servicios. Puedes continuar sin ellos.');
+      } finally {
+        setLoadingServicios(false);
+      }
+    };
+
+    if (cabanasSeleccionadas && searchParams) {
+      cargarServicios();
     }
-  }, [cabanasSeleccionadas, searchParams, isAuthenticated, navigate, location.state]);
+  }, [cabanasSeleccionadas, searchParams]);
 
   const toggleServicio = (idServicio) => {
     setServiciosSeleccionados(prev => {
@@ -66,19 +61,36 @@ export default function ReservaServicios() {
     });
   };
 
+  // Calcular precio de servicios: precio_servicio × noches × cant_personas
   const precioServicios = serviciosSeleccionados.reduce((total, id) => {
-    const servicio = serviciosDisponibles.find(s => s.id === id);
-    return total + (servicio ? servicio.precio : 0);
+    const servicio = serviciosDisponibles.find(s => s.id_servicio === id);
+    if (servicio) {
+      const precioServicio = parseFloat(servicio.precio_servicio);
+      return total + (precioServicio * noches * searchParams.cant_personas);
+    }
+    return total;
   }, 0);
 
   const precioFinal = precioTotal + precioServicios;
 
-  const handleCompletarReserva = async () => {
+  const handleConfirmar = () => {
+    // Si no está autenticado, guardar el estado y redirigir a login
     if (!isAuthenticated) {
+      localStorage.setItem('pendingReservation', JSON.stringify({
+        cabanasSeleccionadas,
+        searchParams,
+        precioTotal,
+        serviciosSeleccionados
+      }));
       navigate('/login', { state: { from: '/reserva/servicios' } });
       return;
     }
 
+    // Si está autenticado, crear la reserva directamente
+    handleCompletarReserva();
+  };
+
+  const handleCompletarReserva = async () => {
     setLoading(true);
     setError(null);
 
@@ -208,61 +220,77 @@ export default function ReservaServicios() {
         <div className="grid md:grid-cols-3 gap-8">
           {/* Columna 1 y 2: Servicios */}
           <div className="md:col-span-2 space-y-4">
-            <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg mb-6">
-              <p className="text-sm">
-                ℹ️ <strong>Nota:</strong> La integración completa con servicios está en desarrollo. 
-                Estos servicios son de ejemplo y no afectarán tu reserva actual.
-              </p>
-            </div>
-
-            {serviciosDisponibles.map((servicio) => {
-              const isSelected = serviciosSeleccionados.includes(servicio.id);
-              
-              return (
-                <div
-                  key={servicio.id}
-                  className={`bg-white/90 backdrop-blur-md rounded-xl shadow-lg p-6 transition-all duration-300 cursor-pointer ${
-                    isSelected ? 'ring-4 ring-orange-500' : 'hover:shadow-xl'
-                  }`}
-                  onClick={() => toggleServicio(servicio.id)}
+            {loadingServicios ? (
+              <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-lg p-12 text-center">
+                <Loader2 size={48} className="animate-spin text-orange-500 mx-auto mb-4" />
+                <p className="text-gray-600">Cargando servicios disponibles...</p>
+              </div>
+            ) : serviciosDisponibles.length === 0 ? (
+              <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-lg p-8 text-center">
+                <AlertCircle size={48} className="text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 mb-4">No hay servicios disponibles en este momento.</p>
+                <button
+                  onClick={handleConfirmar}
+                  className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-full"
                 >
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-start gap-4 flex-1">
-                      <div className="text-4xl">{servicio.icono}</div>
-                      <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">
-                          {servicio.nombre}
-                        </h3>
-                        <p className="text-gray-600 text-sm mb-3">
-                          {servicio.descripcion}
-                        </p>
-                        <p className="text-orange-500 font-bold">
-                          + ARS ${servicio.precio.toLocaleString('es-AR')}
-                        </p>
+                  Continuar sin servicios
+                </button>
+              </div>
+            ) : (
+              serviciosDisponibles.map((servicio) => {
+                const isSelected = serviciosSeleccionados.includes(servicio.id_servicio);
+              
+                return (
+                  <div
+                    key={servicio.id_servicio}
+                    className={`bg-white/90 backdrop-blur-md rounded-xl shadow-lg p-6 transition-all duration-300 cursor-pointer ${
+                      isSelected ? 'ring-4 ring-orange-500' : 'hover:shadow-xl'
+                    }`}
+                    onClick={() => toggleServicio(servicio.id_servicio)}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-start gap-4 flex-1">
+                        <div className="text-4xl">✨</div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-gray-900 mb-2">
+                            {servicio.nom_servicio}
+                          </h3>
+                          <p className="text-gray-600 text-sm mb-3">
+                            Precio por persona por noche: ARS ${parseFloat(servicio.precio_servicio).toLocaleString('es-AR')}
+                          </p>
+                          <p className="text-orange-500 font-bold">
+                            Total: + ARS ${(parseFloat(servicio.precio_servicio) * noches * searchParams.cant_personas).toLocaleString('es-AR')}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            ({noches} {noches === 1 ? 'noche' : 'noches'} × {searchParams.cant_personas} {searchParams.cant_personas === 1 ? 'persona' : 'personas'})
+                          </p>
+                        </div>
                       </div>
+                      <button
+                        className={`px-4 py-2 rounded-full font-semibold transition-all ${
+                          isSelected
+                            ? 'bg-orange-500 text-white'
+                            : 'bg-gray-200 text-gray-800'
+                        }`}
+                      >
+                        {isSelected ? '✓' : '+'}
+                      </button>
                     </div>
-                    <button
-                      className={`px-4 py-2 rounded-full font-semibold transition-all ${
-                        isSelected
-                          ? 'bg-orange-500 text-white'
-                          : 'bg-gray-200 text-gray-800'
-                      }`}
-                    >
-                      {isSelected ? '✓' : '+'}
-                    </button>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
 
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => setServiciosSeleccionados([])}
-                className="text-gray-600 hover:text-gray-800 text-sm underline"
-              >
-                Continuar sin servicios adicionales
-              </button>
-            </div>
+            {!loadingServicios && serviciosDisponibles.length > 0 && (
+              <div className="mt-6 text-center">
+                <button
+                  onClick={handleConfirmar}
+                  className="text-gray-600 hover:text-gray-800 text-sm underline"
+                >
+                  Continuar sin servicios adicionales
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Columna 3: Resumen */}
@@ -329,8 +357,8 @@ export default function ReservaServicios() {
 
               {/* Botón de confirmar */}
               <button
-                onClick={handleCompletarReserva}
-                disabled={loading}
+                onClick={handleConfirmar}
+                disabled={loading || loadingServicios}
                 className="w-full mt-6 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white font-bold py-4 rounded-full shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
@@ -341,13 +369,13 @@ export default function ReservaServicios() {
                 ) : (
                   <>
                     <Check size={20} />
-                    Completar compra
+                    {isAuthenticated ? 'Completar Reserva' : 'Continuar (Login requerido)'}
                   </>
                 )}
               </button>
 
               <p className="text-xs text-gray-500 text-center mt-4">
-                Al confirmar aceptas nuestros términos y condiciones
+                {isAuthenticated ? 'Al confirmar aceptas nuestros términos y condiciones' : 'Necesitas iniciar sesión para completar la reserva'}
               </p>
             </div>
           </div>

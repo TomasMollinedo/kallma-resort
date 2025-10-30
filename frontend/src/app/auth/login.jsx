@@ -25,18 +25,32 @@ export default function Login() {
       // Guardar usuario y token en el contexto
       login(response.data.user, response.data.token);
       
-      // Redirigir según el rol del usuario
-      switch (response.data.user.rol) {
-        case 'Administrador':
-          navigate('/dashboard/admin');
-          break;
-        case 'Operador':
-          navigate('/dashboard/operador');
-          break;
-        case 'Cliente':
-        default:
-          navigate('/dashboard/cliente');
-          break;
+      // Verificar si hay una reserva pendiente
+      const pendingReservation = localStorage.getItem('pendingReservation');
+      
+      if (pendingReservation && response.data.user.rol === 'Cliente') {
+        // Parsear los datos de la reserva pendiente
+        const reservaData = JSON.parse(pendingReservation);
+        
+        // Redirigir de vuelta a la página de servicios con los datos
+        navigate('/reserva/servicios', { 
+          state: reservaData,
+          replace: true 
+        });
+      } else {
+        // Redirigir según el rol del usuario
+        switch (response.data.user.rol) {
+          case 'Administrador':
+            navigate('/dashboard/admin');
+            break;
+          case 'Operador':
+            navigate('/dashboard/operador');
+            break;
+          case 'Cliente':
+          default:
+            navigate('/dashboard/cliente');
+            break;
+        }
       }
     } catch (err) {
       setError(err.message || 'Error al iniciar sesión');

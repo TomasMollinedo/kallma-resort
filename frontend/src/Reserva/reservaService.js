@@ -59,3 +59,16 @@ export const obtenerMisReservas = async (token) => {
     throw error.response?.data || { error: 'Error al obtener las reservas' };
   }
 };
+
+/**
+ * Obtener servicios disponibles (público - sin autenticación)
+ * @returns {Promise} Respuesta con los servicios disponibles
+ */
+export const obtenerServicios = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/servicios`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: 'Error al obtener los servicios' };
+  }
+};
