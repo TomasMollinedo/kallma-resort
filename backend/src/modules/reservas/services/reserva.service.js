@@ -206,15 +206,18 @@ export const crearReserva = async ({ check_in, check_out, cant_personas, cabanas
     
     const idEstadoConfirmada = estadoResult.rows[0].id_est_op;
 
+    // Calcular seña del 25% del monto total
+    const montoPagado = montoTotal * 0.25;
+
     // Crear reserva
     const reservaResult = await client.query(
       `INSERT INTO reserva (
         cod_reserva, check_in, check_out, cant_personas,
         id_est_op, esta_pagada, monto_total_res, monto_pagado,
         fecha_creacion, id_usuario_creacion
-      ) VALUES ($1, $2::date, $3::date, $4, $5, FALSE, $6, 0, NOW(), $7)
+      ) VALUES ($1, $2::date, $3::date, $4, $5, FALSE, $6, $7, NOW(), $8)
       RETURNING *`,
-      [codigoReserva, checkInStr, checkOutStr, cant_personas, idEstadoConfirmada, montoTotal, idUsuario]
+      [codigoReserva, checkInStr, checkOutStr, cant_personas, idEstadoConfirmada, montoTotal, montoPagado, idUsuario]
     );
 
     const reserva = reservaResult.rows[0];

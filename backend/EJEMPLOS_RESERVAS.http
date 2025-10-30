@@ -3,6 +3,10 @@
 ### Ejemplos de requests HTTP para el módulo de Reservas
 ### Base URL: http://localhost:3000/api
 ###
+### NOTA IMPORTANTE: Al crear una reserva, el sistema automáticamente
+### calcula y registra una SEÑA DEL 25% del monto total en el campo
+### monto_pagado. El cliente debe pagar esta seña al confirmar la reserva.
+###
 
 ### Variables
 @baseUrl = http://localhost:3000/api
@@ -66,9 +70,13 @@ Content-Type: application/json
 
 ###############################################
 ### 2. CREAR RESERVA
+### IMPORTANTE: Al crear la reserva, se calcula automáticamente
+### una seña del 25% del monto total y se registra en monto_pagado.
+### El cliente debe pagar esta seña al confirmar la reserva.
 ###############################################
 
 ### 2.1 Crear reserva con 1 cabaña y sin servicios
+### Resultado esperado: monto_pagado = 25% del monto_total_res
 POST {{baseUrl}}/reservas
 Content-Type: application/json
 Authorization: Bearer {{tokenCliente}}

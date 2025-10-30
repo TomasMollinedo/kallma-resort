@@ -104,7 +104,7 @@ Crea una nueva reserva con cabañas y servicios (transacción atómica).
     "estado_operativo": "Cancelada",
     "esta_pagada": false,
     "monto_total_res": "700000.00",
-    "monto_pagado": "0.00",
+    "monto_pagado": "175000.00",
     "noches": 4,
     "cabanas": [...],
     "servicios": [...]
@@ -118,9 +118,10 @@ Crea una nueva reserva con cabañas y servicios (transacción atómica).
 3. Verificar que no estén reservadas en las fechas seleccionadas
 4. Validar servicios (opcional)
 5. Calcular monto total (cabañas × noches + servicios)
-6. Generar código único de reserva
-7. Crear reserva en DB con estado **"Confirmada"**
-8. Insertar relaciones en `cabanas_reserva` y `servicio_reserva`
+6. **Calcular seña del 25% del monto total**
+7. Generar código único de reserva
+8. Crear reserva en DB con estado **"Confirmada"** y `monto_pagado` = 25% del total
+9. Insertar relaciones en `cabanas_reserva` y `servicio_reserva`
 
 **Código de reserva:** Formato `RES-YYYYMMDD-XXXXX`
 
@@ -149,7 +150,7 @@ Lista las reservas del cliente autenticado.
       "estado_operativo": "Cancelada",
       "esta_pagada": false,
       "monto_total_res": "700000.00",
-      "monto_pagado": "0.00",
+      "monto_pagado": "175000.00",
       "cantidad_cabanas": 2,
       "cantidad_servicios": 2
     }
@@ -186,7 +187,7 @@ Lista todas las reservas con filtros (Operador/Admin).
       "estado_operativo": "Cancelada",
       "esta_pagada": false,
       "monto_total_res": "700000.00",
-      "monto_pagado": "0.00",
+      "monto_pagado": "175000.00",
       "cliente_nombre": "Juan Pérez",
       "cliente_email": "juan@example.com",
       "cantidad_cabanas": 2,
@@ -219,7 +220,7 @@ Obtiene el detalle completo de una reserva.
     "estado_operativo": "Cancelada",
     "esta_pagada": false,
     "monto_total_res": "700000.00",
-    "monto_pagado": "0.00",
+    "monto_pagado": "175000.00",
     "cliente_nombre": "Juan Pérez",
     "cliente_email": "juan@example.com",
     "cliente_telefono": "+5491123456789",
@@ -308,6 +309,41 @@ Actualiza el estado de una reserva (operativo y/o financiero).
 
 ---
 
+## 💰 Cálculo de Montos y Seña
+
+### Fórmula de Cálculo
+
+**Monto Total de la Reserva:**
+```
+monto_total_res = (Σ precio_noche_cabañas × noches) + (Σ precio_servicios × noches × cant_personas)
+```
+
+**Monto de Seña (25%):**
+```
+monto_pagado = monto_total_res × 0.25
+```
+
+### Regla de Negocio: Seña Obligatoria
+
+Al crear una reserva, el sistema **automáticamente calcula y registra una seña del 25%** del monto total en el campo `monto_pagado`.
+
+**Características:**
+- ✅ **Porcentaje fijo:** 25% no configurable
+- ✅ **Cálculo automático:** Backend calcula sin intervención del usuario
+- ✅ **Estado de pago:** `esta_pagada = FALSE` (solo pagó seña, no el total)
+- ✅ **Saldo pendiente:** `monto_total_res - monto_pagado` (75% restante)
+
+**Ejemplo práctico:**
+```
+Monto total de reserva: $700,000
+Seña automática (25%): $175,000
+Saldo pendiente (75%): $525,000
+```
+
+El campo `esta_pagada` permanece en `FALSE` hasta que el cliente complete el pago total de la reserva. El staff puede actualizar `monto_pagado` y `esta_pagada` mediante el endpoint `PATCH /api/reservas/:id/status`.
+
+---
+
 ## 🔐 Matriz de Permisos
 
 | Endpoint | Público | Cliente | Operador | Admin |
@@ -359,6 +395,7 @@ Según el esquema de base de datos:
 4. Usuario autenticado crea reserva
    POST /api/reservas
    - Se crea reserva con estado "Confirmada"
+   - **Se registra automáticamente seña del 25% en monto_pagado**
    - Se genera código único (RES-YYYYMMDD-XXXXX)
    - Se vinculan cabañas en cabanas_reserva
    - Se vinculan servicios en servicio_reserva
