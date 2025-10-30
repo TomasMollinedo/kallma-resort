@@ -241,7 +241,38 @@ export const obtenerCabanaPorId = async (idCabana) => {
       throw new Error("CABANA_NOT_FOUND");
     }
 
-    return result.rows[0];
+    const cabana = result.rows[0];
+
+    // Obtener las reservas vinculadas a esta cabaña
+    const reservasQuery = `
+      SELECT 
+        r.id_reserva,
+        r.cod_reserva,
+        r.check_in,
+        r.check_out,
+        r.cant_personas,
+        r.monto_total_res,
+        r.monto_pagado,
+        r.esta_pagada,
+        eo.nom_estado as estado,
+        u.nombre as nombre_cliente,
+        u.email as email_cliente
+      FROM cabanas_reserva cr
+      INNER JOIN reserva r ON cr.id_reserva = r.id_reserva
+      INNER JOIN estado_operativo eo ON r.id_est_op = eo.id_est_op
+      INNER JOIN usuario u ON r.id_usuario_creacion = u.id_usuario
+      WHERE cr.id_cabana = $1
+      ORDER BY r.check_in DESC
+      LIMIT 10
+    `;
+
+    const reservasResult = await pool.query(reservasQuery, [idCabana]);
+
+    // Agregar las reservas al objeto de la cabaña
+    cabana.reservas = reservasResult.rows;
+    cabana.total_reservas = reservasResult.rows.length;
+
+    return cabana;
   } catch (error) {
     console.error("Error en obtenerCabanaPorId:", error);
     if (error.message === "CABANA_NOT_FOUND") {
