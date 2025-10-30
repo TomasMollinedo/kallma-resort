@@ -12,7 +12,7 @@ import { pool } from "../../../config/database.js";
 export const getUserById = async (userId) => {
   const result = await pool.query(
     `SELECT u.id_usuario, u.email, u.nombre, u.telefono, u.dni, 
-            u.esta_activo, u.fecha_creacion, r.nom_rol
+            u.esta_activo, u.fecha_creacion, u.fecha_modific, r.nom_rol
      FROM usuario u
      INNER JOIN rol_usuario r ON u.id_rol_usuario = r.id_rol_usuario
      WHERE u.id_usuario = $1`,
@@ -34,6 +34,7 @@ export const getUserById = async (userId) => {
     rol: user.nom_rol,
     esta_activo: user.esta_activo,
     fecha_creacion: user.fecha_creacion,
+    fecha_modific: user.fecha_modific,
   };
 };
 
@@ -46,7 +47,7 @@ export const getAllUsers = async (filters = {}) => {
 
   let query = `
     SELECT u.id_usuario, u.email, u.nombre, u.telefono, u.dni, 
-           u.esta_activo, u.fecha_creacion, r.nom_rol
+           u.esta_activo, u.fecha_creacion, u.fecha_modific, r.nom_rol
     FROM usuario u
     INNER JOIN rol_usuario r ON u.id_rol_usuario = r.id_rol_usuario
     WHERE 1=1
@@ -150,6 +151,7 @@ export const getAllUsers = async (filters = {}) => {
       rol: user.nom_rol,
       esta_activo: user.esta_activo,
       fecha_creacion: user.fecha_creacion,
+      fecha_modific: user.fecha_modific,
     })),
     pagination: {
       total,

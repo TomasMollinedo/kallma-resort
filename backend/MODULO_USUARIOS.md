@@ -221,7 +221,8 @@ GET /api/users?nombre=Juan&rol=Cliente&esta_activo=true
       "dni": "12345678",
       "rol": "Cliente",
       "esta_activo": true,
-      "fecha_creacion": "2024-10-16T10:00:00.000Z"
+      "fecha_creacion": "2024-10-16T10:00:00.000Z",
+      "fecha_modific": "2024-10-20T15:30:00.000Z"
     }
   ],
   "pagination": {
@@ -258,7 +259,8 @@ GET /api/users/5
     "dni": "12345678",
     "rol": "Cliente",
     "esta_activo": true,
-    "fecha_creacion": "2024-10-16T10:00:00.000Z"
+    "fecha_creacion": "2024-10-16T10:00:00.000Z",
+    "fecha_modific": "2024-10-20T15:30:00.000Z"
   }
 }
 ```
