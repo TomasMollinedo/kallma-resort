@@ -136,32 +136,36 @@ export default function CabanaDetailModal({ cabana, onClose, onEdit }) {
                 Estado de la Cabaña
               </label>
               {getEstadoBadge()}
-              <p className="text-sm text-gray-600 mt-2">{estado.descripcion}</p>
+              {estado.descripcion && (
+                <p className="text-sm text-gray-600 mt-2">{estado.descripcion}</p>
+              )}
             </div>
 
             {/* Estado de Mantenimiento */}
-            <div className={`rounded-lg p-4 ${cabana.en_mantenimiento ? 'bg-yellow-50' : 'bg-green-50'}`}>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Mantenimiento
-              </label>
-              {cabana.en_mantenimiento ? (
-                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800 border border-yellow-300">
-                  <AlertTriangle size={16} />
-                  En Mantenimiento
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-green-100 text-green-800 border border-green-300">
-                  <CheckCircle size={16} />
-                  Operativa
-                </span>
-              )}
-              <p className="text-sm text-gray-600 mt-2">
-                {cabana.en_mantenimiento 
-                  ? 'La cabaña está cerrada temporalmente por mantenimiento'
-                  : 'La cabaña está operativa y disponible'
-                }
-              </p>
-            </div>
+            {cabana.esta_activo && (
+              <div className={`rounded-lg p-4 ${cabana.en_mantenimiento ? 'bg-yellow-50' : 'bg-green-50'}`}>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Mantenimiento
+                </label>
+                {cabana.en_mantenimiento ? (
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800 border border-yellow-300">
+                    <AlertTriangle size={16} />
+                    En Mantenimiento
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-green-100 text-green-800 border border-green-300">
+                    <CheckCircle size={16} />
+                    Operativa
+                  </span>
+                )}
+                <p className="text-sm text-gray-600 mt-2">
+                  {cabana.en_mantenimiento 
+                    ? 'La cabaña está cerrada temporalmente por mantenimiento'
+                    : 'La cabaña está operativa y disponible'
+                  }
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Información de Auditoría */}

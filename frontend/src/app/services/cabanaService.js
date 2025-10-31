@@ -168,25 +168,25 @@ export const formatearFecha = (fecha) => {
  * Obtener descripción del estado de la cabaña
  * @param {boolean} estaActivo - Estado activo
  * @param {boolean} enMantenimiento - Estado de mantenimiento
- * @returns {Object} {texto, color}
+ * @returns {Object} {texto, color, descripcion}
  */
 export const getEstadoCabana = (estaActivo, enMantenimiento) => {
   if (!estaActivo) {
     return {
-      texto: 'Inactiva',
+      texto: 'Cabaña Inactiva',
       color: 'red',
-      descripcion: 'Cabaña eliminada (borrado lógico)'
+      descripcion: ''
     };
   }
-  
+
   if (enMantenimiento) {
     return {
-      texto: 'En Mantenimiento',
+      texto: 'Activa',
       color: 'yellow',
-      descripcion: 'Cabaña temporalmente cerrada por mantenimiento'
+      descripcion: 'Cabaña activa, actualmente en mantenimiento'
     };
   }
-  
+
   return {
     texto: 'Activa',
     color: 'green',
