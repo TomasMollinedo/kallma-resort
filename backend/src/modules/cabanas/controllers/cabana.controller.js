@@ -83,26 +83,44 @@ export const listarCabanasPorZona = async (req, res) => {
  */
 export const listarCabanasReservadas = async (req, res) => {
   try {
-    let fecha = new Date();
+
+    const fechaActual = new Date();
+    let fechaConsulta = fechaActual.toISOString().split("T")[0]; // HOY por defecto
 
     if (req.query.fecha) {
-      fecha = new Date(req.query.fecha);
-
-      if (isNaN(fecha.getTime())) {
+      // Validar formato YYYY-MM-DD con regex
+      const fechaRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!fechaRegex.test(req.query.fecha)) {
         return res.status(400).json({
           ok: false,
           error: "Formato de fecha inválido. Use YYYY-MM-DD",
         });
       }
+      
+      // Validar que sea una fecha válida
+      const partes = req.query.fecha.split('-');
+      const fechaTest = new Date(partes[0], partes[1] - 1, partes[2]);
+      if (
+        fechaTest.getFullYear() != partes[0] ||
+        fechaTest.getMonth() != partes[1] - 1 ||
+        fechaTest.getDate() != partes[2]
+      ) {
+        return res.status(400).json({
+          ok: false,
+          error: "Fecha inválida",
+        });
+      }
+
+      fechaConsulta = req.query.fecha; // Usar el string directamente
     }
 
-    const cabanas = await cabanaService.obtenerCabanasReservadas(fecha);
+    const cabanas = await cabanaService.obtenerCabanasReservadas(fechaConsulta);
 
     res.json({
       ok: true,
       data: cabanas,
       total: cabanas.length,
-      fecha_consultada: fecha.toISOString().split("T")[0],
+      fecha_consultada: fechaConsulta,
     });
   } catch (error) {
     console.error("Error en listarCabanasReservadas:", error);

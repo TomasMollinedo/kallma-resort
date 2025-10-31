@@ -147,8 +147,8 @@ export const obtenerCabanasPorZona = async (idZona) => {
 
 /**
  * Obtener cabañas reservadas para una fecha específica
- * @param {Date} fecha - Fecha a verificar
- * @returns {Promise<Array>} Lista de cabañas reservadas
+ * @param {string} fecha - Fecha a verificar en formato YYYY-MM-DD
+ * @returns {Promise<Array>} Lista de cabañas reservadas con datos de cabana y reserva
  */
 export const obtenerCabanasReservadas = async (fecha) => {
   try {
@@ -156,25 +156,18 @@ export const obtenerCabanasReservadas = async (fecha) => {
       SELECT DISTINCT
         c.id_cabana,
         c.cod_cabana,
-        c.en_mantenimiento,
         tc.nom_tipo_cab,
         z.nom_zona,
         r.cod_reserva,
         r.check_in,
         r.check_out,
-        eo.nom_estado as estado_reserva,
-        c.fecha_creacion,
-        c.fecha_modific,
-        uc.nombre as usuario_creacion,
-        um.nombre as usuario_modificacion
+        eo.nom_estado as estado_reserva
       FROM cabana c
       INNER JOIN cabanas_reserva cr ON c.id_cabana = cr.id_cabana
       INNER JOIN reserva r ON cr.id_reserva = r.id_reserva
       INNER JOIN estado_operativo eo ON r.id_est_op = eo.id_est_op
       INNER JOIN tipo_cabana tc ON c.id_tipo_cab = tc.id_tipo_cab
       INNER JOIN zonas z ON c.id_zona = z.id_zona
-      INNER JOIN usuario uc ON c.id_usuario_creacion = uc.id_usuario
-      LEFT JOIN usuario um ON c.id_usuario_modific = um.id_usuario
       WHERE r.check_in <= $1
         AND r.check_out >= $1
         AND eo.nom_estado NOT IN ('Cancelada')

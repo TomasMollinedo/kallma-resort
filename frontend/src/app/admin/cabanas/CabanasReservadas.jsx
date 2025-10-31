@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { Calendar, Search, Loader2, AlertCircle, Home, MapPin, Users, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Calendar, Search, Loader2, AlertCircle, Home, MapPin, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getCabanasReservadas } from '../../services/cabanaService';
+import { formatIsoDateForDisplay } from '../../utils/dateUtils';
 
 export default function CabanasReservadas() {
   const { token } = useAuth();
 
   // Estados
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [fechaConsultada, setFechaConsultada] = useState(new Date().toISOString().split('T')[0]);
   const [cabanas, setCabanas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -25,11 +27,13 @@ export default function CabanasReservadas() {
     setLoading(true);
     setError(null);
     setSearched(true);
+    setFechaConsultada(fecha);
 
     try {
       const response = await getCabanasReservadas(fecha, token);
       // El backend retorna { ok, data, fecha_consultada }
       setCabanas(response?.data || []);
+      setFechaConsultada(response?.fecha_consultada || fecha);
     } catch (err) {
       console.error('Error al consultar cabañas reservadas:', err);
       setError(err.message || 'Error al consultar las cabañas reservadas');
@@ -37,31 +41,6 @@ export default function CabanasReservadas() {
     } finally {
       setLoading(false);
     }
-  };
-
-  /**
-   * Obtener badge de estado de cabaña
-   */
-  const getEstadoBadge = (estaActivo, enMantenimiento) => {
-    if (!estaActivo) {
-      return {
-        texto: 'Inactiva',
-        color: 'bg-red-100 text-red-800 border-red-300',
-        icon: <XCircle size={16} />
-      };
-    }
-    if (enMantenimiento) {
-      return {
-        texto: 'Mantenimiento',
-        color: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-        icon: <AlertTriangle size={16} />
-      };
-    }
-    return {
-      texto: 'Activa',
-      color: 'bg-green-100 text-green-800 border-green-300',
-      icon: <CheckCircle size={16} />
-    };
   };
 
   /**
@@ -95,45 +74,41 @@ export default function CabanasReservadas() {
       </div>
 
       {/* Filtros */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <div className="flex items-center gap-2 mb-4">
           <Calendar size={20} className="text-gray-600" />
           <span className="font-semibold text-gray-900">Seleccionar Fecha de Consulta</span>
         </div>
 
-        <div className="flex items-end gap-4">
-          <div className="flex-1 max-w-md">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Fecha a Consultar
-            </label>
+        <div className="max-w-md">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Fecha a Consultar
+          </label>
+          <div className="flex gap-2">
             <input
               type="date"
               value={fecha}
               onChange={(e) => setFecha(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (!loading) {
+                    handleConsultar();
+                  }
+                }
+              }}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
-            <p className="text-xs text-gray-500 mt-1">
-              💡 Selecciona la fecha para ver qué cabañas están reservadas
-            </p>
-          </div>
-
-          <button
-            onClick={handleConsultar}
-            disabled={loading || !fecha}
-            className="px-6 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-semibold rounded-lg transition flex items-center gap-2"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="animate-spin" size={20} />
-                Consultando...
-              </>
-            ) : (
-              <>
+            <button
+                onClick={handleConsultar}
+                className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition"
+              >
                 <Search size={20} />
-                Consultar
-              </>
-            )}
-          </button>
+              </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            💡 Selecciona la fecha para ver qué cabañas están reservadas
+          </p>
         </div>
       </div>
 
@@ -158,7 +133,7 @@ export default function CabanasReservadas() {
                 Sin Reservas
               </h3>
               <p className="text-gray-600">
-                No hay cabañas reservadas para el {new Date(fecha).toLocaleDateString('es-AR')}
+                No hay cabañas reservadas para el {formatIsoDateForDisplay(fechaConsultada)}
               </p>
             </div>
           ) : (
@@ -166,7 +141,7 @@ export default function CabanasReservadas() {
               {/* Header de resultados */}
               <div className="bg-blue-50 border-b border-blue-200 px-6 py-4">
                 <h3 className="font-bold text-blue-900">
-                  {cabanas.length} Cabaña{cabanas.length !== 1 ? 's' : ''} Reservada{cabanas.length !== 1 ? 's' : ''} para el {new Date(fecha).toLocaleDateString('es-AR')}
+                  {cabanas.length} Cabaña{cabanas.length !== 1 ? 's' : ''} Reservada{cabanas.length !== 1 ? 's' : ''} para el {formatIsoDateForDisplay(fechaConsultada)}
                 </h3>
               </div>
 
@@ -185,97 +160,64 @@ export default function CabanasReservadas() {
                         Zona
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                        Capacidad
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                        Precio/Noche
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                        Estado Cabaña
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                        Reserva
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                        Check-in / Check-out
+                        Código Reserva
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                         Estado Reserva
                       </th>
+                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                        Check-in / Check-out
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {cabanas.map((cabana) => {
-                      const estadoCabana = getEstadoBadge(cabana.esta_activo, cabana.en_mantenimiento);
-                      return (
-                        <tr key={cabana.id_cabana} className="hover:bg-gray-50">
-                          {/* Cabaña */}
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              <Home size={18} className="text-orange-600" />
-                              <div>
-                                <div className="text-sm font-bold text-gray-900">{cabana.cod_cabana}</div>
-                                <div className="text-xs text-gray-500">ID: {cabana.id_cabana}</div>
-                              </div>
+                    {cabanas.map((cabana) => (
+                      <tr key={cabana.id_cabana} className="hover:bg-gray-50">
+                        {/* Cabaña */}
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <Home size={18} className="text-orange-600" />
+                            <div>
+                              <div className="text-sm font-bold text-gray-900">{cabana.cod_cabana}</div>
+                              <div className="text-xs text-gray-500">ID: {cabana.id_cabana}</div>
                             </div>
-                          </td>
+                          </div>
+                        </td>
 
-                          {/* Tipo */}
-                          <td className="px-6 py-4 text-sm text-gray-900">
-                            {cabana.nom_tipo_cab}
-                          </td>
+                        {/* Tipo */}
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {cabana.nom_tipo_cab}
+                        </td>
 
-                          {/* Zona */}
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-1 text-sm text-gray-900">
-                              <MapPin size={14} className="text-gray-500" />
-                              {cabana.nom_zona}
-                            </div>
-                          </td>
+                        {/* Zona */}
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-1 text-sm text-gray-900">
+                            <MapPin size={14} className="text-gray-500" />
+                            {cabana.nom_zona}
+                          </div>
+                        </td>
 
-                          {/* Capacidad */}
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-1 text-sm text-gray-900">
-                              <Users size={14} className="text-gray-500" />
-                              {cabana.capacidad}
-                            </div>
-                          </td>
+                        {/* Código Reserva */}
+                        <td className="px-6 py-4 text-sm font-medium text-blue-600">
+                          {cabana.cod_reserva}
+                        </td>
 
-                          {/* Precio */}
-                          <td className="px-6 py-4 text-sm font-semibold text-gray-900">
-                            ${cabana.precio_noche?.toLocaleString()}
-                          </td>
+                        {/* Estado Reserva */}
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getEstadoReservaBadge(cabana.estado_reserva)}`}>
+                            {cabana.estado_reserva}
+                          </span>
+                        </td>
 
-                          {/* Estado Cabaña */}
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border ${estadoCabana.color}`}>
-                              {estadoCabana.icon}
-                              {estadoCabana.texto}
-                            </span>
-                          </td>
-
-                          {/* Código Reserva */}
-                          <td className="px-6 py-4 text-sm font-medium text-blue-600">
-                            {cabana.cod_reserva}
-                          </td>
-
-                          {/* Fechas */}
-                          <td className="px-6 py-4 text-sm text-gray-700">
-                            <div>{new Date(cabana.check_in).toLocaleDateString('es-AR')}</div>
-                            <div className="text-xs text-gray-500">
-                              hasta {new Date(cabana.check_out).toLocaleDateString('es-AR')}
-                            </div>
-                          </td>
-
-                          {/* Estado Reserva */}
-                          <td className="px-6 py-4">
-                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getEstadoReservaBadge(cabana.estado_reserva)}`}>
-                              {cabana.estado_reserva}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                        {/* Fechas */}
+                        <td className="px-6 py-4 text-sm text-gray-700">
+                          <div>{formatIsoDateForDisplay(cabana.check_in)}</div>
+                          <div className="text-xs text-gray-500">
+                            hasta {formatIsoDateForDisplay(cabana.check_out)}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
