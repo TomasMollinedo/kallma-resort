@@ -1,6 +1,6 @@
-import cabana1 from '../assets/Cabaña1.webp';
-import cabana2 from '../assets/Cabaña2.webp';
-import cabana3 from '../assets/Cabaña3.webp';
+import cabana1 from '../assets/Cabana1.webp';
+import cabana2 from '../assets/Cabana2.webp';
+import cabana3 from '../assets/Cabana3.webp';
 
 export const cabanas = [
   {

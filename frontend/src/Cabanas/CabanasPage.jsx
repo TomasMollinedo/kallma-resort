@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import CabanaCard from './CabañasCard';
-import { cabanas } from './CabañasData';
+import CabanaCard from './CabanasasCard';
+import { cabanas } from './CabanasData';
 import Fondo from '../assets/fondo.jpg'; 
 
 export default function CabanasPage() {

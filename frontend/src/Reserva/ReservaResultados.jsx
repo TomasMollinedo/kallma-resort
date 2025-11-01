@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Users, DollarSign, Home } from 'lucide-react';
 import Fondo from '../assets/fondo.jpg';
-import cabanaEsencialImg from '../assets/Cabaña1.webp';
-import cabanaConfortImg from '../assets/Cabaña2.webp';
-import cabanaPremiumImg from '../assets/Cabaña3.webp';
+import cabanaEsencialImg from '../assets/Cabana1.webp';
+import cabanaConfortImg from '../assets/Cabana2.webp';
+import cabanaPremiumImg from '../assets/Cabana3.webp';
 
 export default function ReservaResultados({ cabanas, searchParams, onNuevaBusqueda }) {
   const navigate = useNavigate();

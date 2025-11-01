@@ -6,7 +6,7 @@ import { AuthProvider } from './app/context/AuthContext';
 // Componentes públicos del catálogo
 import Header from './components/Header';
 import Footer from './components/Footer';
-import CabanasPage from './Cabañas/CabañasPage.jsx'; 
+import CabanasPage from './Cabanas/CabanasPage.jsx'; 
 import ServiciosPage from './Servicios/ServiciosPage.jsx'; 
 import ActividadesPage from './Actividades/ActividadesPage.jsx'; 
 import InformacionPage from './InformacionPage.jsx'; 
