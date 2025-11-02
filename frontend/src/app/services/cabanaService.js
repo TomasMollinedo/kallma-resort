@@ -4,6 +4,7 @@
  */
 
 import { authenticatedRequest } from './api';
+import { formatIsoDateTimeForDisplay } from '../utils/dateUtils';
 
 const BASE_URL = '/cabanas';
 
@@ -153,15 +154,7 @@ export const restaurarCabana = async (id, token) => {
  */
 export const formatearFecha = (fecha) => {
   if (!fecha) return 'No disponible';
-  
-  const date = new Date(fecha);
-  const dia = date.getDate().toString().padStart(2, '0');
-  const mes = (date.getMonth() + 1).toString().padStart(2, '0');
-  const anio = date.getFullYear();
-  const horas = date.getHours().toString().padStart(2, '0');
-  const minutos = date.getMinutes().toString().padStart(2, '0');
-  
-  return `${dia}/${mes}/${anio} ${horas}:${minutos}`;
+  return formatIsoDateTimeForDisplay(fecha);
 };
 
 /**

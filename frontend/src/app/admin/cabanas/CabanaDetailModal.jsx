@@ -1,5 +1,6 @@
 import { X, Home, Edit2, Calendar, User, CheckCircle, XCircle, AlertTriangle, MapPin } from 'lucide-react';
 import { formatearFecha, getEstadoCabana } from '../../services/cabanaService';
+import { formatIsoDateForDisplay } from '../../utils/dateUtils';
 
 export default function CabanaDetailModal({ cabana, onClose, onEdit }) {
   if (!cabana) return null;
@@ -282,10 +283,10 @@ export default function CabanaDetailModal({ cabana, onClose, onEdit }) {
                           <div className="text-xs text-gray-500">{reserva.email_cliente}</div>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">
-                          {new Date(reserva.check_in).toLocaleDateString('es-AR')}
+                          {formatIsoDateForDisplay(reserva.check_in)}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">
-                          {new Date(reserva.check_out).toLocaleDateString('es-AR')}
+                          {formatIsoDateForDisplay(reserva.check_out)}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">{reserva.cant_personas}</td>
                         <td className="px-4 py-3 text-sm font-semibold text-gray-900">

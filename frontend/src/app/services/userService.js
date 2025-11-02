@@ -1,4 +1,5 @@
 import { authenticatedRequest } from './api';
+import { formatIsoDateTimeForDisplay } from '../utils/dateUtils';
 
 const API_URL = 'http://localhost:4000/api';
 
@@ -141,11 +142,5 @@ export const getRoles = () => {
  */
 export const formatearFecha = (fecha) => {
   if (!fecha) return '-';
-  return new Date(fecha).toLocaleDateString('es-AR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  return formatIsoDateTimeForDisplay(fecha);
 };

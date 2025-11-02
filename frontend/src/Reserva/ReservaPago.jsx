@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Check, AlertCircle, Home, Calendar, Users, CreditCard, Lock } from 'lucide-react';
 import { crearReserva } from './reservaService';
 import { useAuth } from '../app/context/AuthContext';
+import { formatIsoDateForDisplay } from '../app/utils/dateUtils';
 import Fondo from '../assets/fondo.jpg';
 
 export default function ReservaPago() {
@@ -359,7 +360,7 @@ export default function ReservaPago() {
                   <div>
                     <p className="font-semibold text-gray-900">Fechas</p>
                     <p className="text-gray-600">
-                      {new Date(searchParams.check_in + 'T00:00:00').toLocaleDateString('es-AR')} - {new Date(searchParams.check_out + 'T00:00:00').toLocaleDateString('es-AR')}
+                      {formatIsoDateForDisplay(searchParams.check_in)} - {formatIsoDateForDisplay(searchParams.check_out)}
                     </p>
                   </div>
                 </div>
