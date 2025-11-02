@@ -46,7 +46,14 @@ router.get("/me", authenticate, listarReservasCliente);
 /**
  * GET /api/reservas
  * Listar todas las reservas con filtros
- * Query params: cod_reserva?, check_in?, check_out?, id_est_op?, esta_pagada?
+ * Query params:
+ *  - cod_reserva: buscador por código parcial
+ *  - fecha_desde, fecha_hasta: ventana con superposición (formato YYYY-MM-DD)
+ *  - arrivals_on: llegadas ese día (r.check_in = D)
+ *  - departures_on: salidas ese día (r.check_out = D)
+ *  - inhouse_on: hospedados ese día (r.check_in <= D AND r.check_out > D)
+ *  - id_est_op: filtrar por estado operativo
+ *  - esta_pagada: true/false
  * Acceso: Operador / Admin
  */
 router.get("/", authenticate, requireStaff, listarTodasReservas);

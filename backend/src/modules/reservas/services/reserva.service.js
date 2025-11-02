@@ -339,23 +339,54 @@ export const obtenerTodasReservas = async (filters = {}) => {
     const params = [];
     let paramCount = 1;
 
+    // Buscador por código de reserva
     if (filters.cod_reserva) {
       query += ` AND r.cod_reserva ILIKE $${paramCount}`;
       params.push(`%${filters.cod_reserva}%`);
       paramCount++;
     }
 
-    if (filters.check_in) {
-      const checkInStr = normalizarFecha(filters.check_in);
-      query += ` AND r.check_in >= $${paramCount}`;
-      params.push(checkInStr);
+    // Presets explícitos para un día específico (date-only)
+    if (filters.arrivals_on) {
+      const arrivals = normalizarFecha(filters.arrivals_on);
+      query += ` AND r.check_in = $${paramCount}::date`;
+      params.push(arrivals);
       paramCount++;
     }
 
-    if (filters.check_out) {
-      const checkOutStr = normalizarFecha(filters.check_out);
-      query += ` AND r.check_out <= $${paramCount}`;
-      params.push(checkOutStr);
+    if (filters.departures_on) {
+      const departures = normalizarFecha(filters.departures_on);
+      query += ` AND r.check_out = $${paramCount}::date`;
+      params.push(departures);
+      paramCount++;
+    }
+
+    if (filters.inhouse_on) {
+      const inhouse = normalizarFecha(filters.inhouse_on);
+      query += ` AND r.check_in <= $${paramCount}::date AND r.check_out > $${paramCount}::date`;
+      params.push(inhouse);
+      paramCount++;
+    }
+
+    // Filtro general por ventana con superposición [fecha_desde, fecha_hasta)
+    // Incluye reservas que se superpongan con el rango especificado
+    const fechaDesde = filters.fecha_desde ? normalizarFecha(filters.fecha_desde) : null;
+    const fechaHasta = filters.fecha_hasta ? normalizarFecha(filters.fecha_hasta) : null;
+
+    if (fechaDesde && fechaHasta) {
+      // Ambas fechas: reservas que se superponen con [fecha_desde, fecha_hasta)
+      query += ` AND r.check_in < $${paramCount + 1}::date AND r.check_out > $${paramCount}::date`;
+      params.push(fechaDesde, fechaHasta);
+      paramCount += 2;
+    } else if (fechaDesde && !fechaHasta) {
+      // Solo fecha_desde: reservas que terminan después de fecha_desde
+      query += ` AND r.check_out > $${paramCount}::date`;
+      params.push(fechaDesde);
+      paramCount++;
+    } else if (!fechaDesde && fechaHasta) {
+      // Solo fecha_hasta: reservas que comienzan antes de fecha_hasta
+      query += ` AND r.check_in < $${paramCount}::date`;
+      params.push(fechaHasta);
       paramCount++;
     }
 

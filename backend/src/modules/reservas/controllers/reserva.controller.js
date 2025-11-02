@@ -133,8 +133,13 @@ export const listarTodasReservas = async (req, res) => {
   try {
     const filters = {
       cod_reserva: req.query.cod_reserva,
-      check_in: req.query.check_in,
-      check_out: req.query.check_out,
+      // Ventana de fechas con superposición
+      fecha_desde: req.query.fecha_desde,
+      fecha_hasta: req.query.fecha_hasta,
+      // Presets explícitos por día (date-only)
+      arrivals_on: req.query.arrivals_on,
+      departures_on: req.query.departures_on,
+      inhouse_on: req.query.inhouse_on,
       id_est_op: req.query.id_est_op ? parseInt(req.query.id_est_op) : undefined,
       esta_pagada:
         req.query.esta_pagada !== undefined
