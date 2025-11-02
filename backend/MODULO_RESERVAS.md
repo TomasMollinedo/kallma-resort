@@ -147,6 +147,7 @@ Lista las reservas del cliente autenticado.
       "check_in": "2025-12-01",
       "check_out": "2025-12-05",
       "cant_personas": 4,
+      "noches": 4,
       "estado_operativo": "Cancelada",
       "esta_pagada": false,
       "monto_total_res": "700000.00",
@@ -158,6 +159,8 @@ Lista las reservas del cliente autenticado.
   "total": 1
 }
 ```
+
+**Nota:** Los campos de auditoría (`fecha_creacion`, `fecha_modific`) NO se incluyen en este endpoint para optimizar el rendimiento. Están disponibles en el detalle individual.
 
 ---
 
@@ -214,6 +217,7 @@ Lista todas las reservas con filtros (Operador/Admin).
       "check_in": "2025-12-01",
       "check_out": "2025-12-05",
       "cant_personas": 4,
+      "noches": 4,
       "estado_operativo": "Cancelada",
       "esta_pagada": false,
       "monto_total_res": "700000.00",
@@ -227,6 +231,8 @@ Lista todas las reservas con filtros (Operador/Admin).
   "total": 1
 }
 ```
+
+**Nota:** Los campos de auditoría (`fecha_creacion`, `fecha_modific`) NO se incluyen en este endpoint para optimizar el rendimiento. Están disponibles en el detalle individual.
 
 ---
 
@@ -247,6 +253,7 @@ Obtiene el detalle completo de una reserva.
     "check_in": "2025-12-01",
     "check_out": "2025-12-05",
     "cant_personas": 4,
+    "noches": 4,
     "estado_operativo": "Cancelada",
     "esta_pagada": false,
     "monto_total_res": "700000.00",
@@ -254,7 +261,10 @@ Obtiene el detalle completo de una reserva.
     "cliente_nombre": "Juan Pérez",
     "cliente_email": "juan@example.com",
     "cliente_telefono": "+5491123456789",
-    "noches": 4,
+    "fecha_creacion": "2025-10-22T10:30:00.000Z",
+    "fecha_modific": "2025-10-23T14:15:00.000Z",
+    "usuario_creacion": "Admin Principal",
+    "usuario_modificacion": "Operador Juan",
     "cabanas": [
       {
         "id_cabana": 1,

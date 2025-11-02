@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Wrench, LogOut, Home, Calendar, Building, CheckCircle, XCircle, Clock } from 'lucide-react';
+import ReservationsManagement from '../admin/ReservationsManagement';
 
 export default function DashboardOperador() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState('dashboard'); // dashboard, reservations
 
   const handleLogout = () => {
     logout();
@@ -15,6 +17,11 @@ export default function DashboardOperador() {
   const handleGoHome = () => {
     navigate('/');
   };
+
+  // Si estamos en la sección de reservas, mostrar el componente correspondiente
+  if (activeSection === 'reservations') {
+    return <ReservationsManagement onBack={() => setActiveSection('dashboard')} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
@@ -115,7 +122,10 @@ export default function DashboardOperador() {
             <p className="text-gray-600 mb-4">
               Consulta y gestiona las reservas del día y próximas
             </p>
-            <button className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition">
+            <button 
+              onClick={() => setActiveSection('reservations')}
+              className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition"
+            >
               Ver Reservas
             </button>
           </div>

@@ -40,6 +40,46 @@ reservas/
 - `POST /api/reservas/:id/cabanas` - Asignar cabañas
 - `POST /api/reservas/:id/servicios` - Agregar servicios
 
+## Respuestas de la API
+
+### Campos Retornados en GET /api/reservas (Listado)
+
+El endpoint de listado retorna los siguientes campos para cada reserva:
+- `id_reserva`: ID de la reserva
+- `cod_reserva`: Código único de la reserva
+- `check_in`: Fecha de entrada (DATE)
+- `check_out`: Fecha de salida (DATE)
+- `cant_personas`: Cantidad de personas
+- `noches`: Cantidad de noches calculadas (check_out - check_in)
+- `id_est_op`: ID del estado operativo
+- `estado_operativo`: Nombre del estado operativo
+- `esta_pagada`: Booleano indicando si está pagada
+- `monto_total_res`: Monto total de la reserva
+- `monto_pagado`: Monto pagado
+- `cliente_nombre`: Nombre del cliente
+- `cliente_email`: Email del cliente
+- `cantidad_cabanas`: Cantidad de cabañas asignadas
+- `cantidad_servicios`: Cantidad de servicios adicionales
+
+**Nota:** Los campos de auditoría (`fecha_creacion`, `fecha_modific`) NO se incluyen en el listado. Solo están disponibles en el detalle individual.
+
+### Campos Retornados en GET /api/reservas/:id (Detalle)
+
+El endpoint de detalle retorna toda la información de la reserva incluyendo:
+- Todos los campos básicos de la reserva
+- `noches`: Cantidad de noches calculadas
+- `fecha_creacion`: Fecha de creación de la reserva
+- `fecha_modific`: Fecha de última modificación
+- `usuario_creacion`: Nombre del usuario que creó la reserva
+- `usuario_modificacion`: Nombre del usuario que modificó la reserva
+- `cliente_telefono`: Teléfono del cliente
+- `cabanas`: Array de cabañas asignadas con:
+  - `id_cabana`, `cod_cabana`
+  - `nom_tipo_cab`, `capacidad`, `precio_noche`
+  - `nom_zona`
+- `servicios`: Array de servicios adicionales con:
+  - `id_servicio`, `nom_servicio`, `precio_servicio`
+
 ## Filtros de Listado de Reservas
 
 ### GET /api/reservas (Operador/Admin)

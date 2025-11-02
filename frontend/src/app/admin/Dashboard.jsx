@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Shield, LogOut, Home, Users, Building, Calendar, DollarSign, Settings } from 'lucide-react';
 import UsersManagement from './UsersManagement';
 import CabanasZonasManagement from './CabanasZonasManagement';
+import ReservationsManagement from './ReservationsManagement';
 
 export default function DashboardAdministrador() {
   const { user, logout } = useAuth();
@@ -26,6 +27,10 @@ export default function DashboardAdministrador() {
 
   if (activeSection === 'cabanas') {
     return <CabanasZonasManagement onBack={() => setActiveSection('dashboard')} />;
+  }
+
+  if (activeSection === 'reservations') {
+    return <ReservationsManagement onBack={() => setActiveSection('dashboard')} />;
   }
 
   return (
@@ -161,7 +166,9 @@ export default function DashboardAdministrador() {
             <p className="text-gray-600 mb-4">
               Supervisa y administra todas las reservas
             </p>
-            <button className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition">
+            <button 
+              onClick={() => setActiveSection('reservations')}
+              className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition">
               Ver Reservas
             </button>
           </div>

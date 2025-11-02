@@ -279,7 +279,7 @@ export const obtenerReservasCliente = async (idUsuario, filters = {}) => {
         r.id_reserva, r.cod_reserva, r.check_in, r.check_out, r.cant_personas,
         r.id_est_op, eo.nom_estado as estado_operativo,
         r.esta_pagada, r.monto_total_res, r.monto_pagado,
-        r.fecha_creacion, r.fecha_modific,
+        (r.check_out - r.check_in) as noches,
         COUNT(DISTINCT cr.id_cabana) as cantidad_cabanas,
         COUNT(DISTINCT sr.id_servicio) as cantidad_servicios
       FROM reserva r
@@ -324,7 +324,7 @@ export const obtenerTodasReservas = async (filters = {}) => {
         r.id_reserva, r.cod_reserva, r.check_in, r.check_out, r.cant_personas,
         r.id_est_op, eo.nom_estado as estado_operativo,
         r.esta_pagada, r.monto_total_res, r.monto_pagado,
-        r.fecha_creacion, r.fecha_modific,
+        (r.check_out - r.check_in) as noches,
         u.nombre as cliente_nombre, u.email as cliente_email,
         COUNT(DISTINCT cr.id_cabana) as cantidad_cabanas,
         COUNT(DISTINCT sr.id_servicio) as cantidad_servicios

@@ -317,7 +317,7 @@ export default function ZonasList() {
                     Nombre de la Zona
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Capacidad de Cabañas
+                    Cabañas Activas
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Cabañas Asignadas
@@ -340,7 +340,7 @@ export default function ZonasList() {
                       <span className="font-semibold text-gray-900">{zona.nom_zona}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {zona.capacidad_cabanas} cabañas
+                      {zona.total_cabanas_activas} cabañas
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
