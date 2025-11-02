@@ -348,3 +348,186 @@ export const validateActualizarEstado = (data, rol) => {
     errors,
   };
 };
+
+/**
+ * Valida una fecha en formato YYYY-MM-DD
+ * @param {string} fecha - Fecha a validar
+ * @returns {boolean} true si es válida
+ */
+const esFechaValida = (fecha) => {
+  if (typeof fecha !== "string") return false;
+  
+  // Validar formato YYYY-MM-DD con regex
+  const regex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!regex.test(fecha)) return false;
+  
+  // Validar que sea una fecha real
+  const date = new Date(fecha + 'T00:00:00');
+  return !isNaN(date.getTime());
+};
+
+/**
+ * Valida los filtros de búsqueda para clientes
+ * @param {Object} filters - Filtros de búsqueda
+ * @returns {Object} { isValid: boolean, errors: Array }
+ */
+export const validateFiltrosReservasCliente = (filters) => {
+  const errors = [];
+
+  // Validar id_est_op (opcional)
+  if (filters.id_est_op !== undefined) {
+    const idEstOp = parseInt(filters.id_est_op);
+    if (isNaN(idEstOp) || idEstOp <= 0) {
+      errors.push({
+        field: "id_est_op",
+        message: "El ID de estado operativo debe ser un número entero positivo",
+      });
+    }
+  }
+
+  // Validar esta_pagada (opcional)
+  if (filters.esta_pagada !== undefined) {
+    if (filters.esta_pagada !== "true" && filters.esta_pagada !== "false") {
+      errors.push({
+        field: "esta_pagada",
+        message: "El estado de pago debe ser 'true' o 'false'",
+      });
+    }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+};
+
+/**
+ * Valida los filtros de búsqueda para staff (Operador/Admin)
+ * @param {Object} filters - Filtros de búsqueda
+ * @returns {Object} { isValid: boolean, errors: Array }
+ */
+export const validateFiltrosReservasStaff = (filters) => {
+  const errors = [];
+
+  // Validar cod_reserva (opcional)
+  if (filters.cod_reserva !== undefined) {
+    if (typeof filters.cod_reserva !== "string" || filters.cod_reserva.trim() === "") {
+      errors.push({
+        field: "cod_reserva",
+        message: "El código de reserva debe ser una cadena de texto no vacía",
+      });
+    } else if (filters.cod_reserva.length > 50) {
+      errors.push({
+        field: "cod_reserva",
+        message: "El código de reserva no puede exceder 50 caracteres",
+      });
+    }
+  }
+
+  // Validar fecha_desde (opcional)
+  if (filters.fecha_desde !== undefined) {
+    if (!esFechaValida(filters.fecha_desde)) {
+      errors.push({
+        field: "fecha_desde",
+        message: "La fecha desde no es válida. Use formato YYYY-MM-DD",
+      });
+    }
+  }
+
+  // Validar fecha_hasta (opcional)
+  if (filters.fecha_hasta !== undefined) {
+    if (!esFechaValida(filters.fecha_hasta)) {
+      errors.push({
+        field: "fecha_hasta",
+        message: "La fecha hasta no es válida. Use formato YYYY-MM-DD",
+      });
+    }
+  }
+
+  // Validar que fecha_hasta sea posterior a fecha_desde si ambos están presentes
+  if (filters.fecha_desde && filters.fecha_hasta && esFechaValida(filters.fecha_desde) && esFechaValida(filters.fecha_hasta)) {
+    const desde = new Date(filters.fecha_desde + 'T00:00:00');
+    const hasta = new Date(filters.fecha_hasta + 'T00:00:00');
+    
+    if (hasta <= desde) {
+      errors.push({
+        field: "fecha_hasta",
+        message: "La fecha hasta debe ser posterior a la fecha desde",
+      });
+    }
+  }
+
+  // Validar arrivals_on (opcional)
+  if (filters.arrivals_on !== undefined) {
+    if (!esFechaValida(filters.arrivals_on)) {
+      errors.push({
+        field: "arrivals_on",
+        message: "La fecha de llegadas no es válida. Use formato YYYY-MM-DD",
+      });
+    }
+  }
+
+  // Validar departures_on (opcional)
+  if (filters.departures_on !== undefined) {
+    if (!esFechaValida(filters.departures_on)) {
+      errors.push({
+        field: "departures_on",
+        message: "La fecha de salidas no es válida. Use formato YYYY-MM-DD",
+      });
+    }
+  }
+
+  // Validar inhouse_on (opcional)
+  if (filters.inhouse_on !== undefined) {
+    if (!esFechaValida(filters.inhouse_on)) {
+      errors.push({
+        field: "inhouse_on",
+        message: "La fecha de hospedados no es válida. Use formato YYYY-MM-DD",
+      });
+    }
+  }
+
+  // Validar que no se usen filtros mutuamente exclusivos
+  const presetsUsados = [filters.arrivals_on, filters.departures_on, filters.inhouse_on].filter(Boolean);
+  const ventanaUsada = filters.fecha_desde || filters.fecha_hasta;
+  
+  if (presetsUsados.length > 0 && ventanaUsada) {
+    errors.push({
+      field: "general",
+      message: "No puede usar filtros de fecha específica (arrivals_on, departures_on, inhouse_on) junto con filtros de ventana de fechas (fecha_desde, fecha_hasta)",
+    });
+  }
+
+  if (presetsUsados.length > 1) {
+    errors.push({
+      field: "general",
+      message: "Solo puede usar uno de los siguientes filtros a la vez: arrivals_on, departures_on, inhouse_on",
+    });
+  }
+
+  // Validar id_est_op (opcional)
+  if (filters.id_est_op !== undefined) {
+    const idEstOp = parseInt(filters.id_est_op);
+    if (isNaN(idEstOp) || idEstOp <= 0) {
+      errors.push({
+        field: "id_est_op",
+        message: "El ID de estado operativo debe ser un número entero positivo",
+      });
+    }
+  }
+
+  // Validar esta_pagada (opcional)
+  if (filters.esta_pagada !== undefined) {
+    if (filters.esta_pagada !== "true" && filters.esta_pagada !== "false") {
+      errors.push({
+        field: "esta_pagada",
+        message: "El estado de pago debe ser 'true' o 'false'",
+      });
+    }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+};

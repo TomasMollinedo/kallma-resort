@@ -167,11 +167,41 @@ Lista todas las reservas con filtros (Operador/Admin).
 **Autenticación:** Requerida (Operador / Admin)
 
 **Query params:**
-- `cod_reserva` (opcional): Búsqueda parcial por código
-- `check_in` (opcional): Filtrar desde fecha check-in
-- `check_out` (opcional): Filtrar hasta fecha check-out
-- `id_est_op` (opcional): Filtrar por estado operativo
-- `esta_pagada` (opcional): Filtrar por estado de pago
+- `cod_reserva` (opcional): Búsqueda parcial case-insensitive por código de reserva
+- **Ventana de fechas con superposición:**
+  - `fecha_desde` (opcional): Fecha inicio del rango (formato YYYY-MM-DD)
+  - `fecha_hasta` (opcional): Fecha fin del rango (formato YYYY-MM-DD)
+- **Presets de fecha específica (mutuamente exclusivos con ventana):**
+  - `arrivals_on` (opcional): Reservas con check-in exactamente en esta fecha
+  - `departures_on` (opcional): Reservas con check-out exactamente en esta fecha
+  - `inhouse_on` (opcional): Reservas con huéspedes alojados en esta fecha (check_in ≤ fecha AND check_out > fecha)
+- `id_est_op` (opcional): Filtrar por ID de estado operativo
+- `esta_pagada` (opcional): Filtrar por estado de pago (`true`/`false`)
+
+**⚠️ Restricciones de filtros:**
+- Los filtros de fecha específica (`arrivals_on`, `departures_on`, `inhouse_on`) **NO** se pueden combinar con ventana de fechas (`fecha_desde`, `fecha_hasta`)
+- Solo se puede usar **uno** de los presets de fecha específica a la vez
+- `fecha_hasta` debe ser posterior a `fecha_desde` cuando ambos se proporcionan
+
+**Ejemplos de uso:**
+
+1. **Ventana de fechas:** `GET /api/reservas?fecha_desde=2025-11-03&fecha_hasta=2025-11-09`
+   - Retorna reservas que se superponen con el rango del 3 al 9 de noviembre
+
+2. **Fecha desde (abierta):** `GET /api/reservas?fecha_desde=2025-11-02`
+   - Retorna todas las reservas futuras (check_out > 2025-11-02)
+
+3. **Llegadas específicas:** `GET /api/reservas?arrivals_on=2025-11-10`
+   - Retorna solo reservas con check-in exactamente el 10 de noviembre
+
+4. **Salidas específicas:** `GET /api/reservas?departures_on=2025-11-10`
+   - Retorna solo reservas con check-out exactamente el 10 de noviembre
+
+5. **Huéspedes alojados:** `GET /api/reservas?inhouse_on=2025-11-10`
+   - Retorna reservas donde los huéspedes están físicamente alojados el 10 de noviembre
+
+6. **Búsqueda combinada:** `GET /api/reservas?cod_reserva=RES-2025&inhouse_on=2025-11-10&esta_pagada=true`
+   - Busca reservas pagadas con código que contenga "RES-2025" y con huéspedes alojados el 10 de noviembre
 
 **Respuesta exitosa (200):**
 ```json
@@ -470,6 +500,20 @@ Según el esquema de base de datos:
 - Validaciones diferenciadas por rol
 - Cliente: solo `id_est_op` a "Cancelada"
 - Staff: `id_est_op`, `esta_pagada`, `monto_pagado`
+
+### Filtros de Búsqueda - Cliente
+- `id_est_op` debe ser número entero positivo
+- `esta_pagada` debe ser 'true' o 'false'
+
+### Filtros de Búsqueda - Staff
+- `cod_reserva` debe ser string no vacío (máximo 50 caracteres)
+- `fecha_desde` y `fecha_hasta` deben tener formato YYYY-MM-DD válido
+- `fecha_hasta` debe ser posterior a `fecha_desde`
+- `arrivals_on`, `departures_on`, `inhouse_on` deben tener formato YYYY-MM-DD válido
+- **No se pueden combinar presets de fecha específica con ventana de fechas**
+- **Solo se puede usar un preset de fecha específica a la vez**
+- `id_est_op` debe ser número entero positivo
+- `esta_pagada` debe ser 'true' o 'false'
 
 ---
 

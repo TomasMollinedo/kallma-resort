@@ -206,31 +206,65 @@ Authorization: Bearer {{tokenOperador}}
 GET {{baseUrl}}/reservas
 Authorization: Bearer {{tokenAdmin}}
 
-### 4.3 Buscar por código de reserva
+### 4.3 Buscar por código de reserva (búsqueda parcial)
 GET {{baseUrl}}/reservas?cod_reserva=RES-20251022
 Authorization: Bearer {{tokenOperador}}
 
-### 4.4 Filtrar por rango de fechas
-GET {{baseUrl}}/reservas?check_in=2025-11-01&check_out=2025-12-31
+### 4.4 Filtrar por ventana de fechas (superposición)
+# Retorna reservas que se superponen con el rango del 1 al 31 de noviembre
+GET {{baseUrl}}/reservas?fecha_desde=2025-11-01&fecha_hasta=2025-11-30
 Authorization: Bearer {{tokenOperador}}
 
-### 4.5 Filtrar por check_in desde fecha
-GET {{baseUrl}}/reservas?check_in=2025-12-01
+### 4.5 Filtrar por fecha desde (abierta)
+# Retorna todas las reservas futuras (check_out > 2025-12-01)
+GET {{baseUrl}}/reservas?fecha_desde=2025-12-01
 Authorization: Bearer {{tokenOperador}}
 
-### 4.6 Filtrar por estado operativo (Finalizada = 3)
-GET {{baseUrl}}/reservas?id_est_op=3
+### 4.6 Filtrar por fecha hasta (abierta)
+# Retorna todas las reservas que comienzan antes del 2025-12-31
+GET {{baseUrl}}/reservas?fecha_hasta=2025-12-31
 Authorization: Bearer {{tokenOperador}}
 
-### 4.7 Filtrar por estado de pago (no pagadas)
+### 4.7 Filtrar por llegadas de un día específico
+# Retorna solo reservas con check-in exactamente el 10 de noviembre
+GET {{baseUrl}}/reservas?arrivals_on=2025-11-10
+Authorization: Bearer {{tokenOperador}}
+
+### 4.8 Filtrar por salidas de un día específico
+# Retorna solo reservas con check-out exactamente el 10 de noviembre
+GET {{baseUrl}}/reservas?departures_on=2025-11-10
+Authorization: Bearer {{tokenOperador}}
+
+### 4.9 Filtrar por huéspedes alojados en un día específico (In-house)
+# Retorna reservas donde los huéspedes están físicamente alojados el 10 de noviembre
+GET {{baseUrl}}/reservas?inhouse_on=2025-11-10
+Authorization: Bearer {{tokenOperador}}
+
+### 4.10 Filtrar por estado operativo (Finalizada = 4)
+GET {{baseUrl}}/reservas?id_est_op=4
+Authorization: Bearer {{tokenOperador}}
+
+### 4.11 Filtrar por estado de pago (no pagadas)
 GET {{baseUrl}}/reservas?esta_pagada=false
 Authorization: Bearer {{tokenOperador}}
 
-### 4.8 Filtros combinados
-GET {{baseUrl}}/reservas?check_in=2025-11-01&id_est_op=1&esta_pagada=false
+### 4.12 Filtros combinados (código + in-house + pagadas)
+GET {{baseUrl}}/reservas?cod_reserva=RES-2025&inhouse_on=2025-11-10&esta_pagada=true
 Authorization: Bearer {{tokenOperador}}
 
-### 4.9 Error: Cliente no puede acceder
+### 4.13 Error: Combinar ventana de fechas con preset específico
+GET {{baseUrl}}/reservas?fecha_desde=2025-11-01&arrivals_on=2025-11-10
+Authorization: Bearer {{tokenOperador}}
+
+### 4.14 Error: Usar múltiples presets de fecha específica
+GET {{baseUrl}}/reservas?arrivals_on=2025-11-10&departures_on=2025-11-15
+Authorization: Bearer {{tokenOperador}}
+
+### 4.15 Error: fecha_hasta antes de fecha_desde
+GET {{baseUrl}}/reservas?fecha_desde=2025-11-30&fecha_hasta=2025-11-01
+Authorization: Bearer {{tokenOperador}}
+
+### 4.16 Error: Cliente no puede acceder
 GET {{baseUrl}}/reservas
 Authorization: Bearer {{tokenCliente}}
 
@@ -483,6 +517,15 @@ Authorization: Bearer {{tokenCliente}}
 # - check_in no puede ser en el pasado
 # - check_out debe ser posterior a check_in
 
+# VALIDACIONES DE FILTROS:
+# - fecha_desde, fecha_hasta, arrivals_on, departures_on, inhouse_on: formato YYYY-MM-DD
+# - fecha_hasta debe ser posterior a fecha_desde
+# - NO se pueden combinar presets de fecha específica con ventana de fechas
+# - Solo se puede usar UN preset de fecha específica a la vez
+# - cod_reserva: string no vacío (máx 50 caracteres)
+# - id_est_op: número entero positivo
+# - esta_pagada: 'true' o 'false'
+
 # CÓDIGOS DE RESERVA:
 # Formato: RES-YYYYMMDD-XXXXX
 # Ejemplo: RES-20251022-00001
@@ -492,6 +535,17 @@ Authorization: Bearer {{tokenCliente}}
 # - No incluye cabañas en mantenimiento
 # - No incluye cabañas ya reservadas en ese rango
 # - Excluye reservas canceladas del cálculo
+
+# FILTROS DE BÚSQUEDA:
+# Ventana de fechas (fecha_desde, fecha_hasta):
+#   - Busca reservas que se SUPERPONEN con el rango especificado
+#   - Solo fecha_desde: reservas futuras (check_out > fecha_desde)
+#   - Solo fecha_hasta: reservas pasadas (check_in < fecha_hasta)
+#
+# Presets de fecha específica:
+#   - arrivals_on: check_in = fecha exacta
+#   - departures_on: check_out = fecha exacta
+#   - inhouse_on: check_in <= fecha AND check_out > fecha
 
 # FLUJO SIN FRICCIÓN:
 # 1. Usuario consulta disponibilidad SIN LOGIN
