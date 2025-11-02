@@ -12,6 +12,9 @@ import {
 
 import ZonaFormModal from './ZonaFormModal';
 import ZonaDetailModal from './ZonaDetailModal';
+import DeleteConfirmationModal from '../../components/modals/DeleteConfirmationModal';
+import DependencyErrorModal from '../../components/modals/DependencyErrorModal';
+import RestoreConfirmationModal from '../../components/modals/RestoreConfirmationModal';
 
 export default function ZonasList() {
   const { token } = useAuth();
@@ -28,8 +31,14 @@ export default function ZonasList() {
   // Estados de modales
   const [showFormModal, setShowFormModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDependencyModal, setShowDependencyModal] = useState(false);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [selectedZona, setSelectedZona] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [dependencyInfo, setDependencyInfo] = useState({ count: 0, type: 'cabañas' });
 
   // Cargar zonas al montar y cuando cambien los filtros
   useEffect(() => {
@@ -101,42 +110,78 @@ export default function ZonasList() {
   };
 
   /**
-   * Eliminar zona (borrado lógico)
+   * Abrir modal de confirmación de eliminación
    */
-  const handleDelete = async (zona) => {
-    if (!window.confirm(`¿Estás seguro de eliminar la zona "${zona.nom_zona}"?\n\nEsta acción marcará la zona como inactiva y no podrá tener cabañas activas.`)) {
-      return;
-    }
+  const handleDelete = (zona) => {
+    setSelectedZona(zona);
+    setShowDeleteModal(true);
+  };
+
+  /**
+   * Ejecutar eliminación después de confirmar
+   */
+  const handleConfirmDelete = async () => {
+    if (!selectedZona) return;
+
+    setIsDeleting(true);
+    setError(null);
 
     try {
-      await deleteZona(zona.id_zona, token);
-      setSuccess(`Zona "${zona.nom_zona}" eliminada exitosamente`);
+      await deleteZona(selectedZona.id_zona, token);
+      setShowDeleteModal(false);
+      setSuccess(`Zona "${selectedZona.nom_zona}" eliminada exitosamente`);
       setTimeout(() => setSuccess(null), 3000);
       loadZonas();
     } catch (err) {
       console.error('Error al eliminar zona:', err);
-      setError(err.response?.data?.message || 'Error al eliminar la zona');
-      setTimeout(() => setError(null), 5000);
+      setShowDeleteModal(false);
+      
+      // Detectar error de dependencias
+      const errorMessage = err.response?.data?.error || err.message || '';
+      const match = errorMessage.match(/(\d+)\s+cabaña/);
+      
+      if (match) {
+        const count = parseInt(match[1]);
+        setDependencyInfo({ count, type: 'cabañas' });
+        setShowDependencyModal(true);
+      } else {
+        setError(errorMessage || 'Error al eliminar la zona');
+        setTimeout(() => setError(null), 5000);
+      }
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   /**
-   * Restaurar zona eliminada
+   * Abrir modal de confirmación de restauración
    */
-  const handleRestore = async (zona) => {
-    if (!window.confirm(`¿Restaurar la zona "${zona.nom_zona}"?`)) {
-      return;
-    }
+  const handleRestore = (zona) => {
+    setSelectedZona(zona);
+    setShowRestoreModal(true);
+  };
+
+  /**
+   * Ejecutar restauración después de confirmar
+   */
+  const handleConfirmRestore = async () => {
+    if (!selectedZona) return;
+
+    setIsRestoring(true);
 
     try {
-      await restaurarZona(zona.id_zona, token);
-      setSuccess(`Zona "${zona.nom_zona}" restaurada exitosamente`);
+      await restaurarZona(selectedZona.id_zona, token);
+      setShowRestoreModal(false);
+      setSuccess(`Zona "${selectedZona.nom_zona}" restaurada exitosamente`);
       setTimeout(() => setSuccess(null), 3000);
       loadZonas();
     } catch (err) {
       console.error('Error al restaurar zona:', err);
+      setShowRestoreModal(false);
       setError(err.response?.data?.message || 'Error al restaurar la zona');
       setTimeout(() => setError(null), 5000);
+    } finally {
+      setIsRestoring(false);
     }
   };
 
@@ -145,6 +190,8 @@ export default function ZonasList() {
    */
   const handleFormSave = () => {
     setShowFormModal(false);
+    setSuccess(isEditing ? 'Zona actualizada exitosamente' : 'Zona creada exitosamente');
+    setTimeout(() => setSuccess(null), 3000);
     loadZonas();
   };
 
@@ -173,9 +220,12 @@ export default function ZonasList() {
     <div className="space-y-6">
       {/* Mensajes de éxito/error */}
       {success && (
-        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-center gap-2">
-          <CheckCircle size={20} />
-          {success}
+        <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-lg flex items-start gap-3">
+          <CheckCircle size={24} className="flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold">Éxito</p>
+            <p className="text-sm">{success}</p>
+          </div>
         </div>
       )}
 
@@ -270,6 +320,9 @@ export default function ZonasList() {
                     Capacidad de Cabañas
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Cabañas Asignadas
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Estado
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -288,6 +341,26 @@ export default function ZonasList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {zona.capacidad_cabanas} cabañas
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-gray-900">
+                          {zona.total_cabanas || 0}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          / {zona.capacidad_cabanas || 0} total
+                        </span>
+                      </div>
+                      {zona.total_cabanas_activas > 0 && (
+                        <div className="mt-1">
+                          <div className="w-24 bg-gray-200 rounded-full h-1.5">
+                            <div 
+                              className="bg-orange-500 h-1.5 rounded-full" 
+                              style={{ width: `${Math.min((zona.total_cabanas_activas / zona.capacidad_cabanas) * 100, 100)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getEstadoBadge(zona.esta_activa)}
@@ -364,6 +437,40 @@ export default function ZonasList() {
           }}
         />
       )}
+
+      {/* Modal de confirmación de eliminación */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Zona"
+        message="¿Estás seguro de que deseas eliminar esta zona?"
+        itemName={selectedZona?.nom_zona}
+        itemType="zona"
+        isLoading={isDeleting}
+      />
+
+      {/* Modal de error de dependencias */}
+      <DependencyErrorModal
+        isOpen={showDependencyModal}
+        onClose={() => setShowDependencyModal(false)}
+        itemName={selectedZona?.nom_zona || ''}
+        itemType="zona"
+        dependencyType={dependencyInfo.type}
+        dependencyCount={dependencyInfo.count}
+      />
+
+      {/* Modal de confirmación de restauración */}
+      <RestoreConfirmationModal
+        isOpen={showRestoreModal}
+        onClose={() => setShowRestoreModal(false)}
+        onConfirm={handleConfirmRestore}
+        title="Restaurar Zona"
+        message="¿Estás seguro de que deseas restaurar esta zona?"
+        itemName={selectedZona?.nom_zona}
+        itemType="zona"
+        isLoading={isRestoring}
+      />
     </div>
   );
 }

@@ -15,11 +15,14 @@ export const obtenerZonas = async (filters = {}) => {
   try {
     let query = `
       SELECT 
-        id_zona,
-        nom_zona,
-        capacidad_cabanas,
-        esta_activa
-      FROM zonas
+        z.id_zona,
+        z.nom_zona,
+        z.capacidad_cabanas,
+        z.esta_activa,
+        COUNT(c.id_cabana) FILTER (WHERE c.esta_activo = TRUE) as total_cabanas_activas,
+        COUNT(c.id_cabana) as total_cabanas
+      FROM zonas z
+      LEFT JOIN cabana c ON z.id_zona = c.id_zona
       WHERE 1=1
     `;
 
@@ -28,12 +31,15 @@ export const obtenerZonas = async (filters = {}) => {
 
     // Filtrar por estado activo si se especifica
     if (filters.esta_activa !== undefined) {
-      query += ` AND esta_activa = $${paramCount}`;
+      query += ` AND z.esta_activa = $${paramCount}`;
       params.push(filters.esta_activa);
       paramCount++;
     }
 
-    query += ` ORDER BY nom_zona ASC`;
+    query += ` 
+      GROUP BY z.id_zona, z.nom_zona, z.capacidad_cabanas, z.esta_activa
+      ORDER BY z.nom_zona ASC
+    `;
 
     const result = await pool.query(query, params);
     return result.rows;
@@ -246,8 +252,9 @@ export const eliminarZona = async (idZona, idUsuario) => {
       [idZona]
     );
 
-    if (parseInt(cabanasActivas.rows[0].total) > 0) {
-      throw new Error("ZONA_HAS_ACTIVE_CABANAS");
+    const totalCabanas = parseInt(cabanasActivas.rows[0].total);
+    if (totalCabanas > 0) {
+      throw new Error(`ZONA_HAS_ACTIVE_CABANAS:${totalCabanas}`);
     }
 
     // Realizar borrado lógico
@@ -271,9 +278,10 @@ export const eliminarZona = async (idZona, idUsuario) => {
     if (error.message === "ZONA_ALREADY_DELETED") {
       throw new Error("La zona ya está eliminada");
     }
-    if (error.message === "ZONA_HAS_ACTIVE_CABANAS") {
+    if (error.message.startsWith("ZONA_HAS_ACTIVE_CABANAS:")) {
+      const count = error.message.split(":")[1];
       throw new Error(
-        "No se puede eliminar la zona porque tiene cabañas activas asociadas"
+        `No se puede eliminar la zona porque tiene ${count} cabaña${count > 1 ? 's' : ''} activa${count > 1 ? 's' : ''} asociada${count > 1 ? 's' : ''}`
       );
     }
 

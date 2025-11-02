@@ -396,6 +396,22 @@ export const deleteUser = async (userId, deletedBy) => {
       throw new Error("USER_ALREADY_INACTIVE");
     }
 
+    // Verificar si el usuario tiene reservas activas o futuras
+    const reservasActivas = await client.query(
+      `SELECT COUNT(*) as total 
+       FROM reserva r
+       INNER JOIN estado_operativo eo ON r.id_est_op = eo.id_est_op
+       WHERE r.id_usuario_creacion = $1
+         AND r.check_out >= CURRENT_DATE
+         AND eo.nom_estado NOT IN ('Cancelada')`,
+      [userId]
+    );
+
+    const totalReservas = parseInt(reservasActivas.rows[0].total);
+    if (totalReservas > 0) {
+      throw new Error(`USER_HAS_ACTIVE_RESERVATIONS:${totalReservas}`);
+    }
+
     // Borrado lógico
     await client.query(
       `UPDATE usuario 

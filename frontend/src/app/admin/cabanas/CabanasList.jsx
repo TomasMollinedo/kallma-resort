@@ -15,6 +15,9 @@ import { getAllZonas } from '../../services/zonaService';
 
 import CabanaFormModal from './CabanaFormModal';
 import CabanaDetailModal from './CabanaDetailModal';
+import DeleteConfirmationModal from '../../components/modals/DeleteConfirmationModal';
+import DependencyErrorModal from '../../components/modals/DependencyErrorModal';
+import RestoreConfirmationModal from '../../components/modals/RestoreConfirmationModal';
 
 export default function CabanasList() {
   const { token } = useAuth();
@@ -34,8 +37,14 @@ export default function CabanasList() {
   // Estados de modales
   const [showFormModal, setShowFormModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDependencyModal, setShowDependencyModal] = useState(false);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [selectedCabana, setSelectedCabana] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [dependencyInfo, setDependencyInfo] = useState({ count: 0, type: 'reservas' });
 
   // Cargar zonas al montar
   useEffect(() => {
@@ -163,42 +172,78 @@ export default function CabanasList() {
   };
 
   /**
-   * Eliminar cabaña (borrado lógico)
+   * Abrir modal de confirmación de eliminación
    */
-  const handleDelete = async (cabana) => {
-    if (!window.confirm(`¿Estás seguro de eliminar la cabaña ${cabana.cod_cabana}?\n\nEsta acción marcará la cabaña como inactiva.`)) {
-      return;
-    }
+  const handleDelete = (cabana) => {
+    setSelectedCabana(cabana);
+    setShowDeleteModal(true);
+  };
+
+  /**
+   * Ejecutar eliminación después de confirmar
+   */
+  const handleConfirmDelete = async () => {
+    if (!selectedCabana) return;
+
+    setIsDeleting(true);
+    setError(null);
 
     try {
-      await deleteCabana(cabana.id_cabana, token);
-      setSuccess(`Cabaña ${cabana.cod_cabana} eliminada exitosamente`);
+      await deleteCabana(selectedCabana.id_cabana, token);
+      setShowDeleteModal(false);
+      setSuccess(`Cabaña ${selectedCabana.cod_cabana} eliminada exitosamente`);
       setTimeout(() => setSuccess(null), 3000);
       loadCabanas();
     } catch (err) {
       console.error('Error al eliminar cabaña:', err);
-      setError(err.response?.data?.message || 'Error al eliminar la cabaña');
-      setTimeout(() => setError(null), 5000);
+      setShowDeleteModal(false);
+      
+      // Detectar error de dependencias
+      const errorMessage = err.response?.data?.error || err.message || '';
+      const match = errorMessage.match(/(\d+)\s+reserva/);
+      
+      if (match) {
+        const count = parseInt(match[1]);
+        setDependencyInfo({ count, type: 'reservas' });
+        setShowDependencyModal(true);
+      } else {
+        setError(errorMessage || 'Error al eliminar la cabaña');
+        setTimeout(() => setError(null), 5000);
+      }
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   /**
-   * Restaurar cabaña eliminada
+   * Abrir modal de confirmación de restauración
    */
-  const handleRestore = async (cabana) => {
-    if (!window.confirm(`¿Restaurar la cabaña ${cabana.cod_cabana}?`)) {
-      return;
-    }
+  const handleRestore = (cabana) => {
+    setSelectedCabana(cabana);
+    setShowRestoreModal(true);
+  };
+
+  /**
+   * Ejecutar restauración después de confirmar
+   */
+  const handleConfirmRestore = async () => {
+    if (!selectedCabana) return;
+
+    setIsRestoring(true);
 
     try {
-      await restaurarCabana(cabana.id_cabana, token);
-      setSuccess(`Cabaña ${cabana.cod_cabana} restaurada exitosamente`);
+      await restaurarCabana(selectedCabana.id_cabana, token);
+      setShowRestoreModal(false);
+      setSuccess(`Cabaña ${selectedCabana.cod_cabana} restaurada exitosamente`);
       setTimeout(() => setSuccess(null), 3000);
       loadCabanas();
     } catch (err) {
       console.error('Error al restaurar cabaña:', err);
+      setShowRestoreModal(false);
       setError(err.response?.data?.message || 'Error al restaurar la cabaña');
       setTimeout(() => setError(null), 5000);
+    } finally {
+      setIsRestoring(false);
     }
   };
 
@@ -207,6 +252,8 @@ export default function CabanasList() {
    */
   const handleFormSave = () => {
     setShowFormModal(false);
+    setSuccess(isEditing ? 'Cabaña actualizada exitosamente' : 'Cabaña creada exitosamente');
+    setTimeout(() => setSuccess(null), 3000);
     loadCabanas();
   };
 
@@ -240,9 +287,12 @@ export default function CabanasList() {
     <div className="space-y-6">
       {/* Mensajes de éxito/error */}
       {success && (
-        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-center gap-2">
-          <CheckCircle size={20} />
-          {success}
+        <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-lg flex items-start gap-3">
+          <CheckCircle size={24} className="flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold">Éxito</p>
+            <p className="text-sm">{success}</p>
+          </div>
         </div>
       )}
 
@@ -511,6 +561,40 @@ export default function CabanasList() {
           }}
         />
       )}
+
+      {/* Modal de confirmación de eliminación */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Cabaña"
+        message="¿Estás seguro de que deseas eliminar esta cabaña?"
+        itemName={selectedCabana?.cod_cabana}
+        itemType="cabaña"
+        isLoading={isDeleting}
+      />
+
+      {/* Modal de error de dependencias */}
+      <DependencyErrorModal
+        isOpen={showDependencyModal}
+        onClose={() => setShowDependencyModal(false)}
+        itemName={selectedCabana?.cod_cabana || ''}
+        itemType="cabaña"
+        dependencyType={dependencyInfo.type}
+        dependencyCount={dependencyInfo.count}
+      />
+
+      {/* Modal de confirmación de restauración */}
+      <RestoreConfirmationModal
+        isOpen={showRestoreModal}
+        onClose={() => setShowRestoreModal(false)}
+        onConfirm={handleConfirmRestore}
+        title="Restaurar Cabaña"
+        message="¿Estás seguro de que deseas restaurar esta cabaña?"
+        itemName={selectedCabana?.cod_cabana}
+        itemType="cabaña"
+        isLoading={isRestoring}
+      />
     </div>
   );
 }

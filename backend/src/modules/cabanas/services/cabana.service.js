@@ -587,7 +587,7 @@ export const eliminarCabana = async (idCabana, idUsuario) => {
       throw new Error("CABANA_ALREADY_DELETED");
     }
 
-    // Verificar si hay reservas activas
+    // Verificar si hay reservas activas o futuras
     const reservasActivas = await client.query(
       `SELECT COUNT(*) as total 
        FROM cabanas_reserva cr
@@ -599,8 +599,9 @@ export const eliminarCabana = async (idCabana, idUsuario) => {
       [idCabana]
     );
 
-    if (parseInt(reservasActivas.rows[0].total) > 0) {
-      throw new Error("CABANA_HAS_ACTIVE_RESERVATIONS");
+    const totalReservas = parseInt(reservasActivas.rows[0].total);
+    if (totalReservas > 0) {
+      throw new Error(`CABANA_HAS_ACTIVE_RESERVATIONS:${totalReservas}`);
     }
 
     // Realizar borrado lógico
@@ -626,9 +627,10 @@ export const eliminarCabana = async (idCabana, idUsuario) => {
     if (error.message === "CABANA_ALREADY_DELETED") {
       throw new Error("La cabaña ya está eliminada");
     }
-    if (error.message === "CABANA_HAS_ACTIVE_RESERVATIONS") {
+    if (error.message.startsWith("CABANA_HAS_ACTIVE_RESERVATIONS:")) {
+      const count = error.message.split(":")[1];
       throw new Error(
-        "No se puede eliminar la cabaña porque tiene reservas activas"
+        `No se puede eliminar la cabaña porque tiene ${count} reserva${count > 1 ? 's' : ''} activa${count > 1 ? 's' : ''} o futura${count > 1 ? 's' : ''}`
       );
     }
 

@@ -267,6 +267,14 @@ export const deleteUser = async (req, res) => {
       });
     }
 
+    if (error.message.startsWith("USER_HAS_ACTIVE_RESERVATIONS:")) {
+      const count = error.message.split(":")[1];
+      return res.status(400).json({
+        ok: false,
+        error: `No se puede desactivar el usuario porque tiene ${count} reserva${count > 1 ? 's' : ''} activa${count > 1 ? 's' : ''} o futura${count > 1 ? 's' : ''}`,
+      });
+    }
+
     // Error genérico
     res.status(500).json({
       ok: false,

@@ -13,6 +13,8 @@ import {
 
 import UserFormModal from './components/UserFormModal';
 import UserDetailModal from './components/UserDetailModal';
+import DeleteConfirmationModal from '../components/modals/DeleteConfirmationModal';
+import DependencyErrorModal from '../components/modals/DependencyErrorModal';
 
 export default function UsersManagement({ onBack }) {
   const { token } = useAuth();
@@ -44,11 +46,15 @@ export default function UsersManagement({ onBack }) {
   const [selectedRol, setSelectedRol] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('true'); // Por defecto: Activos
   
-  // Estados de modales (los implementaremos después)
+  // Estados de modales
   const [showFormModal, setShowFormModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDependencyModal, setShowDependencyModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [dependencyInfo, setDependencyInfo] = useState({ count: 0, type: 'reservas' });
 
   // Cargar usuarios al montar y cuando cambien los filtros
   useEffect(() => {
@@ -187,29 +193,48 @@ export default function UsersManagement({ onBack }) {
   };
 
   /**
-   * Desactivar usuario
+   * Abrir modal de confirmación de desactivación
    */
-  const handleDelete = async (user) => {
-    if (!window.confirm(`¿Estás seguro de desactivar al usuario "${user.nombre}"?`)) {
-      return;
-    }
-    
-    setLoading(true);
+  const handleDelete = (user) => {
+    setSelectedUser(user);
+    setShowDeleteModal(true);
+  };
+
+  /**
+   * Ejecutar desactivación después de confirmar
+   */
+  const handleConfirmDelete = async () => {
+    if (!selectedUser) return;
+
+    setIsDeleting(true);
     setError(null);
     setSuccess(null);
     
     try {
-      await deleteUser(user.id_usuario, token);
-      setSuccess(`Usuario "${user.nombre}" desactivado exitosamente`);
+      await deleteUser(selectedUser.id_usuario, token);
+      setShowDeleteModal(false);
+      setSuccess(`Usuario "${selectedUser.nombre}" desactivado exitosamente`);
       loadUsers();
       
       // Limpiar mensaje de éxito después de 3 segundos
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error('Error al desactivar usuario:', err);
-      setError(err.message || 'Error al desactivar el usuario');
+      setShowDeleteModal(false);
+      
+      // Detectar error de dependencias
+      const errorMessage = err.response?.data?.error || err.message || '';
+      const match = errorMessage.match(/(\d+)\s+reserva/);
+      
+      if (match) {
+        const count = parseInt(match[1]);
+        setDependencyInfo({ count, type: 'reservas' });
+        setShowDependencyModal(true);
+      } else {
+        setError(errorMessage || 'Error al desactivar el usuario');
+      }
     } finally {
-      setLoading(false);
+      setIsDeleting(false);
     }
   };
 
@@ -563,6 +588,29 @@ export default function UsersManagement({ onBack }) {
           }}
         />
       )}
+
+      {/* Modal de confirmación de desactivación */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+        title="Desactivar Usuario"
+        message="¿Estás seguro de que deseas desactivar este usuario?"
+        itemName={selectedUser?.nombre}
+        itemType="usuario"
+        confirmButtonText="Desactivar"
+        isLoading={isDeleting}
+      />
+
+      {/* Modal de error de dependencias */}
+      <DependencyErrorModal
+        isOpen={showDependencyModal}
+        onClose={() => setShowDependencyModal(false)}
+        itemName={selectedUser?.nombre || ''}
+        itemType="usuario"
+        dependencyType={dependencyInfo.type}
+        dependencyCount={dependencyInfo.count}
+      />
     </div>
   );
 }
