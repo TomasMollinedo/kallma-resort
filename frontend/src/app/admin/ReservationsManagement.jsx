@@ -12,6 +12,8 @@ import {
   getTodayDate
 } from '../services/reservationService';
 import { formatIsoDateForDisplay } from '../utils/dateUtils';
+import { validateSearchLength } from '../utils/searchUtils';
+import { validateDateRange } from '../utils/dateUtils';
 
 import ReservationDetailModal from './components/ReservationDetailModal';
 import ReleaseReservationModal from './components/ReleaseReservationModal';
@@ -24,20 +26,24 @@ export default function ReservationsManagement({ onBack }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [searchError, setSearchError] = useState(null);
   
   // Estados de filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('2'); // Default: Confirmada
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState(''); // Todas
-  const [selectedDateFilter, setSelectedDateFilter] = useState('inhouse'); // inhouse, arrivals, departures, range
+  
+  // Modo de filtro: 'date' o 'today'
+  const [filterMode, setFilterMode] = useState('date'); // 'date' o 'today'
+  
+  // Filtros de fecha (solo activos si filterMode === 'date')
+  const [selectedDateFilter, setSelectedDateFilter] = useState('arrivals'); // arrivals, departures, inhouse, range
   const [specificDate, setSpecificDate] = useState(getTodayDate());
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   
-  // Checkboxes para filtros del día
-  const [showTodayArrivals, setShowTodayArrivals] = useState(false);
-  const [showTodayDepartures, setShowTodayDepartures] = useState(false);
-  const [showOnlyPaid, setShowOnlyPaid] = useState(false);
+  // Filtros de Hoy (solo activos si filterMode === 'today')
+  const [todayFilter, setTodayFilter] = useState('arrivals'); // 'arrivals', 'departures' o 'inhouse'
   
   // Estados de modales
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -50,7 +56,7 @@ export default function ReservationsManagement({ onBack }) {
       loadReservations();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedStatus, selectedPaymentStatus, selectedDateFilter, specificDate, dateFrom, dateTo, token]);
+  }, [selectedStatus, selectedPaymentStatus, filterMode, selectedDateFilter, specificDate, dateFrom, dateTo, todayFilter, token]);
 
   /**
    * Cargar reservas desde el backend
@@ -77,38 +83,45 @@ export default function ReservationsManagement({ onBack }) {
         filterParams.esta_pagada = selectedPaymentStatus === 'true';
       }
       
-      // Aplicar filtros de fecha según selección
-      if (selectedDateFilter === 'inhouse' && specificDate) {
-        filterParams.inhouse_on = specificDate;
-      } else if (selectedDateFilter === 'arrivals' && specificDate) {
-        filterParams.arrivals_on = specificDate;
-      } else if (selectedDateFilter === 'departures' && specificDate) {
-        filterParams.departures_on = specificDate;
-      } else if (selectedDateFilter === 'range' && dateFrom && dateTo) {
-        filterParams.fecha_desde = dateFrom;
-        filterParams.fecha_hasta = dateTo;
+      // Aplicar filtros según el modo seleccionado
+      if (filterMode === 'date') {
+        // Modo: Filtros de Fecha
+        if (selectedDateFilter === 'arrivals' && specificDate) {
+          filterParams.arrivals_on = specificDate;
+        } else if (selectedDateFilter === 'departures' && specificDate) {
+          filterParams.departures_on = specificDate;
+        } else if (selectedDateFilter === 'inhouse' && specificDate) {
+          filterParams.inhouse_on = specificDate;
+        } else if (selectedDateFilter === 'range') {
+          // Validar que fecha_desde no sea mayor que fecha_hasta
+          const dateValidation = validateDateRange(dateFrom, dateTo);
+          if (!dateValidation.isValid) {
+            setError(dateValidation.error);
+            setLoading(false);
+            return;
+          }
+          // Permitir filtrar solo por fecha_desde, solo por fecha_hasta, o ambos
+          if (dateFrom) {
+            filterParams.fecha_desde = dateFrom;
+          }
+          if (dateTo) {
+            filterParams.fecha_hasta = dateTo;
+          }
+        }
+      } else if (filterMode === 'today') {
+        // Modo: Filtros de Hoy
+        const today = getTodayDate();
+        if (todayFilter === 'arrivals') {
+          filterParams.arrivals_on = today;
+        } else if (todayFilter === 'departures') {
+          filterParams.departures_on = today;
+        } else if (todayFilter === 'inhouse') {
+          filterParams.inhouse_on = today;
+        }
       }
       
       const response = await getAllReservations(filterParams, token);
-      
-      let filteredData = response.data || [];
-      
-      // Aplicar filtros adicionales de checkboxes
-      if (showTodayArrivals) {
-        const today = getTodayDate();
-        filteredData = filteredData.filter(r => r.check_in === today);
-      }
-      
-      if (showTodayDepartures) {
-        const today = getTodayDate();
-        filteredData = filteredData.filter(r => r.check_out === today);
-      }
-      
-      if (showOnlyPaid) {
-        filteredData = filteredData.filter(r => r.esta_pagada === true);
-      }
-      
-      setReservations(filteredData);
+      setReservations(response.data || []);
     } catch (err) {
       console.error('Error al cargar reservas:', err);
       setError(err.message || 'Error al cargar las reservas');
@@ -121,7 +134,26 @@ export default function ReservationsManagement({ onBack }) {
    * Manejar búsqueda
    */
   const handleSearch = () => {
+    // Validar solo la longitud del término de búsqueda
+    const validation = validateSearchLength(searchTerm, 50);
+    if (!validation.isValid) {
+      setSearchError(validation.error);
+      return;
+    }
+    setSearchError(null);
     loadReservations();
+  };
+
+  /**
+   * Manejar cambio en el input de búsqueda
+   */
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    // Limpiar error cuando el usuario empieza a escribir
+    if (searchError) {
+      setSearchError(null);
+    }
   };
 
   /**
@@ -129,15 +161,15 @@ export default function ReservationsManagement({ onBack }) {
    */
   const handleClearFilters = () => {
     setSearchTerm('');
+    setSearchError(null);
     setSelectedStatus('2'); // Confirmada
     setSelectedPaymentStatus('');
-    setSelectedDateFilter('inhouse');
+    setFilterMode('date');
+    setSelectedDateFilter('arrivals');
     setSpecificDate(getTodayDate());
     setDateFrom('');
     setDateTo('');
-    setShowTodayArrivals(false);
-    setShowTodayDepartures(false);
-    setShowOnlyPaid(false);
+    setTodayFilter('arrivals');
   };
 
   /**
@@ -274,21 +306,34 @@ export default function ReservationsManagement({ onBack }) {
                 <Search size={16} className="inline mr-1" />
                 Buscar por Código
               </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="RES-20251102-..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
-                <button
-                  onClick={handleSearch}
-                  className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition"
-                >
-                  <Search size={20} />
-                </button>
+              <div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Ingrese código de reserva..."
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                    maxLength={100}
+                    className={`flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition ${
+                      searchError 
+                        ? 'border-red-300 focus:ring-red-500 bg-red-50' 
+                        : 'border-gray-300 focus:ring-orange-500'
+                    }`}
+                  />
+                  <button
+                    onClick={handleSearch}
+                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition"
+                  >
+                    <Search size={20} />
+                  </button>
+                </div>
+                {searchError && (
+                  <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                    <AlertCircle size={12} />
+                    {searchError}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -332,97 +377,126 @@ export default function ReservationsManagement({ onBack }) {
 
           {/* Filtros de Fecha */}
           <div className="border-t border-gray-200 pt-4 mt-4">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              <Calendar size={16} className="inline mr-1" />
-              Filtros de Fecha
-            </label>
+            <div className="flex items-center gap-2 mb-3">
+              <input
+                type="radio"
+                id="filterByDate"
+                checked={filterMode === 'date'}
+                onChange={() => setFilterMode('date')}
+                className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
+              />
+              <label htmlFor="filterByDate" className="text-sm font-semibold text-gray-700 cursor-pointer">
+                <Calendar size={16} className="inline mr-1" />
+                Filtros de Fecha
+              </label>
+            </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Tipo de filtro de fecha */}
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Tipo de Filtro</label>
-                <select
-                  value={selectedDateFilter}
-                  onChange={(e) => setSelectedDateFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
-                >
-                  <option value="inhouse">In-House (Hospedados)</option>
-                  <option value="arrivals">Llegadas (Arrivals)</option>
-                  <option value="departures">Salidas (Departures)</option>
-                  <option value="range">Rango de Fechas</option>
-                </select>
-              </div>
-
-              {/* Fecha específica (para inhouse, arrivals, departures) */}
-              {selectedDateFilter !== 'range' && (
+            {filterMode === 'date' && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 ml-6">
+                {/* Tipo de filtro de fecha */}
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">Fecha Específica</label>
-                  <input
-                    type="date"
-                    value={specificDate}
-                    onChange={(e) => setSpecificDate(e.target.value)}
+                  <label className="block text-xs text-gray-600 mb-1">Tipo de Filtro</label>
+                  <select
+                    value={selectedDateFilter}
+                    onChange={(e) => setSelectedDateFilter(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
-                  />
+                  >
+                    <option value="arrivals">Llegadas (Arrivals)</option>
+                    <option value="departures">Salidas (Departures)</option>
+                    <option value="inhouse">Hospedados (In-House)</option>
+                    <option value="range">Rango de Fechas</option>
+                  </select>
                 </div>
-              )}
 
-              {/* Rango de fechas */}
-              {selectedDateFilter === 'range' && (
-                <>
+                {/* Fecha específica (para arrivals, departures, inhouse) */}
+                {selectedDateFilter !== 'range' && (
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Fecha Desde</label>
+                    <label className="block text-xs text-gray-600 mb-1">Fecha Específica</label>
                     <input
                       type="date"
-                      value={dateFrom}
-                      onChange={(e) => setDateFrom(e.target.value)}
+                      value={specificDate}
+                      onChange={(e) => setSpecificDate(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">Fecha Hasta</label>
-                    <input
-                      type="date"
-                      value={dateTo}
-                      onChange={(e) => setDateTo(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
-                    />
-                  </div>
-                </>
-              )}
+                )}
+
+                {/* Rango de fechas */}
+                {selectedDateFilter === 'range' && (
+                  <>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Fecha Desde (opcional)</label>
+                      <input
+                        type="date"
+                        value={dateFrom}
+                        onChange={(e) => setDateFrom(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Fecha Hasta (opcional)</label>
+                      <input
+                        type="date"
+                        value={dateTo}
+                        onChange={(e) => setDateTo(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Filtros de Hoy */}
+          <div className="border-t border-gray-200 pt-4 mt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <input
+                type="radio"
+                id="filterByToday"
+                checked={filterMode === 'today'}
+                onChange={() => setFilterMode('today')}
+                className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
+              />
+              <label htmlFor="filterByToday" className="text-sm font-semibold text-gray-700 cursor-pointer">
+                <Clock size={16} className="inline mr-1" />
+                Hoy
+              </label>
             </div>
+            
+            {filterMode === 'today' && (
+              <div className="flex flex-wrap gap-4 ml-6">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    checked={todayFilter === 'arrivals'}
+                    onChange={() => setTodayFilter('arrivals')}
+                    className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
+                  />
+                  <span className="text-sm text-gray-700">Llegadas Hoy</span>
+                </label>
 
-            {/* Checkboxes adicionales */}
-            <div className="flex flex-wrap gap-4 mt-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showTodayArrivals}
-                  onChange={(e) => setShowTodayArrivals(e.target.checked)}
-                  className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-                />
-                <span className="text-sm text-gray-700">Llegadas Hoy</span>
-              </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    checked={todayFilter === 'departures'}
+                    onChange={() => setTodayFilter('departures')}
+                    className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
+                  />
+                  <span className="text-sm text-gray-700">Salidas Hoy</span>
+                </label>
 
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showTodayDepartures}
-                  onChange={(e) => setShowTodayDepartures(e.target.checked)}
-                  className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-                />
-                <span className="text-sm text-gray-700">Salidas Hoy</span>
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showOnlyPaid}
-                  onChange={(e) => setShowOnlyPaid(e.target.checked)}
-                  className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-                />
-                <span className="text-sm text-gray-700">Solo Pagadas</span>
-              </label>
-            </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    checked={todayFilter === 'inhouse'}
+                    onChange={() => setTodayFilter('inhouse')}
+                    className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
+                  />
+                  <span className="text-sm text-gray-700">Hospedados Hoy</span>
+                </label>
+              </div>
+            )}
           </div>
 
           {/* Botones de acción */}

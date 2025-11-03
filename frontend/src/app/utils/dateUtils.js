@@ -48,3 +48,86 @@ export const formatIsoDateTimeForDisplay = (isoDateString) => {
 
   return `${day}/${month}/${year} ${hours}:${minutes}`;
 };
+
+
+/**
+ * Valida que fecha_desde no sea mayor que fecha_hasta
+ * @param {string} dateFrom - Fecha desde (formato ISO: YYYY-MM-DD)
+ * @param {string} dateTo - Fecha hasta (formato ISO: YYYY-MM-DD)
+ * @returns {Object} - { isValid: boolean, error: string|null }
+ */
+export const validateDateRange = (dateFrom, dateTo) => {
+  // Si no hay ambas fechas, no hay nada que validar
+  if (!dateFrom || !dateTo) {
+    return { isValid: true, error: null };
+  }
+
+  // Comparar fechas (strings en formato ISO se pueden comparar directamente)
+  if (dateFrom > dateTo) {
+    return {
+      isValid: false,
+      error: 'La fecha desde no puede ser mayor que la fecha hasta'
+    };
+  }
+
+  return { isValid: true, error: null };
+};
+
+
+
+/**
+ * Valida que una fecha no sea futura
+ * @param {string} date - Fecha a validar (formato ISO: YYYY-MM-DD)
+ * @returns {Object} - { isValid: boolean, error: string|null }
+ */
+export const validateNotFutureDate = (date) => {
+  if (!date) {
+    return { isValid: true, error: null };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const selectedDate = new Date(date);
+
+  if (selectedDate > today) {
+    return {
+      isValid: false,
+      error: 'La fecha no puede ser futura'
+    };
+  }
+
+  return { isValid: true, error: null };
+};
+
+/**
+ * Valida que una fecha esté dentro de un rango específico
+ * @param {string} date - Fecha a validar (formato ISO: YYYY-MM-DD)
+ * @param {number} maxDaysInPast - Días máximos en el pasado (default: 365)
+ * @param {number} maxDaysInFuture - Días máximos en el futuro (default: 365)
+ * @returns {Object} - { isValid: boolean, error: string|null }
+ */
+export const validateDateInRange = (date, maxDaysInPast = 365, maxDaysInFuture = 365) => {
+  if (!date) {
+    return { isValid: true, error: null };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const selectedDate = new Date(date);
+  
+  const minDate = new Date(today);
+  minDate.setDate(minDate.getDate() - maxDaysInPast);
+  
+  const maxDate = new Date(today);
+  maxDate.setDate(maxDate.getDate() + maxDaysInFuture);
+
+  if (selectedDate < minDate || selectedDate > maxDate) {
+    return {
+      isValid: false,
+      error: `La fecha debe estar entre ${maxDaysInPast} días en el pasado y ${maxDaysInFuture} días en el futuro`
+    };
+  }
+
+  return { isValid: true, error: null };
+};
+
