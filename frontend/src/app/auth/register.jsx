@@ -11,11 +11,39 @@ export default function Register() {
     telefono: '',
     dni: '',
   });
+  const [errors, setErrors] = useState({});
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   
   const navigate = useNavigate();
+
+  const validate = () => {
+    const newErrors = {};
+
+    if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      newErrors.email = 'Ingresa un correo válido';
+    }
+
+    if (!formData.password.match(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/)) {
+      newErrors.password = 'Debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número';
+    }
+
+    if (!formData.nombre.match(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/)) {
+      newErrors.nombre = 'El nombre debe tener al menos 2 caracteres y solo puede contener letras y espacios';
+    }
+
+    if (formData.telefono && !formData.telefono.match(/^\+?(54)?\d{8,}$/)) {
+      newErrors.telefono = 'El teléfono debe ser válido y puede incluir el prefijo +54';
+    }
+
+    if (formData.dni && !formData.dni.match(/^\d{7,8}$/)) {
+      newErrors.dni = 'El DNI debe tener entre 7 y 8 dígitos';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (e) => {
     setFormData({
@@ -27,6 +55,9 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!validate()) return;
+
     setLoading(true);
 
     try {
@@ -97,6 +128,8 @@ export default function Register() {
             disabled={loading || success}
             className="w-full mb-4 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-gray-100"
           />
+          {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+
           <input
             type="password"
             name="password"
@@ -107,6 +140,8 @@ export default function Register() {
             disabled={loading || success}
             className="w-full mb-4 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-gray-100"
           />
+          {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
+
           <input
             type="text"
             name="nombre"
@@ -117,6 +152,8 @@ export default function Register() {
             disabled={loading || success}
             className="w-full mb-4 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-gray-100"
           />
+          {errors.nombre && <p className="text-sm text-red-500">{errors.nombre}</p>}
+
           <input
             type="tel"
             name="telefono"
@@ -126,6 +163,8 @@ export default function Register() {
             disabled={loading || success}
             className="w-full mb-4 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-gray-100"
           />
+          {errors.telefono && <p className="text-sm text-red-500">{errors.telefono}</p>}
+
           <input
             type="text"
             name="dni"
@@ -135,6 +174,7 @@ export default function Register() {
             disabled={loading || success}
             className="w-full mb-6 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-gray-100"
           />
+          {errors.dni && <p className="text-sm text-red-500">{errors.dni}</p>}
 
           <button 
             type="submit"
