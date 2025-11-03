@@ -1,0 +1,722 @@
+###
+### MÓDULO DE PAGOS
+### Ejemplos de requests HTTP para el módulo de Pagos
+### Base URL: http://localhost:3000/api
+###
+
+### Variables
+@baseUrl = http://localhost:3000/api
+@tokenCliente = YOUR_CLIENT_TOKEN_HERE
+@tokenOperador = YOUR_OPERATOR_TOKEN_HERE
+@tokenAdmin = YOUR_ADMIN_TOKEN_HERE
+
+###############################################
+### 1. LISTAR PAGOS
+###############################################
+
+### 1.1 Listar todos los pagos (Operador/Admin)
+GET {{baseUrl}}/pagos
+Authorization: Bearer {{tokenOperador}}
+
+### Respuesta esperada (200):
+# {
+#   "ok": true,
+#   "data": [
+#     {
+#       "id_pago": 1,
+#       "fecha_pago": "2025-01-15T14:30:00.000Z",
+#       "monto": "175000.00",
+#       "esta_activo": true,
+#       "id_medio_pago": 3,
+#       "nom_medio_pago": "Tarjeta de crédito",
+#       "id_reserva": 5,
+#       "cod_reserva": "RES-20250115-00001",
+#       "monto_total_res": "700000.00",
+#       "monto_pagado": "175000.00",
+#       "esta_pagada": false,
+#       "check_in": "2025-02-01",
+#       "check_out": "2025-02-05",
+#       "estado_reserva": "Confirmada",
+#       "nombre_cliente": "Juan Pérez",
+#       "email_cliente": "juan@example.com",
+#       "usuario_creo_pago": "María Operadora"
+#     }
+#   ],
+#   "pagination": {
+#     "total": 45,
+#     "limit": 100,
+#     "offset": 0,
+#     "hasMore": false
+#   }
+# }
+
+### 1.2 Listar pagos propios (Cliente)
+GET {{baseUrl}}/pagos
+Authorization: Bearer {{tokenCliente}}
+
+### 1.3 Listar pagos con filtro por código de reserva (Operador/Admin)
+GET {{baseUrl}}/pagos?cod_reserva=RES-20250115
+Authorization: Bearer {{tokenOperador}}
+
+### 1.4 Listar pagos por rango de fechas (Operador/Admin)
+GET {{baseUrl}}/pagos?fecha_desde=2025-01-01&fecha_hasta=2025-01-31
+Authorization: Bearer {{tokenOperador}}
+
+### 1.5 Listar solo pagos activos (no anulados)
+GET {{baseUrl}}/pagos?esta_activo=true
+Authorization: Bearer {{tokenOperador}}
+
+### 1.6 Listar solo pagos anulados
+GET {{baseUrl}}/pagos?esta_activo=false
+Authorization: Bearer {{tokenOperador}}
+
+### 1.7 Filtrar por método de pago (Efectivo)
+GET {{baseUrl}}/pagos?id_medio_pago=1
+Authorization: Bearer {{tokenOperador}}
+
+### 1.8 Filtrar por método de pago (Tarjeta de crédito)
+GET {{baseUrl}}/pagos?id_medio_pago=3
+Authorization: Bearer {{tokenOperador}}
+
+### 1.9 Listar con paginación
+GET {{baseUrl}}/pagos?limit=20&offset=0
+Authorization: Bearer {{tokenOperador}}
+
+### 1.10 Filtros combinados
+GET {{baseUrl}}/pagos?fecha_desde=2025-01-01&fecha_hasta=2025-01-31&id_medio_pago=1&esta_activo=true
+Authorization: Bearer {{tokenOperador}}
+
+### 1.11 Error: Cliente intenta usar filtros no permitidos (403)
+GET {{baseUrl}}/pagos?cod_reserva=RES-20250115
+Authorization: Bearer {{tokenCliente}}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "message": "Errores de validación",
+#   "errors": [
+#     {
+#       "field": "general",
+#       "message": "Los clientes solo pueden filtrar por estado activo. Campos no permitidos: cod_reserva"
+#     }
+#   ]
+# }
+
+###############################################
+### 2. DETALLE DE PAGO
+###############################################
+
+### 2.1 Ver detalle de un pago (Operador/Admin)
+GET {{baseUrl}}/pagos/1
+Authorization: Bearer {{tokenOperador}}
+
+### Respuesta esperada (200):
+# {
+#   "ok": true,
+#   "data": {
+#     "id_pago": 1,
+#     "fecha_pago": "2025-01-15T14:30:00.000Z",
+#     "monto": "175000.00",
+#     "esta_activo": true,
+#     "id_medio_pago": 3,
+#     "nom_medio_pago": "Tarjeta de crédito",
+#     "id_reserva": 5,
+#     "cod_reserva": "RES-20250115-00001",
+#     "check_in": "2025-02-01",
+#     "check_out": "2025-02-05",
+#     "cant_personas": 4,
+#     "monto_total_res": "700000.00",
+#     "monto_pagado": "175000.00",
+#     "esta_pagada": false,
+#     "estado_reserva": "Confirmada",
+#     "id_cliente": 12,
+#     "nombre_cliente": "Juan Pérez",
+#     "email_cliente": "juan@example.com",
+#     "telefono_cliente": "+54 9 11 1234-5678",
+#     "id_usuario_creacion": 3,
+#     "usuario_creacion": "María Operadora",
+#     "fecha_creacion": "2025-01-15 14:30:00",
+#     "id_usuario_modific": null,
+#     "usuario_modificacion": null,
+#     "fecha_modificacion": null
+#   }
+# }
+
+### 2.2 Ver detalle de pago propio (Cliente)
+GET {{baseUrl}}/pagos/1
+Authorization: Bearer {{tokenCliente}}
+
+### 2.3 Error: Pago no existe (404)
+GET {{baseUrl}}/pagos/999
+Authorization: Bearer {{tokenOperador}}
+
+### Respuesta esperada (404):
+# {
+#   "ok": false,
+#   "message": "El pago no existe"
+# }
+
+### 2.4 Error: Cliente intenta ver pago de otra persona (403)
+GET {{baseUrl}}/pagos/5
+Authorization: Bearer {{tokenCliente}}
+
+### Respuesta esperada (403):
+# {
+#   "ok": false,
+#   "message": "No tienes permiso para ver este pago"
+# }
+
+### 2.5 Error: ID inválido (400)
+GET {{baseUrl}}/pagos/abc
+Authorization: Bearer {{tokenOperador}}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "message": "El ID del pago debe ser un número entero positivo"
+# }
+
+###############################################
+### 3. HISTORIAL DE PAGOS POR RESERVA
+###############################################
+
+### 3.1 Ver historial de pagos de una reserva (Operador/Admin)
+GET {{baseUrl}}/reservas/5/pagos
+Authorization: Bearer {{tokenOperador}}
+
+### Respuesta esperada (200):
+# {
+#   "ok": true,
+#   "data": [
+#     {
+#       "id_pago": 1,
+#       "fecha_pago": "2025-01-15T14:30:00.000Z",
+#       "monto": "175000.00",
+#       "esta_activo": true,
+#       "nom_medio_pago": "Tarjeta de crédito",
+#       "usuario_creo_pago": "María Operadora"
+#     },
+#     {
+#       "id_pago": 2,
+#       "fecha_pago": "2025-01-20T10:15:00.000Z",
+#       "monto": "200000.00",
+#       "esta_activo": true,
+#       "nom_medio_pago": "Efectivo",
+#       "usuario_creo_pago": "Carlos Operador"
+#     }
+#   ],
+#   "total": 2
+# }
+
+### 3.2 Ver historial de pagos de reserva propia (Cliente)
+GET {{baseUrl}}/reservas/5/pagos
+Authorization: Bearer {{tokenCliente}}
+
+### 3.3 Error: Reserva no existe (404)
+GET {{baseUrl}}/reservas/999/pagos
+Authorization: Bearer {{tokenOperador}}
+
+### Respuesta esperada (404):
+# {
+#   "ok": false,
+#   "message": "La reserva no existe"
+# }
+
+### 3.4 Error: Cliente intenta ver pagos de reserva ajena (403)
+GET {{baseUrl}}/reservas/8/pagos
+Authorization: Bearer {{tokenCliente}}
+
+### Respuesta esperada (403):
+# {
+#   "ok": false,
+#   "message": "No tienes permiso para ver los pagos de esta reserva"
+# }
+
+###############################################
+### 4. REGISTRAR NUEVO PAGO
+###############################################
+
+### 4.1 Registrar seña del 25% con tarjeta de crédito (Operador)
+### Contexto: Reserva con monto total ARS $700,000
+POST {{baseUrl}}/reservas/5/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "monto": 175000,
+  "id_medio_pago": 3
+}
+
+### Respuesta esperada (201):
+# {
+#   "ok": true,
+#   "message": "Pago registrado exitosamente",
+#   "data": {
+#     "id_pago": 1,
+#     "fecha_pago": "2025-01-15T14:30:00.000Z",
+#     "monto": "175000.00",
+#     "esta_activo": true,
+#     "nom_medio_pago": "Tarjeta de crédito",
+#     "id_reserva": 5,
+#     "cod_reserva": "RES-20250115-00001",
+#     "monto_total_res": "700000.00",
+#     "monto_pagado": "175000.00",
+#     "esta_pagada": false,
+#     "usuario_creo_pago": "María Operadora"
+#   }
+# }
+
+### 4.2 Registrar pago adicional en efectivo (Operador)
+POST {{baseUrl}}/reservas/5/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "monto": 200000,
+  "id_medio_pago": 1
+}
+
+### 4.3 Completar pago de reserva (Admin)
+### Contexto: Monto total $700,000, ya pagó $375,000, falta $325,000
+POST {{baseUrl}}/reservas/5/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "monto": 325000,
+  "id_medio_pago": 2
+}
+
+### Respuesta esperada (201):
+# {
+#   "ok": true,
+#   "message": "Pago registrado exitosamente",
+#   "data": {
+#     "id_pago": 3,
+#     "fecha_pago": "2025-01-30T16:45:00.000Z",
+#     "monto": "325000.00",
+#     "esta_activo": true,
+#     "nom_medio_pago": "Tarjeta de débito",
+#     "id_reserva": 5,
+#     "cod_reserva": "RES-20250115-00001",
+#     "monto_total_res": "700000.00",
+#     "monto_pagado": "700000.00",
+#     "esta_pagada": true,
+#     "usuario_creo_pago": "Admin Principal"
+#   }
+# }
+
+### 4.4 Registrar pago con tarjeta de débito
+POST {{baseUrl}}/reservas/8/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "monto": 150000,
+  "id_medio_pago": 2
+}
+
+### 4.5 Error: Monto negativo (400)
+POST {{baseUrl}}/reservas/5/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "monto": -50000,
+  "id_medio_pago": 1
+}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "message": "Errores de validación",
+#   "errors": [
+#     {
+#       "field": "monto",
+#       "message": "El monto debe ser un número mayor a cero"
+#     }
+#   ]
+# }
+
+### 4.6 Error: Monto cero (400)
+POST {{baseUrl}}/reservas/5/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "monto": 0,
+  "id_medio_pago": 1
+}
+
+### 4.7 Error: Método de pago inválido (400)
+POST {{baseUrl}}/reservas/5/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "monto": 100000,
+  "id_medio_pago": 99
+}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "message": "Errores de validación",
+#   "errors": [
+#     {
+#       "field": "id_medio_pago",
+#       "message": "El método de pago debe ser: 1=Efectivo, 2=Tarjeta de débito, 3=Tarjeta de crédito"
+#     }
+#   ]
+# }
+
+### 4.8 Error: Intento de sobrepago (400)
+### Contexto: Monto total $700,000, ya pagó $600,000
+POST {{baseUrl}}/reservas/5/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "monto": 200000,
+  "id_medio_pago": 1
+}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "message": "El monto del pago excede el saldo pendiente de la reserva. Monto restante: ARS $100000.00"
+# }
+
+### 4.9 Error: Reserva no existe (404)
+POST {{baseUrl}}/reservas/999/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "monto": 100000,
+  "id_medio_pago": 1
+}
+
+### Respuesta esperada (404):
+# {
+#   "ok": false,
+#   "message": "La reserva no existe"
+# }
+
+### 4.10 Error: Reserva cancelada (400)
+### No se puede registrar pago para reserva cancelada
+POST {{baseUrl}}/reservas/10/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "monto": 100000,
+  "id_medio_pago": 1
+}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "message": "No se puede registrar un pago para una reserva con estado \"Cancelada\""
+# }
+
+### 4.11 Error: Reserva finalizada (400)
+POST {{baseUrl}}/reservas/12/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "monto": 100000,
+  "id_medio_pago": 1
+}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "message": "No se puede registrar un pago para una reserva con estado \"Finalizada\""
+# }
+
+### 4.12 Error: Cliente intenta registrar pago (403)
+POST {{baseUrl}}/reservas/5/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "monto": 100000,
+  "id_medio_pago": 1
+}
+
+### Respuesta esperada (403):
+# {
+#   "ok": false,
+#   "message": "Acceso denegado. Se requiere rol de Staff"
+# }
+
+### 4.13 Error: Sin token (401)
+POST {{baseUrl}}/reservas/5/pagos
+Content-Type: application/json
+
+{
+  "monto": 100000,
+  "id_medio_pago": 1
+}
+
+###############################################
+### 5. ANULAR PAGO
+###############################################
+
+### 5.1 Anular pago (Operador)
+DELETE {{baseUrl}}/pagos/3
+Authorization: Bearer {{tokenOperador}}
+
+### Respuesta esperada (200):
+# {
+#   "ok": true,
+#   "message": "Pago anulado exitosamente",
+#   "data": {
+#     "id_pago": 3,
+#     "fecha_pago": "2025-01-30T16:45:00.000Z",
+#     "monto": "200000.00",
+#     "esta_activo": false,
+#     "nom_medio_pago": "Efectivo",
+#     "id_reserva": 5,
+#     "cod_reserva": "RES-20250115-00001",
+#     "monto_total_res": "700000.00",
+#     "monto_pagado": "175000.00",
+#     "esta_pagada": false,
+#     "usuario_creo_pago": "María Operadora"
+#   }
+# }
+
+### 5.2 Anular pago (Admin)
+DELETE {{baseUrl}}/pagos/5
+Authorization: Bearer {{tokenAdmin}}
+
+### 5.3 Error: Pago ya anulado (400)
+DELETE {{baseUrl}}/pagos/3
+Authorization: Bearer {{tokenOperador}}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "message": "El pago ya está anulado"
+# }
+
+### 5.4 Error: Pago no existe (404)
+DELETE {{baseUrl}}/pagos/999
+Authorization: Bearer {{tokenOperador}}
+
+### Respuesta esperada (404):
+# {
+#   "ok": false,
+#   "message": "El pago no existe"
+# }
+
+### 5.5 Error: Anular pago de reserva finalizada (400)
+DELETE {{baseUrl}}/pagos/8
+Authorization: Bearer {{tokenOperador}}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "message": "No se puede anular un pago de una reserva con estado \"Finalizada\""
+# }
+
+### 5.6 Error: Cliente intenta anular pago (403)
+DELETE {{baseUrl}}/pagos/1
+Authorization: Bearer {{tokenCliente}}
+
+### Respuesta esperada (403):
+# {
+#   "ok": false,
+#   "message": "Acceso denegado. Se requiere rol de Staff"
+# }
+
+### 5.7 Error: ID inválido (400)
+DELETE {{baseUrl}}/pagos/abc
+Authorization: Bearer {{tokenOperador}}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "message": "El ID del pago debe ser un número entero positivo"
+# }
+
+###############################################
+### 6. CASOS DE USO REALES
+###############################################
+
+### 6.1 CASO: Cliente hace reserva online
+### 1. Cliente crea reserva (seña 25% automática)
+### 2. Operador registra pago de seña al confirmar
+### 3. Al check-in, operador registra saldo restante
+
+# Paso 1: Ya creada con seña automática del 25%
+# cod_reserva: RES-20250115-00001
+# monto_total_res: $700,000
+# monto_pagado: $175,000 (25% automático)
+# esta_pagada: false
+
+# Paso 2: Registrar saldo restante al check-in
+POST {{baseUrl}}/reservas/5/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "monto": 525000,
+  "id_medio_pago": 1
+}
+
+# Resultado:
+# monto_pagado: $700,000
+# esta_pagada: true ✅
+
+### 6.2 CASO: Corrección de error
+### 1. Operador registra pago por $300,000 por error
+### 2. Operador anula el pago erróneo
+### 3. Operador registra pago correcto por $200,000
+
+# Paso 1: Pago erróneo
+POST {{baseUrl}}/reservas/8/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "monto": 300000,
+  "id_medio_pago": 1
+}
+
+# Paso 2: Anular pago erróneo
+DELETE {{baseUrl}}/pagos/10
+Authorization: Bearer {{tokenOperador}}
+
+# Paso 3: Registrar pago correcto
+POST {{baseUrl}}/reservas/8/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "monto": 200000,
+  "id_medio_pago": 1
+}
+
+### 6.3 CASO: Cliente consulta sus pagos
+### Cliente verifica pagos realizados y saldo pendiente
+
+# Listar todos mis pagos
+GET {{baseUrl}}/pagos
+Authorization: Bearer {{tokenCliente}}
+
+# Ver historial de pagos de mi reserva
+GET {{baseUrl}}/reservas/5/pagos
+Authorization: Bearer {{tokenCliente}}
+
+# Ver detalle de un pago específico
+GET {{baseUrl}}/pagos/1
+Authorization: Bearer {{tokenCliente}}
+
+### 6.4 CASO: Cierre diario (Admin)
+### Admin consulta todos los pagos del día para reconciliación
+
+# Pagos del día
+GET {{baseUrl}}/pagos?fecha_desde=2025-01-30&fecha_hasta=2025-01-30
+Authorization: Bearer {{tokenAdmin}}
+
+# Pagos en efectivo del día
+GET {{baseUrl}}/pagos?fecha_desde=2025-01-30&fecha_hasta=2025-01-30&id_medio_pago=1
+Authorization: Bearer {{tokenAdmin}}
+
+# Pagos con tarjeta de crédito del día
+GET {{baseUrl}}/pagos?fecha_desde=2025-01-30&fecha_hasta=2025-01-30&id_medio_pago=3
+Authorization: Bearer {{tokenAdmin}}
+
+### 6.5 CASO: Análisis de pagos anulados
+### Admin revisa pagos anulados para auditoría
+
+GET {{baseUrl}}/pagos?esta_activo=false&fecha_desde=2025-01-01&fecha_hasta=2025-01-31
+Authorization: Bearer {{tokenAdmin}}
+
+###############################################
+### 7. VALIDACIONES ESPECÍFICAS
+###############################################
+
+### 7.1 Campos obligatorios
+POST {{baseUrl}}/reservas/5/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "monto": 100000
+}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "message": "Errores de validación",
+#   "errors": [
+#     {
+#       "field": "id_medio_pago",
+#       "message": "El método de pago es obligatorio"
+#     }
+#   ]
+# }
+
+### 7.2 Validación de rango de fechas
+GET {{baseUrl}}/pagos?fecha_desde=2025-01-31&fecha_hasta=2025-01-01
+Authorization: Bearer {{tokenOperador}}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "message": "Errores de validación",
+#   "errors": [
+#     {
+#       "field": "fecha_hasta",
+#       "message": "La fecha hasta debe ser posterior o igual a la fecha desde"
+#     }
+#   ]
+# }
+
+### 7.3 Formato de fecha inválido
+GET {{baseUrl}}/pagos?fecha_desde=31-01-2025
+Authorization: Bearer {{tokenOperador}}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "message": "Errores de validación",
+#   "errors": [
+#     {
+#       "field": "fecha_desde",
+#       "message": "La fecha desde no es válida. Use formato YYYY-MM-DD"
+#     }
+#   ]
+# }
+
+###############################################
+### NOTAS IMPORTANTES
+###############################################
+
+# MÉTODOS DE PAGO:
+# 1 = Efectivo
+# 2 = Tarjeta de débito
+# 3 = Tarjeta de crédito
+
+# ESTADOS DE RESERVA PERMITIDOS PARA PAGOS:
+# ✅ Confirmada - Se pueden registrar/anular pagos
+# ❌ Cancelada - NO se pueden registrar/anular pagos
+# ❌ Finalizada - NO se pueden registrar/anular pagos
+# ❌ No aparecio - NO se pueden registrar/anular pagos
+
+# TRANSACCIONES ATÓMICAS:
+# - Registro de pago: INSERT pago + UPDATE reserva
+# - Anulación de pago: UPDATE pago + UPDATE reserva
+# - Si cualquier operación falla, se hace ROLLBACK completo
+
+# CÁLCULO AUTOMÁTICO:
+# - esta_pagada = TRUE cuando monto_pagado >= monto_total_res
+# - esta_pagada = FALSE cuando monto_pagado < monto_total_res
+
+# AUDITORÍA:
+# - Cada pago registra usuario_creacion y fecha_pago
+# - Cada modificación registra usuario_modific y fecha_modific
