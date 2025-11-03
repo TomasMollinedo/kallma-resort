@@ -26,23 +26,73 @@ pagos/
 
 ## 🔌 Endpoints
 
-### 1. **GET /api/pagos**
-Lista pagos con filtros según rol del usuario.
+### 1. **GET /api/pagos/me**
+Lista pagos propios del cliente autenticado con todos los filtros disponibles.
 
 **Autenticación:** ✅ Requerida
 
-**Roles permitidos:**
-- **Cliente:** Solo sus propios pagos (filtros limitados)
-- **Operador/Admin:** Todos los pagos con filtros completos
+**Roles permitidos:** Cliente
 
-**Query params:**
-- `cod_reserva` (opcional): Búsqueda parcial por código de reserva
-- `fecha_desde` (opcional): Fecha inicio del rango (formato YYYY-MM-DD)
-- `fecha_hasta` (opcional): Fecha fin del rango (formato YYYY-MM-DD)
-- `esta_activo` (opcional): `true` (activos) o `false` (anulados)
-- `id_medio_pago` (opcional): Filtrar por método de pago (1=Efectivo, 2=Tarjeta débito, 3=Tarjeta crédito)
-- `limit` (opcional): Límite de resultados (default: 100, max: 1000)
-- `offset` (opcional): Offset para paginación (default: 0)
+**Query params (todos opcionales):**
+- `cod_reserva`: Búsqueda parcial por código de reserva (solo en sus reservas)
+- `fecha_desde`: Fecha inicio del rango (formato YYYY-MM-DD)
+- `fecha_hasta`: Fecha fin del rango (formato YYYY-MM-DD)
+- `esta_activo`: `true` (activos) o `false` (anulados)
+- `id_medio_pago`: Filtrar por método de pago (1=Efectivo, 2=Débito, 3=Crédito)
+- `limit`: Límite de resultados (default: 100, max: 1000)
+- `offset`: Offset para paginación (default: 0)
+
+**Respuesta exitosa (200):**
+```json
+{
+  "ok": true,
+  "data": [
+    {
+      "id_pago": 1,
+      "fecha_pago": "2025-01-15T14:30:00.000Z",
+      "monto": "175000.00",
+      "esta_activo": true,
+      "id_medio_pago": 3,
+      "nom_medio_pago": "Tarjeta de crédito",
+      "id_reserva": 5,
+      "cod_reserva": "RES-20250115-00001",
+      "monto_total_res": "700000.00",
+      "monto_pagado": "175000.00",
+      "esta_pagada": false,
+      "check_in": "2025-02-01",
+      "check_out": "2025-02-05",
+      "estado_reserva": "Confirmada",
+      "usuario_creo_pago": "María Operadora"
+    }
+  ],
+  "pagination": {
+    "total": 8,
+    "limit": 100,
+    "offset": 0,
+    "hasMore": false
+  }
+}
+```
+
+**Nota:** Los filtros se aplican automáticamente solo a pagos de reservas del cliente autenticado.
+
+---
+
+### 2. **GET /api/pagos**
+Lista todos los pagos del sistema con filtros.
+
+**Autenticación:** ✅ Requerida
+
+**Roles permitidos:** Operador / Administrador
+
+**Query params (todos opcionales):**
+- `cod_reserva`: Búsqueda parcial por código de reserva (todas las reservas)
+- `fecha_desde`: Fecha inicio del rango (formato YYYY-MM-DD)
+- `fecha_hasta`: Fecha fin del rango (formato YYYY-MM-DD)
+- `esta_activo`: `true` (activos) o `false` (anulados)
+- `id_medio_pago`: Filtrar por método de pago (1=Efectivo, 2=Débito, 3=Crédito)
+- `limit`: Límite de resultados (default: 100, max: 1000)
+- `offset`: Offset para paginación (default: 0)
 
 **Respuesta exitosa (200):**
 ```json
@@ -70,21 +120,17 @@ Lista pagos con filtros según rol del usuario.
     }
   ],
   "pagination": {
-    "total": 45,
+    "total": 245,
     "limit": 100,
     "offset": 0,
-    "hasMore": false
+    "hasMore": true
   }
 }
 ```
 
-**Restricciones por rol:**
-- **Cliente:** Solo puede usar filtros `esta_activo`, `limit`, `offset`
-- **Operador/Admin:** Pueden usar todos los filtros disponibles
-
 ---
 
-### 2. **GET /api/pagos/:id**
+### 3. **GET /api/pagos/:id**
 Obtiene el detalle completo de un pago específico con información de auditoría.
 
 **Autenticación:** ✅ Requerida
@@ -134,7 +180,7 @@ Obtiene el detalle completo de un pago específico con información de auditorí
 
 ---
 
-### 3. **GET /api/reservas/:id/pagos**
+### 4. **GET /api/reservas/:id/pagos**
 Obtiene el historial de pagos de una reserva específica.
 
 **Autenticación:** ✅ Requerida
@@ -176,7 +222,7 @@ Obtiene el historial de pagos de una reserva específica.
 
 ---
 
-### 4. **POST /api/reservas/:id/pagos**
+### 5. **POST /api/reservas/:id/pagos**
 Registra un nuevo pago para una reserva existente.
 
 **Autenticación:** ✅ Requerida
@@ -245,7 +291,7 @@ Registra un nuevo pago para una reserva existente.
 
 ---
 
-### 5. **DELETE /api/pagos/:id**
+### 6. **DELETE /api/pagos/:id**
 Anula un pago (borrado lógico).
 
 **Autenticación:** ✅ Requerida
@@ -332,18 +378,18 @@ Anula un pago (borrado lógico).
 | Registrar pago | ❌ | ✅ | ✅ |
 | Anular pago | ❌ | ✅ | ✅ |
 
-### Filtros permitidos
+### Filtros Disponibles
 
-**Cliente:**
-- `esta_activo`
-- `limit`, `offset`
+**Todos los roles tienen acceso a los mismos filtros:**
+- `cod_reserva` - Búsqueda parcial por código de reserva
+- `fecha_desde`, `fecha_hasta` - Rango de fechas de pago
+- `esta_activo` - Pagos activos o anulados
+- `id_medio_pago` - Filtrar por método de pago (1, 2 o 3)
+- `limit`, `offset` - Paginación
 
-**Operador/Admin:**
-- `cod_reserva`
-- `fecha_desde`, `fecha_hasta`
-- `esta_activo`
-- `id_medio_pago`
-- `limit`, `offset`
+**Diferencia clave:**
+- **Cliente (GET /me):** Los filtros se aplican automáticamente solo a pagos de sus propias reservas
+- **Operador/Admin (GET /):** Los filtros se aplican a todos los pagos del sistema
 
 ---
 

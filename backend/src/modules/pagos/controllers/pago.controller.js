@@ -7,22 +7,12 @@ import * as pagoService from "../services/pago.service.js";
 import * as pagoSchemas from "../schemas/pago.schemas.js";
 
 /**
- * Listar pagos según rol
- * Staff: todos los pagos con filtros
- * Cliente: solo sus propios pagos
+ * Listar todos los pagos con filtros (Solo Staff)
  */
 export const listarPagos = async (req, res) => {
   try {
-    const userId = req.userId;
-    const userRole = req.userRole;
-
-    // Validar filtros según rol
-    let validation;
-    if (userRole === "Cliente") {
-      validation = pagoSchemas.validateFiltrosPagosCliente(req.query);
-    } else {
-      validation = pagoSchemas.validateFiltrosPagosStaff(req.query);
-    }
+    // Validar filtros
+    const validation = pagoSchemas.validateFiltrosPagos(req.query);
 
     if (!validation.isValid) {
       return res.status(400).json({
@@ -32,7 +22,7 @@ export const listarPagos = async (req, res) => {
       });
     }
 
-    const { pagos, pagination } = await pagoService.obtenerPagos(req.query, userId, userRole);
+    const { pagos, pagination } = await pagoService.obtenerPagos(req.query);
 
     return res.status(200).json({
       ok: true,
@@ -41,6 +31,42 @@ export const listarPagos = async (req, res) => {
     });
   } catch (error) {
     console.error("Error al listar pagos:", error);
+    return res.status(500).json({
+      ok: false,
+      message: "Error al obtener el listado de pagos",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Listar pagos propios del cliente autenticado
+ * Los filtros se aplican solo a las reservas del cliente
+ */
+export const listarPagosPropios = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    // Validar filtros (mismos filtros que staff, pero aplicados a sus reservas)
+    const validation = pagoSchemas.validateFiltrosPagos(req.query);
+
+    if (!validation.isValid) {
+      return res.status(400).json({
+        ok: false,
+        message: "Errores de validación",
+        errors: validation.errors,
+      });
+    }
+
+    const { pagos, pagination } = await pagoService.obtenerPagosPropios(req.query, userId);
+
+    return res.status(200).json({
+      ok: true,
+      data: pagos,
+      pagination,
+    });
+  } catch (error) {
+    console.error("Error al listar pagos propios:", error);
     return res.status(500).json({
       ok: false,
       message: "Error al obtener el listado de pagos",

@@ -70,11 +70,12 @@ export const validateCrearPago = (data) => {
 };
 
 /**
- * Valida los filtros de búsqueda para listar pagos (Staff)
+ * Valida los filtros de búsqueda para listar pagos
+ * Usado tanto por clientes (filtrado automático a sus reservas) como por staff (todos los pagos)
  * @param {Object} filters - Filtros de búsqueda
  * @returns {Object} { isValid: boolean, errors: Array }
  */
-export const validateFiltrosPagosStaff = (filters) => {
+export const validateFiltrosPagos = (filters) => {
   const errors = [];
 
   // Validar cod_reserva (opcional)
@@ -152,66 +153,6 @@ export const validateFiltrosPagosStaff = (filters) => {
       errors.push({
         field: "id_medio_pago",
         message: "El método de pago debe ser: 1=Efectivo, 2=Tarjeta de débito, 3=Tarjeta de crédito",
-      });
-    }
-  }
-
-  // Validar limit (opcional)
-  if (filters.limit !== undefined) {
-    const limit = parseInt(filters.limit);
-    if (isNaN(limit) || limit < 1 || limit > 1000) {
-      errors.push({
-        field: "limit",
-        message: "El límite debe estar entre 1 y 1000",
-      });
-    }
-  }
-
-  // Validar offset (opcional)
-  if (filters.offset !== undefined) {
-    const offset = parseInt(filters.offset);
-    if (isNaN(offset) || offset < 0) {
-      errors.push({
-        field: "offset",
-        message: "El offset debe ser un número mayor o igual a cero",
-      });
-    }
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
-};
-
-/**
- * Valida los filtros de búsqueda para listar pagos (Cliente)
- * @param {Object} filters - Filtros de búsqueda
- * @returns {Object} { isValid: boolean, errors: Array }
- */
-export const validateFiltrosPagosCliente = (filters) => {
-  const errors = [];
-
-  // Cliente solo puede filtrar por esta_activo
-  const camposPermitidos = ["esta_activo", "limit", "offset"];
-  const camposEnviados = Object.keys(filters);
-  const camposNoPermitidos = camposEnviados.filter(
-    (campo) => !camposPermitidos.includes(campo)
-  );
-
-  if (camposNoPermitidos.length > 0) {
-    errors.push({
-      field: "general",
-      message: `Los clientes solo pueden filtrar por estado activo. Campos no permitidos: ${camposNoPermitidos.join(", ")}`,
-    });
-  }
-
-  // Validar esta_activo (opcional)
-  if (filters.esta_activo !== undefined) {
-    if (filters.esta_activo !== "true" && filters.esta_activo !== "false") {
-      errors.push({
-        field: "esta_activo",
-        message: "El estado activo debe ser 'true' o 'false'",
       });
     }
   }

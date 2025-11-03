@@ -6,6 +6,7 @@
 import { Router } from "express";
 import {
   listarPagos,
+  listarPagosPropios,
   obtenerPago,
   obtenerPagosDeReserva,
   registrarPago,
@@ -19,8 +20,23 @@ import {
 const router = Router();
 
 /**
+ * GET /api/pagos/me
+ * Listar pagos propios del cliente autenticado
+ * Los filtros se aplican solo a las reservas del cliente
+ * Query params:
+ *  - cod_reserva: búsqueda por código de reserva (parcial, solo en sus reservas)
+ *  - fecha_desde: fecha inicio del rango (formato YYYY-MM-DD)
+ *  - fecha_hasta: fecha fin del rango (formato YYYY-MM-DD)
+ *  - esta_activo: true/false (pagos activos o anulados)
+ *  - id_medio_pago: filtrar por método de pago (1=Efectivo, 2=Tarjeta débito, 3=Tarjeta crédito)
+ *  - limit, offset: paginación
+ * Acceso: Cliente
+ */
+router.get("/me", authenticate, listarPagosPropios);
+
+/**
  * GET /api/pagos
- * Listar pagos con filtros
+ * Listar todos los pagos con filtros
  * Query params:
  *  - cod_reserva: búsqueda por código de reserva (parcial)
  *  - fecha_desde: fecha inicio del rango (formato YYYY-MM-DD)
@@ -28,11 +44,9 @@ const router = Router();
  *  - esta_activo: true/false (pagos activos o anulados)
  *  - id_medio_pago: filtrar por método de pago (1=Efectivo, 2=Tarjeta débito, 3=Tarjeta crédito)
  *  - limit, offset: paginación
- * Acceso: 
- *  - Cliente: solo sus propios pagos (filtros limitados)
- *  - Operador/Admin: todos los pagos (filtros completos)
+ * Acceso: Operador / Admin
  */
-router.get("/", authenticate, listarPagos);
+router.get("/", authenticate, requireStaff, listarPagos);
 
 /**
  * GET /api/pagos/:id

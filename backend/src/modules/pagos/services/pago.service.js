@@ -6,25 +6,16 @@
 import { pool } from "../../../config/database.js";
 
 /**
- * Obtener listado de pagos según rol (Staff: todos, Cliente: solo propios)
+ * Obtener listado de todos los pagos (Solo Staff)
  * @param {Object} filters - Filtros de búsqueda
- * @param {number} userId - ID del usuario autenticado
- * @param {string} userRole - Rol del usuario (Cliente, Operador, Administrador)
  * @returns {Object} { pagos: Array, pagination: Object }
  */
-export const obtenerPagos = async (filters, userId, userRole) => {
+export const obtenerPagos = async (filters) => {
   const { cod_reserva, fecha_desde, fecha_hasta, esta_activo, id_medio_pago, limit = 100, offset = 0 } = filters;
 
   const conditions = [];
   const params = [];
   let paramIndex = 1;
-
-  // Si es Cliente, solo puede ver sus propios pagos
-  if (userRole === "Cliente") {
-    conditions.push(`r.id_usuario_creacion = $${paramIndex}`);
-    params.push(userId);
-    paramIndex++;
-  }
 
   // Filtro por código de reserva (búsqueda parcial)
   if (cod_reserva) {
@@ -98,6 +89,114 @@ export const obtenerPagos = async (filters, userId, userRole) => {
     INNER JOIN medio_pago mp ON p.id_medio_pago = mp.id_medio_pago
     INNER JOIN estado_operativo eo ON r.id_est_op = eo.id_est_op
     INNER JOIN usuario u ON r.id_usuario_creacion = u.id_usuario
+    INNER JOIN usuario uc ON p.id_usuario_creacion = uc.id_usuario
+    ${whereClause}
+    ORDER BY p.fecha_pago DESC
+    LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+  `;
+
+  params.push(parseInt(limit), parseInt(offset));
+  const result = await pool.query(query, params);
+
+  return {
+    pagos: result.rows,
+    pagination: {
+      total,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      hasMore: offset + result.rows.length < total,
+    },
+  };
+};
+
+/**
+ * Obtener listado de pagos propios del cliente autenticado
+ * Los filtros se aplican solo a las reservas del cliente
+ * @param {Object} filters - Filtros de búsqueda
+ * @param {number} userId - ID del usuario autenticado (cliente)
+ * @returns {Object} { pagos: Array, pagination: Object }
+ */
+export const obtenerPagosPropios = async (filters, userId) => {
+  const { cod_reserva, fecha_desde, fecha_hasta, esta_activo, id_medio_pago, limit = 100, offset = 0 } = filters;
+
+  const conditions = [];
+  const params = [];
+  let paramIndex = 1;
+
+  // Filtro obligatorio: solo pagos de reservas del cliente
+  conditions.push(`r.id_usuario_creacion = $${paramIndex}`);
+  params.push(userId);
+  paramIndex++;
+
+  // Filtro por código de reserva (búsqueda parcial dentro de sus reservas)
+  if (cod_reserva) {
+    conditions.push(`r.cod_reserva ILIKE $${paramIndex}`);
+    params.push(`%${cod_reserva}%`);
+    paramIndex++;
+  }
+
+  // Filtro por rango de fechas
+  if (fecha_desde) {
+    conditions.push(`p.fecha_pago::date >= $${paramIndex}::date`);
+    params.push(fecha_desde);
+    paramIndex++;
+  }
+
+  if (fecha_hasta) {
+    conditions.push(`p.fecha_pago::date <= $${paramIndex}::date`);
+    params.push(fecha_hasta);
+    paramIndex++;
+  }
+
+  // Filtro por estado activo/anulado
+  if (esta_activo !== undefined) {
+    conditions.push(`p.esta_activo = $${paramIndex}`);
+    params.push(esta_activo === "true");
+    paramIndex++;
+  }
+
+  // Filtro por método de pago
+  if (id_medio_pago) {
+    conditions.push(`p.id_medio_pago = $${paramIndex}`);
+    params.push(parseInt(id_medio_pago));
+    paramIndex++;
+  }
+
+  const whereClause = `WHERE ${conditions.join(" AND ")}`;
+
+  // Query de conteo
+  const countQuery = `
+    SELECT COUNT(*) as total
+    FROM pago p
+    INNER JOIN reserva r ON p.id_reserva = r.id_reserva
+    ${whereClause}
+  `;
+
+  const countResult = await pool.query(countQuery, params);
+  const total = parseInt(countResult.rows[0].total);
+
+  // Query principal con paginación
+  const query = `
+    SELECT 
+      p.id_pago,
+      p.fecha_pago,
+      p.monto,
+      p.esta_activo,
+      p.id_medio_pago,
+      mp.nom_medio_pago,
+      p.id_reserva,
+      r.cod_reserva,
+      r.monto_total_res,
+      r.monto_pagado,
+      r.esta_pagada,
+      r.check_in,
+      r.check_out,
+      eo.nom_estado as estado_reserva,
+      uc.nombre as usuario_creo_pago
+    FROM pago p
+    INNER JOIN reserva r ON p.id_reserva = r.id_reserva
+    INNER JOIN medio_pago mp ON p.id_medio_pago = mp.id_medio_pago
+    INNER JOIN estado_operativo eo ON r.id_est_op = eo.id_est_op
     INNER JOIN usuario uc ON p.id_usuario_creacion = uc.id_usuario
     ${whereClause}
     ORDER BY p.fecha_pago DESC
