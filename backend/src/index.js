@@ -10,6 +10,7 @@ import cabanasModule from "./modules/cabanas/index.js";
 import reservasModule from "./modules/reservas/index.js";
 import serviciosModule from "./modules/servicios/index.js";
 import { tipoCabanaRoutes } from "./modules/tipo_cabana/index.js";
+import pagosModule from "./modules/pagos/index.js";
 
 const app = express();
 app.use(cors());
@@ -32,6 +33,7 @@ app.use("/api", cabanasModule);
 app.use("/api", reservasModule);
 app.use("/api", serviciosModule);
 app.use("/api/tipo-cabana", tipoCabanaRoutes);
+app.use("/api", pagosModule);
 
 // Manejo de rutas no encontradas
 app.use((req, res) => {

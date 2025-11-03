@@ -178,12 +178,12 @@ export default function DashboardAdministrador() {
             <div className="bg-orange-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
               <DollarSign size={24} className="text-orange-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Reportes Financieros</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Gestión de Pagos</h3>
             <p className="text-gray-600 mb-4">
-              Consulta reportes de pagos e ingresos
+              Consulta pagos e ingresos
             </p>
             <button className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition">
-              Ver Reportes
+              Ver historial de pagos
             </button>
           </div>
 
