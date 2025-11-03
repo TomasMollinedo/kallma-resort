@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { User, Calendar, CreditCard, MessageSquare, Save, X, Edit, ArrowLeft } from 'lucide-react';
@@ -10,86 +11,34 @@ export default function DashboardCliente() {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [showReservas, setShowReservas] = useState(false);
-  const [formData, setFormData] = useState({
-    nombre: user?.nombre || '',
-    dni: user?.dni || '',
-    telefono: user?.telefono || '',
-    email: user?.email || '',
-    password: ''
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm({
+    defaultValues: {
+      nombre: user?.nombre || '',
+      dni: user?.dni || '',
+      telefono: user?.telefono || '',
+      email: user?.email || '',
+      password: '',
+    },
   });
 
-  const handleEditClick = () => {
-    setIsEditing(true);
-    setFormData({
-      nombre: user?.nombre || '',
-      dni: user?.dni || '',
-      telefono: user?.telefono || '',
-      email: user?.email || '',
-      password: ''
-    });
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    setFormData({
-      nombre: user?.nombre || '',
-      dni: user?.dni || '',
-      telefono: user?.telefono || '',
-      email: user?.email || '',
-      password: ''
-    });
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    
-    // Validaciones según el campo
-    if (name === 'dni') {
-      // Solo números, máximo 8 dígitos
-      const onlyNumbers = value.replace(/\D/g, '');
-      if (onlyNumbers.length <= 8) {
-        setFormData(prev => ({ ...prev, [name]: onlyNumbers }));
-      }
-    } else if (name === 'telefono') {
-      // Solo números
-      const onlyNumbers = value.replace(/\D/g, '');
-      setFormData(prev => ({ ...prev, [name]: onlyNumbers }));
-    } else if (name === 'nombre') {
-      // Solo letras y espacios
-      const onlyLetters = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
-      setFormData(prev => ({ ...prev, [name]: onlyLetters }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleSaveData = async () => {
+  const onSubmit = async (data) => {
     try {
-      // Validaciones antes de guardar
-      if (formData.dni && formData.dni.length !== 8) {
-        alert('El DNI debe tener exactamente 8 dígitos');
-        return;
-      }
-      
-      if (!formData.nombre || formData.nombre.trim() === '') {
-        alert('El nombre es obligatorio');
-        return;
-      }
-      
-      if (!formData.email || formData.email.trim() === '') {
-        alert('El email es obligatorio');
-        return;
-      }
-
+      // Aquí puedes enviar los datos al backend
       const updatedUser = {
         ...user,
-        nombre: formData.nombre,
-        dni: formData.dni,
-        telefono: formData.telefono,
-        email: formData.email
+        nombre: data.nombre,
+        dni: data.dni,
+        telefono: data.telefono,
+        email: data.email
       };
 
       login(updatedUser, localStorage.getItem('token'));
+
       setIsEditing(false);
 
       alert('Datos actualizados correctamente');
@@ -136,7 +85,7 @@ export default function DashboardCliente() {
 
             {!isEditing && (
               <button
-                onClick={handleEditClick}
+                onClick={() => setIsEditing(true)}
                 className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition w-full sm:w-auto"
               >
                 <Edit size={18} />
@@ -146,59 +95,81 @@ export default function DashboardCliente() {
           </div>
 
           {isEditing ? (
-            <div className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">Nombre Completo</label>
                   <input
                     type="text"
-                    name="nombre"
-                    value={formData.nombre}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    {...register('nombre', {
+                      required: 'El nombre es obligatorio',
+                      minLength: {
+                        value: 2,
+                        message: 'El nombre debe tener al menos 2 caracteres',
+                      },
+                      pattern: {
+                        value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+                        message: 'El nombre solo puede contener letras y espacios',
+                      },
+                    })}
+                    className={`w-full px-4 py-2 border rounded-md ${errors.nombre ? 'border-red-500' : 'border-gray-300'}`}
                     placeholder="Tu nombre completo"
                   />
+                  {errors.nombre && <p className="text-red-500 text-sm mt-1">{errors.nombre.message}</p>}
                 </div>
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">DNI</label>
                   <input
                     type="text"
-                    name="dni"
-                    value={formData.dni}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    {...register('dni', {
+                      required: 'El DNI es obligatorio',
+                      pattern: {
+                        value: /^\d{7,8}$/,
+                        message: 'El DNI debe tener entre 7 y 8 dígitos',
+                      },
+                    })}
+                    className={`w-full px-4 py-2 border rounded-md ${errors.dni ? 'border-red-500' : 'border-gray-300'}`}
                     placeholder="Tu DNI"
                   />
+                  {errors.dni && <p className="text-red-500 text-sm mt-1">{errors.dni.message}</p>}
                 </div>
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">Teléfono</label>
                   <input
                     type="text"
-                    name="telefono"
-                    value={formData.telefono}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    {...register('telefono', {
+                      required: 'El teléfono es obligatorio',
+                      pattern: {
+                        value: /^\+?(54)?\d{8,}$/,
+                        message: 'El teléfono debe ser válido y puede incluir el prefijo +54',
+                      },
+                    })}
+                    className={`w-full px-4 py-2 border rounded-md ${errors.telefono ? 'border-red-500' : 'border-gray-300'}`}
                     placeholder="Tu teléfono"
                   />
+                  {errors.telefono && <p className="text-red-500 text-sm mt-1">{errors.telefono.message}</p>}
                 </div>
                 <div>
-                  <label className="block text-gray-700 font-medium mb-2">Email</label>
+                  <label className="block text-gray-700 font-medium mb-2">Correo Electrónico</label>
                   <input
                     type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    {...register('email', {
+                      required: 'El correo es obligatorio',
+                      pattern: {
+                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                        message: 'Ingresa un correo válido',
+                      },
+                    })}
+                    className={`w-full px-4 py-2 border rounded-md ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
                     placeholder="Tu email"
                   />
+                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
                 </div>
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">Nueva Contraseña (opcional)</label>
                   <input
                     type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
+                    {...register('password')}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     placeholder="Dejar vacío para no cambiar"
                   />
@@ -207,21 +178,21 @@ export default function DashboardCliente() {
 
               <div className="flex gap-3 justify-end pt-4">
                 <button
-                  onClick={handleCancelEdit}
+                  onClick={() => setIsEditing(false)}
                   className="flex items-center gap-2 px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
                 >
                   <X size={18} />
                   Cancelar
                 </button>
                 <button
-                  onClick={handleSaveData}
+                  type="submit"
                   className="flex items-center gap-2 px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
                 >
                   <Save size={18} />
                   Guardar
                 </button>
               </div>
-            </div>
+            </form>
           ) : (
             <div className="grid md:grid-cols-2 gap-4 text-sm">
               <div>

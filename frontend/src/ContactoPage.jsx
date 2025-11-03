@@ -1,45 +1,29 @@
-import React, { useState } from "react";
+import React from "react";
+import { useForm } from "react-hook-form";
 import emailjs from "@emailjs/browser";
 import Fondo from "./assets/fondo.jpg";
 
 function Contacto() {
-  const [formData, setFormData] = useState({ name: "", email: "", message: "" });
-  const [status, setStatus] = useState("");
-  const [sending, setSending] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm();
 
-  const handleChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-
-  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!formData.name || !formData.email || !formData.message) {
-      alert("Completa todos los campos");
-      return;
-    }
-
-    if (!validateEmail(formData.email)) {
-      alert("Ingresa un correo válido");
-      return;
-    }
-
-    setSending(true);
+  const onSubmit = async (data) => {
     try {
       await emailjs.send(
         "service_zfp766k",
         "template_xc8w33j",
-        formData,
+        data,
         "sgekDpnNSfwLcIszP"
       );
-      setStatus("success");
-      setFormData({ name: "", email: "", message: "" });
+      alert("Mensaje enviado con éxito");
+      reset();
     } catch (error) {
       console.error("Error al enviar:", error);
-      setStatus("error");
-    } finally {
-      setSending(false);
+      alert("Hubo un error al enviar el mensaje");
     }
   };
 
@@ -70,58 +54,77 @@ function Contacto() {
           </h1>
 
           <form
-            onSubmit={handleSubmit}
+            onSubmit={handleSubmit(onSubmit)}
             className="flex flex-col gap-4 text-gray-800"
           >
-            <input
-              type="text"
-              name="name"
-              placeholder="Nombre"
-              value={formData.name}
-              onChange={handleChange}
-              className="p-3 rounded-md border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-400"
-            />
+            <div>
+              <input
+                type="text"
+                {...register("name", {
+                  required: "El nombre es obligatorio",
+                  minLength: {
+                    value: 2,
+                    message: "El nombre debe tener al menos 2 caracteres",
+                  },
+                })}
+                placeholder="Nombre"
+                className={`w-full p-2 border rounded-md ${
+                  errors.name ? "border-red-500" : "border-gray-300"
+                }`}
+              />
+              {errors.name && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.name.message}
+                </p>
+              )}
+            </div>
 
-            <input
-              type="email"
-              name="email"
-              placeholder="Correo electrónico"
-              value={formData.email}
-              onChange={handleChange}
-              className="p-3 rounded-md border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-400"
-            />
+            <div>
+              <input
+                type="email"
+                {...register("email", {
+                  required: "El correo es obligatorio",
+                  pattern: {
+                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                    message: "Ingresa un correo válido",
+                  },
+                })}
+                placeholder="Correo"
+                className={`w-full p-2 border rounded-md ${
+                  errors.email ? "border-red-500" : "border-gray-300"
+                }`}
+              />
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
 
-            <textarea
-              name="message"
-              placeholder="Escribe tu mensaje..."
-              value={formData.message}
-              onChange={handleChange}
-              className="p-3 rounded-md border border-orange-200 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-orange-400"
-            />
+            <div>
+              <textarea
+                {...register("message", {
+                  required: "El mensaje es obligatorio",
+                })}
+                placeholder="Mensaje"
+                className={`w-full p-2 border rounded-md ${
+                  errors.message ? "border-red-500" : "border-gray-300"
+                }`}
+              ></textarea>
+              {errors.message && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.message.message}
+                </p>
+              )}
+            </div>
 
             <button
               type="submit"
-              disabled={sending}
-              className={`p-3 rounded-md text-white font-semibold transition ${
-                sending
-                  ? "bg-orange-300 cursor-not-allowed"
-                  : "bg-orange-600 hover:bg-orange-700"
-              }`}
+              className="bg-orange-600 text-white py-2 px-4 rounded-md hover:bg-orange-700 transition"
             >
-              {sending ? "Enviando..." : "Enviar"}
+              Enviar
             </button>
           </form>
-
-          {status === "success" && (
-            <p className="text-green-600 mt-3 text-center">
-              ✅ ¡Correo enviado correctamente!
-            </p>
-          )}
-          {status === "error" && (
-            <p className="text-red-600 mt-3 text-center">
-              ❌ Ocurrió un error al enviar el correo.
-            </p>
-          )}
         </div>
 
         {/* 🗺️ Mapa */}
