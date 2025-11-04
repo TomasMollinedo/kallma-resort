@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { obtenerMisReservas } from '../../../Reserva/reservaService';
-import { Calendar, Search, Filter, X, Clock, Check, XCircle, Loader2 } from 'lucide-react';
+import { Calendar, Search, Filter, X, Clock, Check, XCircle, Loader2, RefreshCw} from 'lucide-react';
 
 export default function MisReservas({ onClose }) {
   const { token } = useAuth();
@@ -105,6 +105,13 @@ export default function MisReservas({ onClose }) {
       esta_pagada: '',
       fecha: ''
     });
+  };
+
+  /**
+   * Refrescar lista
+   */
+  const handleRefresh = () => {
+    loadReservations();
   };
 
   const getPagoBadge = (estaPagada) => {
@@ -287,89 +294,106 @@ export default function MisReservas({ onClose }) {
             </div>
           </div>
         )}
-      </div>
+
+        {/* Botones de acción */}
+          <div className="flex gap-2 mt-4 pt-4 border-t border-gray-200">
+            <button
+              onClick={resetFilters}
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition text-sm"
+            >
+              Limpiar Filtros
+            </button>
+            <button
+              onClick={handleRefresh}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition text-sm"
+            >
+              <RefreshCw size={16} />
+              Refrescar
+            </button>
+          </div>
+        </div>
 
       {/* Lista de reservas */}
-      <div className="overflow-x-auto bg-white">
-        {filteredReservas.length === 0 ? (
-          <div className="text-center py-12 px-4">
-            <Calendar className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No hay reservas</h3>
-            <p className="text-gray-500">
-              {reservas.length === 0 
-                ? 'Aún no has realizado ninguna reserva.'
-                : 'No se encontraron reservas que coincidan con los filtros seleccionados.'}
-            </p>
-          </div>
-        ) : (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-blue-100">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Código
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Cabaña
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Fechas
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Pago
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredReservas.map((reserva) => (
-                <tr key={reserva.id_reserva} className="hover:bg-blue-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {reserva.cod_reserva || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {reserva.cantidad_cabanas ? `${reserva.cantidad_cabanas} Cabaña${reserva.cantidad_cabanas > 1 ? 's' : ''}` : 'No especificada'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div className="flex flex-col">
-                      <span>{formatDate(reserva.check_in)}</span>
-                      <span className="text-xs text-gray-400">
-                        {reserva.noches || 0} noches
-                      </span>
-                      <span>→ {formatDate(reserva.check_out)}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span 
-                      className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        reserva.estado_operativo === 'Confirmada' 
-                          ? 'bg-green-100 text-green-800' 
-                          : reserva.estado_operativo === 'Cancelada'
-                          ? 'bg-red-100 text-red-800'
-                          : reserva.estado_operativo === 'Finalizada'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}
-                    >
-                      {reserva.estado_operativo || 'Pendiente'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getPagoBadge(reserva.esta_pagada)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                    ${parseFloat(reserva.monto_total_res || 0).toLocaleString('es-AR')}
-                  </td>
+        <div className="overflow-x-auto bg-white">
+          {filteredReservas.length === 0 ? (
+            <div className="text-center py-12 px-4">
+              <Calendar className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No hay reservas</h3>
+              <p className="text-gray-500">
+                {reservas.length === 0 
+                  ? 'Aún no has realizado ninguna reserva.'
+                  : 'No se encontraron reservas que coincidan con los filtros seleccionados.'}
+              </p>
+            </div>
+          ) : (
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-blue-100">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Código
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Cabaña
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Fechas
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Estado
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Pago
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredReservas.map((reserva) => (
+                  <tr key={reserva.id_reserva} className="hover:bg-blue-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {reserva.cod_reserva || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {reserva.cantidad_cabanas ? `${reserva.cantidad_cabanas} Cabaña${reserva.cantidad_cabanas > 1 ? 's' : ''}` : 'No especificada'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="flex flex-col">
+                        <span>{formatDate(reserva.check_in)}</span>
+                        <span className="text-xs text-gray-400">
+                          {reserva.noches || 0} noches
+                        </span>
+                        <span>→ {formatDate(reserva.check_out)}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span 
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          reserva.estado_operativo === 'Confirmada' 
+                            ? 'bg-green-100 text-green-800' 
+                            : reserva.estado_operativo === 'Cancelada'
+                            ? 'bg-red-100 text-red-800'
+                            : reserva.estado_operativo === 'Finalizada'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}
+                      >
+                        {reserva.estado_operativo || 'Pendiente'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {getPagoBadge(reserva.esta_pagada)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                      ${parseFloat(reserva.monto_total_res || 0).toLocaleString('es-AR')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
