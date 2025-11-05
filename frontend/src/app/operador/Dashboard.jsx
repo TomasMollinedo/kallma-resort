@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Wrench, LogOut, Home, Calendar, Building, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Wrench, LogOut, Home, Calendar, Building, CheckCircle, XCircle, Clock, DollarSign } from 'lucide-react';
 import ReservationsManagement from '../admin/ReservationsManagement';
 
 export default function DashboardOperador() {
@@ -130,19 +130,19 @@ export default function DashboardOperador() {
             </button>
           </div>
 
-          {/* Check-in / Check-out */}
-          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
-            <div className="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle size={24} className="text-green-600" />
+          {/* Reportes Financieros */}
+            <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+              <div className="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+                <DollarSign size={24} className="text-green-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Gestión de Pagos</h3>
+              <p className="text-gray-600 mb-4">
+                Consulta pagos e ingresos
+              </p>
+              <button className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition">
+                Ver historial de pagos
+              </button>
             </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Check-in / Check-out</h3>
-            <p className="text-gray-600 mb-4">
-              Procesa la entrada y salida de huéspedes
-            </p>
-            <button className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition">
-              Gestionar
-            </button>
-          </div>
 
           {/* Estado de Cabañas */}
           <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
