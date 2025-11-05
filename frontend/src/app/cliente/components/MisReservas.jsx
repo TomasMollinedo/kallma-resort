@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { obtenerMisReservas } from '../../../Reserva/reservaService';
-import { Calendar, Search, Filter, X, Clock, Check, XCircle, Loader2, RefreshCw, Eye, DollarSign } from 'lucide-react';
+import { Calendar, Search, Filter, X, Clock, Check, XCircle, Loader2, RefreshCw, Eye} from 'lucide-react';
 import ReservationDetailModal from '../../admin/components/ReservationDetailModal';
 
 export default function MisReservas({ onClose }) {
@@ -418,11 +418,6 @@ export default function MisReservas({ onClose }) {
                           className="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors"
                           onClick={() => handleViewDetails(reserva)}
                           title="Ver detalles"
-                        />
-                        <DollarSign 
-                          size={20} 
-                          className="cursor-pointer text-green-600 hover:text-green-800 transition-colors"
-                          title="Pagos"
                         />
                         <X 
                           size={20} 
