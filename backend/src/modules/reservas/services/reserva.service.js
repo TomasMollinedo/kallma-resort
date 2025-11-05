@@ -466,6 +466,24 @@ export const obtenerReservaPorId = async (idReserva, idUsuario = null) => {
 
     const serviciosResult = await pool.query(serviciosQuery, [idReserva]);
 
+    // Query para obtener pagos vinculados a la reserva
+    const pagosQuery = `
+      SELECT 
+        p.id_pago,
+        p.fecha_pago,
+        p.monto,
+        p.esta_activo,
+        mp.nom_medio_pago,
+        uc.nombre as usuario_creo_pago
+      FROM pago p
+      INNER JOIN medio_pago mp ON p.id_medio_pago = mp.id_medio_pago
+      INNER JOIN usuario uc ON p.id_usuario_creacion = uc.id_usuario
+      WHERE p.id_reserva = $1
+      ORDER BY p.fecha_pago DESC
+    `;
+
+    const pagosResult = await pool.query(pagosQuery, [idReserva]);
+
     // Normalizar fechas para evitar problemas de zona horaria
     const checkInStr = normalizarFecha(reserva.check_in);
     const checkOutStr = normalizarFecha(reserva.check_out);
@@ -478,6 +496,8 @@ export const obtenerReservaPorId = async (idReserva, idUsuario = null) => {
       noches,
       cabanas: cabanasResult.rows,
       servicios: serviciosResult.rows,
+      pagos: pagosResult.rows,
+      total_pagos: pagosResult.rows.length,
     };
   } catch (error) {
     console.error("Error en obtenerReservaPorId:", error);

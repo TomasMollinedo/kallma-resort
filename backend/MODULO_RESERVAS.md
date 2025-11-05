@@ -237,7 +237,7 @@ Lista todas las reservas con filtros (Operador/Admin).
 ---
 
 ### 5. **GET /api/reservas/:id**
-Obtiene el detalle completo de una reserva.
+Obtiene el detalle completo de una reserva, incluyendo cabañas, servicios y pagos asociados.
 
 **Autenticación:** Requerida
 - **Cliente:** Solo puede ver sus propias reservas
@@ -281,10 +281,42 @@ Obtiene el detalle completo de una reserva.
         "nom_servicio": "Desayuno",
         "precio_servicio": "15000.00"
       }
-    ]
+    ],
+    "pagos": [
+      {
+        "id_pago": 5,
+        "fecha_pago": "2025-10-22T14:30:00.000Z",
+        "monto": "175000.00",
+        "esta_activo": true,
+        "nom_medio_pago": "Tarjeta de crédito",
+        "usuario_creo_pago": "Operador Juan"
+      },
+      {
+        "id_pago": 8,
+        "fecha_pago": "2025-12-01T10:00:00.000Z",
+        "monto": "525000.00",
+        "esta_activo": true,
+        "nom_medio_pago": "Efectivo",
+        "usuario_creo_pago": "Operador María"
+      }
+    ],
+    "total_pagos": 2
   }
 }
 ```
+
+**Información incluida:**
+- ✅ **Datos de la reserva:** Fechas, personas, noches, montos
+- ✅ **Cabañas reservadas:** Detalles de cada cabaña con tipo, zona y precios
+- ✅ **Servicios contratados:** Lista de servicios adicionales
+- ✅ **Historial de pagos:** Todos los pagos realizados ordenados por fecha (más recientes primero)
+- ✅ **Auditoría completa:** Fechas de creación/modificación y usuarios responsables
+
+**Nota sobre pagos:**
+- Los pagos están ordenados por `fecha_pago DESC` (más recientes primero)
+- El campo `esta_activo` indica si el pago está activo (`true`) o fue anulado (`false`)
+- El array `pagos` puede estar vacío `[]` si la reserva no tiene pagos registrados
+- `total_pagos` indica la cantidad de pagos en el historial (incluye activos y anulados)
 
 ---
 
@@ -586,6 +618,8 @@ Según el esquema de base de datos:
 - Disponibilidad pública sin autenticación (flujo sin fricción)
 - Validación de suma de capacidades de cabañas
 - Límite máximo de 10 personas por reserva
+- **Integración con módulo de pagos:** Detalle de reserva incluye historial completo de pagos
+- **Seña automática del 25%:** Al crear reserva se registra automáticamente la seña
 
 ### 💡 Sugerencias Futuras:
 
@@ -599,9 +633,9 @@ Según el esquema de base de datos:
    - Email de cancelación
 
 3. **Pagos:**
-   - Integración con módulo de pagos
-   - Registro de pagos parciales
-   - Cálculo automático de saldo pendiente
+   - Dashboard de análisis de pagos
+   - Exportación de reportes de pagos
+   - Alertas de pagos vencidos
 
 4. **Disponibilidad:**
    - Cache de disponibilidad para rangos populares

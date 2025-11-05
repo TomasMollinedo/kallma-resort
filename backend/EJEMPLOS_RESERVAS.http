@@ -270,17 +270,23 @@ Authorization: Bearer {{tokenCliente}}
 
 ###############################################
 ### 5. DETALLE DE RESERVA
+### NOTA: El detalle ahora incluye historial completo de pagos
+### con información sobre cada pago: monto, fecha, método de pago,
+### estado (activo/anulado) y usuario que lo registró
 ###############################################
 
 ### 5.1 Ver detalle de reserva propia (Cliente)
+# Incluye: datos de reserva, cabañas, servicios, pagos y auditoría
 GET {{baseUrl}}/reservas/1
 Authorization: Bearer {{tokenCliente}}
 
 ### 5.2 Ver detalle de cualquier reserva (Operador)
+# Incluye historial de pagos ordenado por fecha descendente
 GET {{baseUrl}}/reservas/1
 Authorization: Bearer {{tokenOperador}}
 
 ### 5.3 Ver detalle de cualquier reserva (Admin)
+# Incluye pagos activos y anulados en el campo "pagos"
 GET {{baseUrl}}/reservas/1
 Authorization: Bearer {{tokenAdmin}}
 
@@ -295,6 +301,43 @@ Authorization: Bearer {{tokenOperador}}
 ### 5.6 Error: Reserva no existe
 GET {{baseUrl}}/reservas/99999
 Authorization: Bearer {{tokenOperador}}
+
+# RESPUESTA ESPERADA (5.1, 5.2, 5.3):
+# {
+#   "ok": true,
+#   "data": {
+#     "id_reserva": 1,
+#     "cod_reserva": "RES-20251104-00001",
+#     "check_in": "2025-12-01",
+#     "check_out": "2025-12-05",
+#     "cant_personas": 4,
+#     "noches": 4,
+#     "estado_operativo": "Confirmada",
+#     "esta_pagada": false,
+#     "monto_total_res": "700000.00",
+#     "monto_pagado": "175000.00",
+#     "cliente_nombre": "Juan Pérez",
+#     "cliente_email": "juan@example.com",
+#     "cliente_telefono": "+5491123456789",
+#     "fecha_creacion": "2025-11-04T10:30:00.000Z",
+#     "fecha_modific": null,
+#     "usuario_creacion": "Juan Pérez",
+#     "usuario_modificacion": null,
+#     "cabanas": [...],
+#     "servicios": [...],
+#     "pagos": [
+#       {
+#         "id_pago": 5,
+#         "fecha_pago": "2025-11-04T14:30:00.000Z",
+#         "monto": "175000.00",
+#         "esta_activo": true,
+#         "nom_medio_pago": "Tarjeta de crédito",
+#         "usuario_creo_pago": "Operador Juan"
+#       }
+#     ],
+#     "total_pagos": 1
+#   }
+# }
 
 ###############################################
 ### 6. ACTUALIZAR ESTADO - CLIENTE
@@ -552,5 +595,13 @@ Authorization: Bearer {{tokenCliente}}
 # 2. Usuario selecciona cabañas y servicios
 # 3. Usuario se autentica SOLO al confirmar reserva
 # 4. Sistema crea reserva con estado "Confirmada"
+
+# INTEGRACIÓN CON MÓDULO DE PAGOS:
+# - El detalle de reserva (GET /api/reservas/:id) incluye el campo "pagos"
+# - Array con todos los pagos asociados a la reserva (activos y anulados)
+# - Ordenados por fecha descendente (más recientes primero)
+# - Incluye: id_pago, fecha_pago, monto, esta_activo, nom_medio_pago, usuario_creo_pago
+# - Campo "total_pagos" indica la cantidad total de pagos en el historial
+# - Útil para ver el historial completo de pagos sin llamar a otro endpoint
 
 ###

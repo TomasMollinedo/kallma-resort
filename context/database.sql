@@ -131,7 +131,7 @@ CREATE TABLE IF NOT EXISTS reserva (
 -- (11) PAGO
 CREATE TABLE IF NOT EXISTS pago (
   id_pago              SERIAL PRIMARY KEY,
-  fecha_pago           TIMESTAMPTZ NOT NULL,
+  fecha_pago           DATE NOT NULL,
   monto                NUMERIC(10,2) NOT NULL CHECK (monto > 0),
   id_medio_pago        INTEGER NOT NULL REFERENCES medio_pago(id_medio_pago) ON DELETE RESTRICT ON UPDATE CASCADE,
   id_reserva           INTEGER NOT NULL REFERENCES reserva(id_reserva) ON DELETE RESTRICT ON UPDATE CASCADE,

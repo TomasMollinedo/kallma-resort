@@ -45,7 +45,7 @@ export const listarPagos = async (req, res) => {
  */
 export const listarPagosPropios = async (req, res) => {
   try {
-    const userId = req.userId;
+    const userId = req.user.id_usuario;
 
     // Validar filtros (mismos filtros que staff, pero aplicados a sus reservas)
     const validation = pagoSchemas.validateFiltrosPagos(req.query);
@@ -81,8 +81,8 @@ export const listarPagosPropios = async (req, res) => {
 export const obtenerPago = async (req, res) => {
   try {
     const idPago = parseInt(req.params.id);
-    const userId = req.userId;
-    const userRole = req.userRole;
+    const userId = req.user.id_usuario;
+    const userRole = req.user.nom_rol;
 
     // Validar que el ID sea un número válido
     if (isNaN(idPago) || idPago <= 0) {
@@ -129,8 +129,8 @@ export const obtenerPago = async (req, res) => {
 export const obtenerPagosDeReserva = async (req, res) => {
   try {
     const idReserva = parseInt(req.params.id);
-    const userId = req.userId;
-    const userRole = req.userRole;
+    const userId = req.user.id_usuario;
+    const userRole = req.user.nom_rol;
 
     // Validar que el ID sea un número válido
     if (isNaN(idReserva) || idReserva <= 0) {
@@ -179,7 +179,7 @@ export const obtenerPagosDeReserva = async (req, res) => {
 export const registrarPago = async (req, res) => {
   try {
     const idReserva = parseInt(req.params.id);
-    const userId = req.userId;
+    const userId = req.user.id_usuario;
 
     // Validar que el ID sea un número válido
     if (isNaN(idReserva) || idReserva <= 0) {
@@ -254,7 +254,7 @@ export const registrarPago = async (req, res) => {
 export const anularPago = async (req, res) => {
   try {
     const idPago = parseInt(req.params.id);
-    const userId = req.userId;
+    const userId = req.user.id_usuario;
 
     // Validar que el ID sea un número válido
     if (isNaN(idPago) || idPago <= 0) {

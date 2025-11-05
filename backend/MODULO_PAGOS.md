@@ -233,7 +233,8 @@ Registra un nuevo pago para una reserva existente.
 ```json
 {
   "monto": 200000.00,
-  "id_medio_pago": 1
+  "id_medio_pago": 1,
+  "fecha_pago": "2025-01-30"
 }
 ```
 
@@ -243,6 +244,9 @@ Registra un nuevo pago para una reserva existente.
   - `1` = Efectivo
   - `2` = Tarjeta de débito
   - `3` = Tarjeta de crédito
+- `fecha_pago` (opcional): Fecha del pago en formato YYYY-MM-DD
+  - Si no se proporciona, se usa la fecha actual (CURRENT_DATE)
+  - No puede ser una fecha futura
 
 **Respuesta exitosa (201):**
 ```json
@@ -347,7 +351,7 @@ Anula un pago (borrado lógico).
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `id_pago` | SERIAL | ID único (PK) |
-| `fecha_pago` | TIMESTAMPTZ | Fecha y hora del pago |
+| `fecha_pago` | DATE | Fecha del pago (YYYY-MM-DD) |
 | `monto` | NUMERIC(10,2) | Monto del pago (> 0) |
 | `id_medio_pago` | INTEGER | FK a `medio_pago` |
 | `id_reserva` | INTEGER | FK a `reserva` |
@@ -425,7 +429,7 @@ Anula un pago (borrado lógico).
 
 - Todos los pagos registran:
   - Usuario que creó el pago (`id_usuario_creacion`)
-  - Fecha de creación (`fecha_pago`)
+  - Fecha del pago (`fecha_pago` tipo DATE, por defecto CURRENT_DATE)
   - Usuario que modificó (`id_usuario_modific`)
   - Fecha de modificación (`fecha_modific`)
 
@@ -645,9 +649,11 @@ Authorization: Bearer <token>
 
 ### Manejo de Fechas
 
-- Tipo `TIMESTAMPTZ` para `fecha_pago` (con zona horaria)
-- Filtros con `::date` para comparaciones por día
-- Formato en respuestas: ISO 8601
+- Tipo `DATE` para `fecha_pago` (solo fecha, sin hora)
+- Formato: YYYY-MM-DD
+- Por defecto usa CURRENT_DATE si no se especifica
+- No se permiten fechas futuras al registrar pagos
+- Filtros de fecha_desde y fecha_hasta usan comparación directa (ya no necesitan ::date)
 
 ### Cálculos de Montos
 
