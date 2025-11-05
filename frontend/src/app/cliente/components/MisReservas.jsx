@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { obtenerMisReservas } from '../../../Reserva/reservaService';
-import { Calendar, Search, Filter, X, Clock, Check, XCircle, Loader2, RefreshCw} from 'lucide-react';
+import { Calendar, Search, Filter, X, Clock, Check, XCircle, Loader2, RefreshCw, Eye, DollarSign } from 'lucide-react';
+import ReservationDetailModal from '../../admin/components/ReservationDetailModal';
 
 export default function MisReservas({ onClose }) {
   const { token } = useAuth();
@@ -15,6 +16,8 @@ export default function MisReservas({ onClose }) {
     fecha: ''
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedReservation, setSelectedReservation] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Estados operativos para los filtros
   const estadosOperativos = [
@@ -112,6 +115,23 @@ export default function MisReservas({ onClose }) {
    */
   const handleRefresh = () => {
     loadReservations();
+  };
+
+  /**
+   * Abre el modal de detalle de reserva con la reserva seleccionada
+   * @param {object} reserva - El objeto de la reserva a mostrar en el modal
+   */
+  const handleViewDetails = (reserva) => {
+    setSelectedReservation(reserva);
+    setShowDetailModal(true);
+  };
+
+  /**
+   * Cierra el modal de detalle de reserva
+   */
+  const handleCloseDetailModal = () => {
+    setShowDetailModal(false);
+    setSelectedReservation(null);
   };
 
   const getPagoBadge = (estaPagada) => {
@@ -347,6 +367,9 @@ export default function MisReservas({ onClose }) {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Total
                   </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -388,12 +411,40 @@ export default function MisReservas({ onClose }) {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                       ${parseFloat(reserva.monto_total_res || 0).toLocaleString('es-AR')}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="flex items-center gap-3">
+                        <Eye 
+                          size={20} 
+                          className="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors"
+                          onClick={() => handleViewDetails(reserva)}
+                          title="Ver detalles"
+                        />
+                        <DollarSign 
+                          size={20} 
+                          className="cursor-pointer text-green-600 hover:text-green-800 transition-colors"
+                          title="Pagos"
+                        />
+                        <X 
+                          size={20} 
+                          className="cursor-pointer text-red-600 hover:text-red-800 transition-colors"
+                          title="Cancelar"
+                        />
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
         </div>
+
+      {/* Modal de detalle de reserva */}
+      {showDetailModal && selectedReservation && (
+        <ReservationDetailModal
+          reservation={selectedReservation}
+          onClose={handleCloseDetailModal}
+        />
+      )}
       </div>
     );
   }
