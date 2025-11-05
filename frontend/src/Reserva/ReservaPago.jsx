@@ -26,6 +26,7 @@ export default function ReservaPago() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [tarjetaValida, setTarjetaValida] = useState(false);
+  const [errores, setErrores] = useState({});
 
   // Calcular totales
   const precioFinal = precioTotal + (precioServicios || 0);
@@ -44,59 +45,77 @@ export default function ReservaPago() {
     }
   }, [cabanasSeleccionadas, searchParams, precioTotal, navigate]);
 
-  // Validar si todos los campos de la tarjeta están completos
-  useEffect(() => {
-    const { numeroTarjeta, nombreTitular, fechaExpiracion, cvv } = datosTarjeta;
-    
-    const numeroLimpio = numeroTarjeta.replace(/\s/g, '');
-    const fechaValida = /^\d{2}\/\d{2}$/.test(fechaExpiracion);
-    const cvvValido = /^\d{3,4}$/.test(cvv);
-    
-    const esValida = numeroLimpio.length >= 13 && 
-                     numeroLimpio.length <= 19 &&
-                     nombreTitular.trim().length >= 3 &&
-                     fechaValida &&
-                     cvvValido;
-    
-    setTarjetaValida(esValida);
-  }, [datosTarjeta]);
+  const validarCampos = () => {
+    const nuevosErrores = {};
 
-  const formatearNumeroTarjeta = (valor) => {
-    const limpio = valor.replace(/\D/g, '');
-    const grupos = limpio.match(/.{1,4}/g);
-    return grupos ? grupos.join(' ') : limpio;
-  };
-
-  const formatearFechaExpiracion = (valor) => {
-    const limpio = valor.replace(/\D/g, '');
-    if (limpio.length >= 2) {
-      return limpio.slice(0, 2) + '/' + limpio.slice(2, 4);
+    // Validar número de tarjeta
+    const numeroLimpio = datosTarjeta.numeroTarjeta.replace(/\s/g, '');
+    if (!numeroLimpio.match(/^\d{13,19}$/)) {
+      nuevosErrores.numeroTarjeta = 'El número de tarjeta debe tener entre 13 y 19 dígitos.';
     }
-    return limpio;
+
+    // Validar nombre del titular
+    if (!datosTarjeta.nombreTitular.match(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/)) {
+      nuevosErrores.nombreTitular = 'El nombre del titular debe tener al menos 2 caracteres y solo puede contener letras y espacios.';
+    }
+
+    // Validar fecha de expiración
+    const [mes, anio] = datosTarjeta.fechaExpiracion.split('/');
+    const fechaActual = new Date();
+    const mesActual = fechaActual.getMonth() + 1;
+    const anioActual = fechaActual.getFullYear() % 100;
+    if (!datosTarjeta.fechaExpiracion.match(/^\d{2}\/\d{2}$/) ||
+        parseInt(anio, 10) < anioActual ||
+        (parseInt(anio, 10) === anioActual && parseInt(mes, 10) <= mesActual)) {
+      nuevosErrores.fechaExpiracion = 'La fecha de vencimiento debe ser válida y posterior al día de hoy.';
+    }
+
+    // Validar CVV
+    if (!datosTarjeta.cvv.match(/^\d{3,4}$/)) {
+      nuevosErrores.cvv = 'El CVV debe tener entre 3 y 4 dígitos.';
+    }
+
+    setErrores(nuevosErrores);
+    return Object.keys(nuevosErrores).length === 0;
   };
 
   const handleChangeTarjeta = (campo, valor) => {
     let valorFormateado = valor;
     
     if (campo === 'numeroTarjeta') {
-      valorFormateado = formatearNumeroTarjeta(valor);
-      if (valorFormateado.replace(/\s/g, '').length > 19) return;
+      valorFormateado = valor.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim();
     } else if (campo === 'fechaExpiracion') {
-      valorFormateado = formatearFechaExpiracion(valor);
-      if (valorFormateado.replace(/\//g, '').length > 4) return;
+      valorFormateado = valor.replace(/\D/g, '').replace(/(.{2})/, '$1/').slice(0, 5);
     } else if (campo === 'cvv') {
-      valorFormateado = valor.replace(/\D/g, '');
-      if (valorFormateado.length > 4) return;
+      valorFormateado = valor.replace(/\D/g, '').slice(0, 4);
     } else if (campo === 'nombreTitular') {
-      valorFormateado = valor.toUpperCase();
+      valorFormateado = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '').toUpperCase();
     }
     
     setDatosTarjeta(prev => ({ ...prev, [campo]: valorFormateado }));
   };
+  useEffect(() => {
+  const numeroLimpio = datosTarjeta.numeroTarjeta.replace(/\s/g, '');
+  const [mes, anio] = datosTarjeta.fechaExpiracion.split('/');
+  const fechaActual = new Date();
+  const mesActual = fechaActual.getMonth() + 1;
+  const anioActual = fechaActual.getFullYear() % 100;
+
+  const esValida =
+    numeroLimpio.match(/^\d{13,19}$/) &&
+    datosTarjeta.nombreTitular.match(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/) &&
+    datosTarjeta.fechaExpiracion.match(/^\d{2}\/\d{2}$/) &&
+    parseInt(anio, 10) >= anioActual &&
+    (parseInt(anio, 10) > anioActual || parseInt(mes, 10) > mesActual) &&
+    datosTarjeta.cvv.match(/^\d{3,4}$/);
+
+  setTarjetaValida(!!esValida);
+}, [datosTarjeta]);
+
 
   const handleConfirmar = () => {
-    if (!tarjetaValida) {
-      setError('Por favor, complete todos los datos de la tarjeta correctamente.');
+    if (!validarCampos()) {
+      setError('Por favor, corrija los errores en el formulario.');
       return;
     }
 
@@ -291,6 +310,9 @@ export default function ReservaPago() {
                     onChange={(e) => handleChangeTarjeta('numeroTarjeta', e.target.value)}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none transition text-lg tracking-wider"
                   />
+                  {errores.numeroTarjeta && (
+                    <p className="text-red-500 text-xs mt-1">{errores.numeroTarjeta}</p>
+                  )}
                 </div>
 
                 {/* Nombre del titular */}
@@ -305,6 +327,9 @@ export default function ReservaPago() {
                     onChange={(e) => handleChangeTarjeta('nombreTitular', e.target.value)}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none transition uppercase"
                   />
+                  {errores.nombreTitular && (
+                    <p className="text-red-500 text-xs mt-1">{errores.nombreTitular}</p>
+                  )}
                 </div>
 
                 {/* Fecha y CVV */}
@@ -320,6 +345,9 @@ export default function ReservaPago() {
                       onChange={(e) => handleChangeTarjeta('fechaExpiracion', e.target.value)}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none transition text-lg tracking-wider"
                     />
+                    {errores.fechaExpiracion && (
+                      <p className="text-red-500 text-xs mt-1">{errores.fechaExpiracion}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -332,6 +360,9 @@ export default function ReservaPago() {
                       onChange={(e) => handleChangeTarjeta('cvv', e.target.value)}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none transition text-lg tracking-wider"
                     />
+                    {errores.cvv && (
+                      <p className="text-red-500 text-xs mt-1">{errores.cvv}</p>
+                    )}
                   </div>
                 </div>
               </div>
