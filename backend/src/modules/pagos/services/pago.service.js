@@ -26,13 +26,13 @@ export const obtenerPagos = async (filters) => {
 
   // Filtro por rango de fechas
   if (fecha_desde) {
-    conditions.push(`p.fecha_pago::date >= $${paramIndex}::date`);
+    conditions.push(`p.fecha_pago >= $${paramIndex}::date`);
     params.push(fecha_desde);
     paramIndex++;
   }
 
   if (fecha_hasta) {
-    conditions.push(`p.fecha_pago::date <= $${paramIndex}::date`);
+    conditions.push(`p.fecha_pago <= $${paramIndex}::date`);
     params.push(fecha_hasta);
     paramIndex++;
   }
@@ -76,20 +76,17 @@ export const obtenerPagos = async (filters) => {
       p.id_reserva,
       r.cod_reserva,
       r.monto_total_res,
-      r.monto_pagado,
       r.esta_pagada,
       r.check_in,
       r.check_out,
       eo.nom_estado as estado_reserva,
       u.nombre as nombre_cliente,
-      u.email as email_cliente,
-      uc.nombre as usuario_creo_pago
+      u.email as email_cliente
     FROM pago p
     INNER JOIN reserva r ON p.id_reserva = r.id_reserva
     INNER JOIN medio_pago mp ON p.id_medio_pago = mp.id_medio_pago
     INNER JOIN estado_operativo eo ON r.id_est_op = eo.id_est_op
     INNER JOIN usuario u ON r.id_usuario_creacion = u.id_usuario
-    INNER JOIN usuario uc ON p.id_usuario_creacion = uc.id_usuario
     ${whereClause}
     ORDER BY p.fecha_pago DESC
     LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -137,13 +134,13 @@ export const obtenerPagosPropios = async (filters, userId) => {
 
   // Filtro por rango de fechas
   if (fecha_desde) {
-    conditions.push(`p.fecha_pago::date >= $${paramIndex}::date`);
+    conditions.push(`p.fecha_pago >= $${paramIndex}::date`);
     params.push(fecha_desde);
     paramIndex++;
   }
 
   if (fecha_hasta) {
-    conditions.push(`p.fecha_pago::date <= $${paramIndex}::date`);
+    conditions.push(`p.fecha_pago <= $${paramIndex}::date`);
     params.push(fecha_hasta);
     paramIndex++;
   }
@@ -187,17 +184,14 @@ export const obtenerPagosPropios = async (filters, userId) => {
       p.id_reserva,
       r.cod_reserva,
       r.monto_total_res,
-      r.monto_pagado,
       r.esta_pagada,
       r.check_in,
       r.check_out,
-      eo.nom_estado as estado_reserva,
-      uc.nombre as usuario_creo_pago
+      eo.nom_estado as estado_reserva
     FROM pago p
     INNER JOIN reserva r ON p.id_reserva = r.id_reserva
     INNER JOIN medio_pago mp ON p.id_medio_pago = mp.id_medio_pago
     INNER JOIN estado_operativo eo ON r.id_est_op = eo.id_est_op
-    INNER JOIN usuario uc ON p.id_usuario_creacion = uc.id_usuario
     ${whereClause}
     ORDER BY p.fecha_pago DESC
     LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -332,7 +326,7 @@ export const obtenerPagosPorReserva = async (idReserva, userId, userRole) => {
  * @returns {Object} Pago creado con estado actualizado de reserva
  */
 export const crearPago = async (pagoData, idReserva, userId) => {
-  const { monto, id_medio_pago } = pagoData;
+  const { monto, id_medio_pago, fecha_pago } = pagoData;
   const client = await pool.connect();
 
   try {
@@ -381,6 +375,9 @@ export const crearPago = async (pagoData, idReserva, userId) => {
     }
 
     // 5. Insertar el pago
+    // Si se proporciona fecha_pago, usarla; sino usar CURRENT_DATE (hoy)
+    const fechaPagoFinal = fecha_pago || null;
+    
     const insertPagoQuery = `
       INSERT INTO pago (
         fecha_pago,
@@ -390,16 +387,16 @@ export const crearPago = async (pagoData, idReserva, userId) => {
         esta_activo,
         id_usuario_creacion
       ) VALUES (
-        NOW(),
-        $1,
+        COALESCE($1::DATE, CURRENT_DATE),
         $2,
         $3,
+        $4,
         TRUE,
-        $4
+        $5
       )
       RETURNING id_pago, fecha_pago, monto, id_medio_pago, id_reserva, esta_activo
     `;
-    const pagoResult = await client.query(insertPagoQuery, [monto, id_medio_pago, idReserva, userId]);
+    const pagoResult = await client.query(insertPagoQuery, [fechaPagoFinal, monto, id_medio_pago, idReserva, userId]);
     const nuevoPago = pagoResult.rows[0];
 
     // 6. Actualizar monto_pagado de la reserva

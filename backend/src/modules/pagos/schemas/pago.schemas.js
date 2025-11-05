@@ -63,6 +63,28 @@ export const validateCrearPago = (data) => {
     });
   }
 
+  // Validar fecha_pago (opcional)
+  if (data.fecha_pago !== undefined) {
+    if (!esFechaValida(data.fecha_pago)) {
+      errors.push({
+        field: "fecha_pago",
+        message: "La fecha de pago no es válida. Use formato YYYY-MM-DD",
+      });
+    } else {
+      // Validar que la fecha no sea en el futuro
+      const fechaPago = new Date(data.fecha_pago + 'T00:00:00');
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      
+      if (fechaPago > hoy) {
+        errors.push({
+          field: "fecha_pago",
+          message: "La fecha de pago no puede ser en el futuro",
+        });
+      }
+    }
+  }
+
   return {
     isValid: errors.length === 0,
     errors,

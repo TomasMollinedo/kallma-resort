@@ -163,7 +163,7 @@ Authorization: Bearer {{tokenOperador}}
 #   "ok": true,
 #   "data": {
 #     "id_pago": 1,
-#     "fecha_pago": "2025-01-15T14:30:00.000Z",
+#     "fecha_pago": "2025-01-15",
 #     "monto": "175000.00",
 #     "esta_activo": true,
 #     "id_medio_pago": 3,
@@ -286,6 +286,7 @@ Authorization: Bearer {{tokenCliente}}
 
 ### 5.1 Registrar seña del 25% con tarjeta de crédito (Operador)
 ### Contexto: Reserva con monto total ARS $700,000
+### Fecha por defecto: hoy (CURRENT_DATE)
 POST {{baseUrl}}/reservas/5/pagos
 Content-Type: application/json
 Authorization: Bearer {{tokenOperador}}
@@ -301,7 +302,7 @@ Authorization: Bearer {{tokenOperador}}
 #   "message": "Pago registrado exitosamente",
 #   "data": {
 #     "id_pago": 1,
-#     "fecha_pago": "2025-01-15T14:30:00.000Z",
+#     "fecha_pago": "2025-01-15",
 #     "monto": "175000.00",
 #     "esta_activo": true,
 #     "nom_medio_pago": "Tarjeta de crédito",
@@ -322,6 +323,18 @@ Authorization: Bearer {{tokenOperador}}
 {
   "monto": 200000,
   "id_medio_pago": 1
+}
+
+### 5.3 Registrar pago con fecha específica (Operador)
+### Permite registrar un pago de un día anterior
+POST {{baseUrl}}/reservas/5/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "monto": 150000,
+  "id_medio_pago": 2,
+  "fecha_pago": "2025-01-25"
 }
 
 ### 5.3 Completar pago de reserva (Admin)
@@ -348,9 +361,7 @@ Authorization: Bearer {{tokenAdmin}}
 #     "id_reserva": 5,
 #     "cod_reserva": "RES-20250115-00001",
 #     "monto_total_res": "700000.00",
-#     "monto_pagado": "700000.00",
 #     "esta_pagada": true,
-#     "usuario_creo_pago": "Admin Principal"
 #   }
 # }
 
@@ -741,6 +752,29 @@ Authorization: Bearer {{tokenOperador}}
 #   ]
 # }
 
+### 8.4 Fecha de pago en el futuro (no permitida)
+POST {{baseUrl}}/reservas/5/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenOperador}}
+
+{
+  "monto": 100000,
+  "id_medio_pago": 1,
+  "fecha_pago": "2026-12-31"
+}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "message": "Errores de validación",
+#   "errors": [
+#     {
+#       "field": "fecha_pago",
+#       "message": "La fecha de pago no puede ser en el futuro"
+#     }
+#   ]
+# }
+
 ###############################################
 ### NOTAS IMPORTANTES
 ###############################################
@@ -755,6 +789,15 @@ Authorization: Bearer {{tokenOperador}}
 # ❌ Cancelada - NO se pueden registrar/anular pagos
 # ❌ Finalizada - NO se pueden registrar/anular pagos
 # ❌ No aparecio - NO se pueden registrar/anular pagos
+
+# MANEJO DE FECHA_PAGO (TIPO DATE):
+# - Formato: YYYY-MM-DD (solo fecha, sin hora)
+# - Si NO se especifica: usa CURRENT_DATE (hoy automáticamente)
+# - Si se especifica: debe ser una fecha válida en el pasado o hoy
+# - NO se permiten fechas futuras
+# - Útil para registrar pagos históricos de días anteriores
+# - Ejemplo con fecha: { "monto": 100000, "id_medio_pago": 1, "fecha_pago": "2025-01-20" }
+# - Ejemplo sin fecha: { "monto": 100000, "id_medio_pago": 1 } → usa fecha actual
 
 # TRANSACCIONES ATÓMICAS:
 # - Registro de pago: INSERT pago + UPDATE reserva
