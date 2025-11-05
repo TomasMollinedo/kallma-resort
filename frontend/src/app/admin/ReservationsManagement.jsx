@@ -17,6 +17,7 @@ import { validateDateRange } from '../utils/dateUtils';
 
 import ReservationDetailModal from './components/ReservationDetailModal';
 import ReleaseReservationModal from './components/ReleaseReservationModal';
+import PaymentFormModal from './components/PaymentFormModal';
 
 export default function ReservationsManagement({ onBack }) {
   const { token } = useAuth();
@@ -48,6 +49,7 @@ export default function ReservationsManagement({ onBack }) {
   // Estados de modales
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showReleaseModal, setShowReleaseModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState(null);
 
   // Cargar reservas al montar y cuando cambien los filtros
@@ -201,6 +203,24 @@ export default function ReservationsManagement({ onBack }) {
   const handleReleaseSuccess = () => {
     setShowReleaseModal(false);
     setSuccess('Estado de reserva actualizado exitosamente');
+    setTimeout(() => setSuccess(null), 3000);
+    loadReservations();
+  };
+
+  /**
+   * Abrir modal para registrar pago
+   */
+  const handleRegisterPayment = (reservation) => {
+    setSelectedReservation(reservation);
+    setShowPaymentModal(true);
+  };
+
+  /**
+   * Callback después de registrar pago
+   */
+  const handlePaymentSuccess = () => {
+    setShowPaymentModal(false);
+    setSuccess('Pago registrado exitosamente');
     setTimeout(() => setSuccess(null), 3000);
     loadReservations();
   };
@@ -632,13 +652,22 @@ export default function ReservationsManagement({ onBack }) {
                             <Eye size={18} />
                           </button>
                           {reservation.estado_operativo === 'Confirmada' && (
-                            <button
-                              onClick={() => handleRelease(reservation)}
-                              className="px-3 py-1 text-xs font-semibold text-orange-600 hover:bg-orange-50 border border-orange-300 rounded-lg transition"
-                              title="Liberar reserva"
-                            >
-                              Liberar
-                            </button>
+                            <>
+                              <button
+                                onClick={() => handleRegisterPayment(reservation)}
+                                className="px-3 py-1 text-xs font-semibold text-green-600 hover:bg-green-50 border border-green-300 rounded-lg transition"
+                                title="Registrar pago"
+                              >
+                                Pagar
+                              </button>
+                              <button
+                                onClick={() => handleRelease(reservation)}
+                                className="px-3 py-1 text-xs font-semibold text-orange-600 hover:bg-orange-50 border border-orange-300 rounded-lg transition"
+                                title="Liberar reserva"
+                              >
+                                Liberar
+                              </button>
+                            </>
                           )}
                         </div>
                       </td>
@@ -664,6 +693,14 @@ export default function ReservationsManagement({ onBack }) {
           reservation={selectedReservation}
           onClose={() => setShowReleaseModal(false)}
           onSuccess={handleReleaseSuccess}
+        />
+      )}
+
+      {showPaymentModal && selectedReservation && (
+        <PaymentFormModal
+          reserva={selectedReservation}
+          onClose={() => setShowPaymentModal(false)}
+          onSuccess={handlePaymentSuccess}
         />
       )}
     </div>

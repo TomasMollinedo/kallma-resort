@@ -243,7 +243,7 @@ export const obtenerPagoPorId = async (idPago, userId, userRole) => {
       -- Auditoría del pago
       p.id_usuario_creacion,
       uc.nombre as usuario_creacion,
-      TO_CHAR(p.fecha_pago, 'YYYY-MM-DD HH24:MI:SS') as fecha_creacion,
+      TO_CHAR(p.fecha_pago, 'YYYY-MM-DD') as fecha_creacion,
       p.id_usuario_modific,
       um.nombre as usuario_modificacion,
       TO_CHAR(p.fecha_modific, 'YYYY-MM-DD HH24:MI:SS') as fecha_modificacion

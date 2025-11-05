@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Shield, LogOut, Home, Users, Building, Calendar, DollarSign, Settings } from 'lucide-react';
+import { Shield, LogOut, Home, Users, Building, Calendar, DollarSign, Settings, CreditCard } from 'lucide-react';
 import UsersManagement from './UsersManagement';
 import CabanasZonasManagement from './CabanasZonasManagement';
 import ReservationsManagement from './ReservationsManagement';
+import PagosManagement from './PagosManagement';
 
 export default function DashboardAdministrador() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState('dashboard'); // dashboard, users, cabanas
+  const [activeSection, setActiveSection] = useState('dashboard'); // dashboard, users, cabanas, reservations, pagos
 
   const handleLogout = () => {
     logout();
@@ -31,6 +32,10 @@ export default function DashboardAdministrador() {
 
   if (activeSection === 'reservations') {
     return <ReservationsManagement onBack={() => setActiveSection('dashboard')} />;
+  }
+
+  if (activeSection === 'pagos') {
+    return <PagosManagement onBack={() => setActiveSection('dashboard')} />;
   }
 
   return (
@@ -173,17 +178,20 @@ export default function DashboardAdministrador() {
             </button>
           </div>
 
-          {/* Reportes Financieros */}
+          {/* Gestión de Pagos */}
           <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
-            <div className="bg-orange-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
-              <DollarSign size={24} className="text-orange-600" />
+            <div className="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+              <CreditCard size={24} className="text-green-600" />
             </div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">Gestión de Pagos</h3>
             <p className="text-gray-600 mb-4">
-              Consulta pagos e ingresos
+              Consulta historial de pagos y registra nuevos pagos
             </p>
-            <button className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition">
-              Ver historial de pagos
+            <button 
+              onClick={() => setActiveSection('pagos')}
+              className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition"
+            >
+              Gestionar Pagos
             </button>
           </div>
 

@@ -1,13 +1,18 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar, User, Mail, Phone, Home, Users, DollarSign, Clock, CheckCircle, Loader2 } from 'lucide-react';
+import { X, Calendar, User, Mail, Phone, Home, Users, DollarSign, Clock, CheckCircle, Loader2, CreditCard, Plus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getReservationById, getStatusBadgeColor } from '../../services/reservationService';
 import { formatIsoDateForDisplay } from '../../utils/dateUtils';
+import { getPagosByReserva, getMedioPagoBadgeColor } from '../../services/pagoService';
+import PaymentFormModal from './PaymentFormModal';
 
 export default function ReservationDetailModal({ reservation, onClose }) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [fullReservation, setFullReservation] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [pagos, setPagos] = useState([]);
+  const [loadingPagos, setLoadingPagos] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
     if (reservation && token) {
@@ -21,12 +26,37 @@ export default function ReservationDetailModal({ reservation, onClose }) {
       setLoading(true);
       const response = await getReservationById(reservation.id_reserva, token);
       setFullReservation(response.data);
+      // Cargar pagos asociados después de cargar la reserva
+      await loadPagos();
     } catch (error) {
       console.error('Error al cargar detalle completo:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  const loadPagos = async () => {
+    try {
+      setLoadingPagos(true);
+      const response = await getPagosByReserva(reservation.id_reserva, token);
+      setPagos(response.data || []);
+    } catch (error) {
+      console.error('Error al cargar pagos:', error);
+      setPagos([]);
+    } finally {
+      setLoadingPagos(false);
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    setShowPaymentModal(false);
+    // Recargar detalle completo y pagos para actualizar montos
+    loadFullDetails();
+    loadPagos();
+  };
+
+  const isStaff = user?.rol === 'Operador' || user?.rol === 'Administrador';
+  const canRegisterPayment = isStaff && fullReservation?.estado_operativo === 'Confirmada';
 
   if (!reservation) return null;
 
@@ -240,10 +270,21 @@ export default function ReservationDetailModal({ reservation, onClose }) {
 
             {/* Información de Pagos */}
             <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg p-6 border border-orange-200">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <DollarSign size={20} className="text-orange-600" />
-                Información de Pagos
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <DollarSign size={20} className="text-orange-600" />
+                  Información de Pagos
+                </h3>
+                {canRegisterPayment && (
+                  <button
+                    onClick={() => setShowPaymentModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm"
+                  >
+                    <Plus size={18} />
+                    Registrar Pago
+                  </button>
+                )}
+              </div>
               
               <div className="grid grid-cols-2 gap-6">
                 <div>
@@ -273,6 +314,72 @@ export default function ReservationDetailModal({ reservation, onClose }) {
                   </p>
                 </div>
               </div>
+            </div>
+
+            {/* Historial de Pagos */}
+            <div className="bg-gray-50 rounded-lg p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <CreditCard size={20} className="text-orange-600" />
+                Historial de Pagos ({pagos.length})
+              </h3>
+              
+              {loadingPagos ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 size={32} className="animate-spin text-orange-500" />
+                  <p className="ml-3 text-gray-600">Cargando pagos...</p>
+                </div>
+              ) : pagos.length === 0 ? (
+                <div className="text-center py-8 bg-white rounded-lg border border-dashed border-gray-300">
+                  <CreditCard size={48} className="mx-auto text-gray-300 mb-2" />
+                  <p className="text-gray-600 font-medium">Sin Pagos Registrados</p>
+                  <p className="text-sm text-gray-500">Esta reserva aún no tiene pagos asociados</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pagos.map((pago) => (
+                    <div 
+                      key={pago.id_pago} 
+                      className={`bg-white p-4 rounded-lg border ${
+                        pago.esta_activo ? 'border-gray-200' : 'border-red-200 bg-red-50'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border ${
+                              getMedioPagoBadgeColor(pago.nom_medio_pago)
+                            }`}>
+                              <CreditCard size={12} />
+                              {pago.nom_medio_pago}
+                            </span>
+                            {!pago.esta_activo && (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-300">
+                                Anulado
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            Fecha: {new Date(pago.fecha_pago).toLocaleDateString('es-ES')}
+                          </p>
+                          {pago.usuario_creo_pago && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Registrado por: {pago.usuario_creo_pago}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-gray-600">Monto</p>
+                          <p className={`font-bold text-xl ${
+                            pago.esta_activo ? 'text-green-600' : 'text-red-600 line-through'
+                          }`}>
+                            ${parseFloat(pago.monto).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Metadatos */}
@@ -318,6 +425,15 @@ export default function ReservationDetailModal({ reservation, onClose }) {
           </button>
         </div>
       </div>
+
+      {/* Modal de Registro de Pago */}
+      {showPaymentModal && fullReservation && (
+        <PaymentFormModal
+          reserva={fullReservation}
+          onClose={() => setShowPaymentModal(false)}
+          onSuccess={handlePaymentSuccess}
+        />
+      )}
     </div>
   );
 }
