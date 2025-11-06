@@ -137,6 +137,7 @@ CREATE TABLE IF NOT EXISTS pago (
   id_reserva           INTEGER NOT NULL REFERENCES reserva(id_reserva) ON DELETE RESTRICT ON UPDATE CASCADE,
   esta_activo          BOOLEAN NOT NULL DEFAULT TRUE,
   id_usuario_creacion  INTEGER NOT NULL REFERENCES usuario(id_usuario) ON DELETE RESTRICT ON UPDATE CASCADE,
+  fecha_creacion       TIMESTAMPTZ NOT NULL,
   id_usuario_modific   INTEGER     REFERENCES usuario(id_usuario) ON DELETE RESTRICT ON UPDATE CASCADE,
   fecha_modific        TIMESTAMPTZ
 );
