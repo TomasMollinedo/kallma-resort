@@ -81,12 +81,15 @@ export const obtenerPagos = async (filters) => {
       r.check_out,
       eo.nom_estado as estado_reserva,
       u.nombre as nombre_cliente,
-      u.email as email_cliente
+      u.email as email_cliente,
+      p.fecha_creacion,
+      uc.nombre as usuario_creo_pago
     FROM pago p
     INNER JOIN reserva r ON p.id_reserva = r.id_reserva
     INNER JOIN medio_pago mp ON p.id_medio_pago = mp.id_medio_pago
     INNER JOIN estado_operativo eo ON r.id_est_op = eo.id_est_op
     INNER JOIN usuario u ON r.id_usuario_creacion = u.id_usuario
+    INNER JOIN usuario uc ON p.id_usuario_creacion = uc.id_usuario
     ${whereClause}
     ORDER BY p.fecha_pago DESC
     LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -187,11 +190,14 @@ export const obtenerPagosPropios = async (filters, userId) => {
       r.esta_pagada,
       r.check_in,
       r.check_out,
-      eo.nom_estado as estado_reserva
+      eo.nom_estado as estado_reserva,
+      p.fecha_creacion,
+      uc.nombre as usuario_creo_pago
     FROM pago p
     INNER JOIN reserva r ON p.id_reserva = r.id_reserva
     INNER JOIN medio_pago mp ON p.id_medio_pago = mp.id_medio_pago
     INNER JOIN estado_operativo eo ON r.id_est_op = eo.id_est_op
+    INNER JOIN usuario uc ON p.id_usuario_creacion = uc.id_usuario
     ${whereClause}
     ORDER BY p.fecha_pago DESC
     LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -243,10 +249,10 @@ export const obtenerPagoPorId = async (idPago, userId, userRole) => {
       -- Auditoría del pago
       p.id_usuario_creacion,
       uc.nombre as usuario_creacion,
-      TO_CHAR(p.fecha_pago, 'YYYY-MM-DD') as fecha_creacion,
+      p.fecha_creacion,
       p.id_usuario_modific,
       um.nombre as usuario_modificacion,
-      TO_CHAR(p.fecha_modific, 'YYYY-MM-DD HH24:MI:SS') as fecha_modificacion
+      p.fecha_modific as fecha_modificacion
     FROM pago p
     INNER JOIN reserva r ON p.id_reserva = r.id_reserva
     INNER JOIN medio_pago mp ON p.id_medio_pago = mp.id_medio_pago
@@ -306,6 +312,7 @@ export const obtenerPagosPorReserva = async (idReserva, userId, userRole) => {
       p.monto,
       p.esta_activo,
       mp.nom_medio_pago,
+      p.fecha_creacion,
       uc.nombre as usuario_creo_pago
     FROM pago p
     INNER JOIN medio_pago mp ON p.id_medio_pago = mp.id_medio_pago
@@ -385,16 +392,18 @@ export const crearPago = async (pagoData, idReserva, userId) => {
         id_medio_pago,
         id_reserva,
         esta_activo,
-        id_usuario_creacion
+        id_usuario_creacion,
+        fecha_creacion
       ) VALUES (
         COALESCE($1::DATE, CURRENT_DATE),
         $2,
         $3,
         $4,
         TRUE,
-        $5
+        $5,
+        NOW()
       )
-      RETURNING id_pago, fecha_pago, monto, id_medio_pago, id_reserva, esta_activo
+      RETURNING id_pago, fecha_pago, monto, id_medio_pago, id_reserva, esta_activo, fecha_creacion
     `;
     const pagoResult = await client.query(insertPagoQuery, [fechaPagoFinal, monto, id_medio_pago, idReserva, userId]);
     const nuevoPago = pagoResult.rows[0];
@@ -430,6 +439,7 @@ export const crearPago = async (pagoData, idReserva, userId) => {
         r.monto_total_res,
         r.monto_pagado,
         r.esta_pagada,
+        p.fecha_creacion,
         uc.nombre as usuario_creo_pago
       FROM pago p
       INNER JOIN medio_pago mp ON p.id_medio_pago = mp.id_medio_pago
@@ -538,6 +548,7 @@ export const anularPago = async (idPago, userId) => {
         r.monto_total_res,
         r.monto_pagado,
         r.esta_pagada,
+        p.fecha_creacion,
         uc.nombre as usuario_creo_pago
       FROM pago p
       INNER JOIN medio_pago mp ON p.id_medio_pago = mp.id_medio_pago

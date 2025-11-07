@@ -357,6 +357,7 @@ Anula un pago (borrado lógico).
 | `id_reserva` | INTEGER | FK a `reserva` |
 | `esta_activo` | BOOLEAN | TRUE=activo, FALSE=anulado |
 | `id_usuario_creacion` | INTEGER | FK a `usuario` (quien registró) |
+| `fecha_creacion` | TIMESTAMPTZ | Fecha de creación del registro |
 | `id_usuario_modific` | INTEGER | FK a `usuario` (quien modificó) |
 | `fecha_modific` | TIMESTAMPTZ | Fecha de modificación |
 
@@ -429,6 +430,7 @@ Anula un pago (borrado lógico).
 
 - Todos los pagos registran:
   - Usuario que creó el pago (`id_usuario_creacion`)
+  - Fecha de creación del registro (`fecha_creacion` tipo TIMESTAMPTZ, automático en NOW())
   - Fecha del pago (`fecha_pago` tipo DATE, por defecto CURRENT_DATE)
   - Usuario que modificó (`id_usuario_modific`)
   - Fecha de modificación (`fecha_modific`)
@@ -443,8 +445,8 @@ Anula un pago (borrado lógico).
 BEGIN;
 
 -- 1. Insertar pago
-INSERT INTO pago (fecha_pago, monto, id_medio_pago, id_reserva, esta_activo, id_usuario_creacion)
-VALUES (NOW(), $1, $2, $3, TRUE, $4);
+INSERT INTO pago (fecha_pago, monto, id_medio_pago, id_reserva, esta_activo, id_usuario_creacion, fecha_creacion)
+VALUES (CURRENT_DATE, $1, $2, $3, TRUE, $4, NOW());
 
 -- 2. Actualizar reserva
 UPDATE reserva
