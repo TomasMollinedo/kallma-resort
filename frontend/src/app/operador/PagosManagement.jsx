@@ -10,8 +10,8 @@ import {
   getMedioPagoBadgeColor
 } from '../services/pagoService';
 import { validateDateRange } from '../utils/dateUtils';
-import PaymentDetailModal from './components/PaymentDetailModal';
-import AnularPagoModal from './components/AnularPagoModal';
+import PaymentDetailModal from '../admin/components/PaymentDetailModal';
+import AnularPagoModal from '../admin/components/AnularPagoModal';
 
 export default function PagosManagement({ onBack }) {
   const { token } = useAuth();
@@ -172,7 +172,7 @@ export default function PagosManagement({ onBack }) {
         {onBack && (
           <button
             onClick={onBack}
-            className="mb-6 flex items-center gap-2 text-gray-700 hover:text-orange-500 font-medium transition"
+            className="mb-6 flex items-center gap-2 text-gray-700 hover:text-green-500 font-medium transition"
           >
             <ArrowLeft size={20} />
             Volver al Dashboard

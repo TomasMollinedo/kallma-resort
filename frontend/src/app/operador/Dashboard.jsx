@@ -3,11 +3,12 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Wrench, LogOut, Home, Calendar, Building, CheckCircle, XCircle, Clock, DollarSign } from 'lucide-react';
 import ReservationsManagement from '../admin/ReservationsManagement';
+import PagosManagement from './PagosManagement';
 
 export default function DashboardOperador() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState('dashboard'); // dashboard, reservations
+  const [activeSection, setActiveSection] = useState('dashboard'); // dashboard, reservations, pagos
 
   const handleLogout = () => {
     logout();
@@ -21,6 +22,11 @@ export default function DashboardOperador() {
   // Si estamos en la sección de reservas, mostrar el componente correspondiente
   if (activeSection === 'reservations') {
     return <ReservationsManagement onBack={() => setActiveSection('dashboard')} />;
+  }
+
+  // Si estamos en la sección de pagos, mostrar el componente correspondiente
+  if (activeSection === 'pagos') {
+    return <PagosManagement onBack={() => setActiveSection('dashboard')} />;
   }
 
   return (
@@ -130,7 +136,7 @@ export default function DashboardOperador() {
             </button>
           </div>
 
-          {/* Reportes Financieros */}
+          {/* Gestión de Pagos */}
             <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
               <div className="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
                 <DollarSign size={24} className="text-green-600" />
@@ -139,7 +145,10 @@ export default function DashboardOperador() {
               <p className="text-gray-600 mb-4">
                 Consulta pagos e ingresos
               </p>
-              <button className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition">
+              <button 
+                onClick={() => setActiveSection('pagos')}
+                className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition"
+              >
                 Ver historial de pagos
               </button>
             </div>

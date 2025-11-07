@@ -31,15 +31,15 @@ export default function ReservationsManagement({ onBack }) {
   
   // Estados de filtros
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('2'); // Default: Confirmada
+  const [selectedStatus, setSelectedStatus] = useState(''); // Sin filtro de estado por defecto
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState(''); // Todas
   
   // Modo de filtro: 'date' o 'today'
   const [filterMode, setFilterMode] = useState('date'); // 'date' o 'today'
   
   // Filtros de fecha (solo activos si filterMode === 'date')
-  const [selectedDateFilter, setSelectedDateFilter] = useState('arrivals'); // arrivals, departures, inhouse, range
-  const [specificDate, setSpecificDate] = useState(getTodayDate());
+  const [selectedDateFilter, setSelectedDateFilter] = useState('range'); // arrivals, departures, inhouse, range
+  const [specificDate, setSpecificDate] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   
@@ -164,11 +164,11 @@ export default function ReservationsManagement({ onBack }) {
   const handleClearFilters = () => {
     setSearchTerm('');
     setSearchError(null);
-    setSelectedStatus('2'); // Confirmada
+    setSelectedStatus(''); // Sin filtro
     setSelectedPaymentStatus('');
     setFilterMode('date');
-    setSelectedDateFilter('arrivals');
-    setSpecificDate(getTodayDate());
+    setSelectedDateFilter('range');
+    setSpecificDate('');
     setDateFrom('');
     setDateTo('');
     setTodayFilter('arrivals');
