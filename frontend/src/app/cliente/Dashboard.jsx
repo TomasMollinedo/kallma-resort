@@ -5,12 +5,14 @@ import { useNavigate } from 'react-router-dom';
 import { User, Calendar, CreditCard, MessageSquare, Save, X, Edit, ArrowLeft } from 'lucide-react';
 import ClientNavbar from './ClientNavbar';
 import MisReservas from './components/MisReservas';
+import PagosManagement from './PagosManagement';
 
 export default function DashboardCliente() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [showReservas, setShowReservas] = useState(false);
+  const [showPagos, setShowPagos] = useState(false);
   const {
     register,
     handleSubmit,
@@ -49,7 +51,7 @@ export default function DashboardCliente() {
   };
 
   return (
-    <div className={`min-h-screen ${showReservas ? 'bg-gradient-to-br from-blue-50 to-blue-100' : 'bg-gradient-to-br from-orange-50 to-orange-100'}`}>
+    <div className={`min-h-screen ${showReservas ? 'bg-gradient-to-br from-blue-50 to-blue-100' : showPagos ? 'bg-gray-50' : 'bg-gradient-to-br from-orange-50 to-orange-100'}`}>
       {/* Navbar simplificado negro */}
       <ClientNavbar />
 
@@ -58,7 +60,9 @@ export default function DashboardCliente() {
 
       {/* Contenido Principal */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {!showReservas && (
+        {showPagos ? (
+          <PagosManagement onBack={() => setShowPagos(false)} />
+        ) : !showReservas && (
           <>
             {/* Mensaje de Bienvenida */}
             <div className="mb-6 bg-orange-50 border-l-4 border-orange-500 p-4 sm:p-6 rounded-r-xl shadow-md">
@@ -209,8 +213,8 @@ export default function DashboardCliente() {
           </>
         )}
 
-        {/* Sección de Reservas o Acciones Rápidas */}
-        {showReservas ? (
+        {/* Sección de Reservas */}
+        {!showPagos && showReservas ? (
           <div className="space-y-4">
             <button
               onClick={() => setShowReservas(false)}
@@ -221,7 +225,7 @@ export default function DashboardCliente() {
             </button>
             <MisReservas onClose={() => setShowReservas(false)} />
           </div>
-        ) : (
+        ) : !showPagos && (
           <>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Mis Reservas */}
@@ -250,7 +254,10 @@ export default function DashboardCliente() {
                 <p className="text-gray-600 mb-4">
                   Revisa tu historial de pagos
                 </p>
-                <button className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition font-medium">
+                <button 
+                  onClick={() => setShowPagos(true)}
+                  className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition font-medium"
+                >
                   Ver Pagos
                 </button>
               </div>

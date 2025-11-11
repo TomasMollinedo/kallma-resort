@@ -1,17 +1,16 @@
 import { useState, useEffect } from 'react';
 import { 
   CreditCard, Search, Filter, Eye, RefreshCw, AlertCircle, Loader2, 
-  ArrowLeft, DollarSign, Calendar, Trash2
+  ArrowLeft, Calendar
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { 
-  getAllPagos,
+  getMyPagos,
   getMediosPago,
   getMedioPagoBadgeColor
 } from '../services/pagoService';
 import { validateDateRange } from '../utils/dateUtils';
-import PaymentDetailModal from './components/PaymentDetailModal';
-import AnularPagoModal from './components/AnularPagoModal';
+import PaymentDetailModal from '../admin/components/PaymentDetailModal';
 
 export default function PagosManagement({ onBack }) {
   const { token } = useAuth();
@@ -20,7 +19,6 @@ export default function PagosManagement({ onBack }) {
   const [pagos, setPagos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
   
   // Estados de filtros
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,7 +29,6 @@ export default function PagosManagement({ onBack }) {
   
   // Estados de modales
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showAnularModal, setShowAnularModal] = useState(false);
   const [selectedPago, setSelectedPago] = useState(null);
 
   const mediosPago = getMediosPago();
@@ -87,7 +84,7 @@ export default function PagosManagement({ onBack }) {
         filterParams.fecha_hasta = fechaHasta;
       }
       
-      const response = await getAllPagos(filterParams, token);
+      const response = await getMyPagos(filterParams, token);
       setPagos(response.data || []);
     } catch (err) {
       console.error('Error al cargar pagos:', err);
@@ -131,24 +128,6 @@ export default function PagosManagement({ onBack }) {
   };
 
   /**
-   * Abrir modal para anular pago
-   */
-  const handleAnular = (pago) => {
-    setSelectedPago(pago);
-    setShowAnularModal(true);
-  };
-
-  /**
-   * Callback después de anular pago
-   */
-  const handleAnularSuccess = () => {
-    setShowAnularModal(false);
-    setSuccess('Pago anulado exitosamente');
-    setTimeout(() => setSuccess(null), 3000);
-    loadPagos();
-  };
-
-  /**
    * Limpiar mensajes automáticamente
    */
   useEffect(() => {
@@ -158,13 +137,6 @@ export default function PagosManagement({ onBack }) {
     }
   }, [error]);
 
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => setSuccess(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [success]);
-
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
@@ -172,7 +144,7 @@ export default function PagosManagement({ onBack }) {
         {onBack && (
           <button
             onClick={onBack}
-            className="mb-6 flex items-center gap-2 text-gray-700 hover:text-orange-500 font-medium transition"
+            className="mb-6 flex items-center gap-2 text-gray-700 hover:text-green-500 font-medium transition"
           >
             <ArrowLeft size={20} />
             Volver al Dashboard
@@ -187,8 +159,8 @@ export default function PagosManagement({ onBack }) {
                 <CreditCard size={32} className="text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Gestión de Pagos</h1>
-                <p className="text-gray-600">Administra el historial de pagos de las reservas</p>
+                <h1 className="text-3xl font-bold text-gray-900">Mis Pagos</h1>
+                <p className="text-gray-600">Consulta tu historial de pagos</p>
               </div>
             </div>
           </div>
@@ -201,16 +173,6 @@ export default function PagosManagement({ onBack }) {
             <div>
               <p className="font-semibold">Error</p>
               <p className="text-sm">{error}</p>
-            </div>
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-lg flex items-start gap-3">
-            <CreditCard size={24} className="flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-semibold">Éxito</p>
-              <p className="text-sm">{success}</p>
             </div>
           </div>
         )}
@@ -360,9 +322,6 @@ export default function PagosManagement({ onBack }) {
                       Reserva
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Cliente
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                       Monto
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
@@ -387,10 +346,6 @@ export default function PagosManagement({ onBack }) {
                         <div className="text-xs text-gray-500">
                           {new Date(pago.check_in).toLocaleDateString('es-ES')} - {new Date(pago.check_out).toLocaleDateString('es-ES')}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-gray-900">{pago.nombre_cliente}</div>
-                        <div className="text-xs text-gray-500">{pago.email_cliente}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-bold text-gray-900">
@@ -426,15 +381,6 @@ export default function PagosManagement({ onBack }) {
                           >
                             <Eye size={18} />
                           </button>
-                          {pago.esta_activo && pago.estado_reserva === 'Confirmada' && (
-                            <button
-                              onClick={() => handleAnular(pago)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                              title="Anular pago"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          )}
                         </div>
                       </td>
                     </tr>
@@ -446,19 +392,11 @@ export default function PagosManagement({ onBack }) {
         </div>
       </div>
 
-      {/* Modales */}
+      {/* Modal de Detalle */}
       {showDetailModal && selectedPago && (
         <PaymentDetailModal
           pago={selectedPago}
           onClose={() => setShowDetailModal(false)}
-        />
-      )}
-
-      {showAnularModal && selectedPago && (
-        <AnularPagoModal
-          pago={selectedPago}
-          onClose={() => setShowAnularModal(false)}
-          onSuccess={handleAnularSuccess}
         />
       )}
     </div>
