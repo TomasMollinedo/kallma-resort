@@ -1,0 +1,618 @@
+### ===========================================================================
+### EJEMPLOS DE USO - MÓDULO DE CONSULTAS
+### Kallma Resort - API de Consultas y Respuestas
+### ===========================================================================
+
+@baseUrl = http://localhost:4000/api
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+### ===========================================================================
+### 1. CREAR CONSULTA (PÚBLICO - SIN AUTENTICACIÓN)
+### Usado desde el formulario de contacto de la página principal
+### ===========================================================================
+
+POST {{baseUrl}}/consultas
+Content-Type: application/json
+
+{
+  "nomCli": "María González",
+  "emailCli": "maria.gonzalez@example.com",
+  "titulo": "Consulta sobre disponibilidad para grupo grande",
+  "mensajeCli": "Hola, me gustaría saber si tienen disponibilidad para un grupo de 12 personas del 15 al 20 de diciembre. ¿Qué opciones de cabañas tienen para esas fechas?"
+}
+
+### Respuesta esperada (201):
+# {
+#   "ok": true,
+#   "message": "Consulta creada exitosamente. Le responderemos a la brevedad.",
+#   "data": {
+#     "id_consulta": 1,
+#     "nom_cli": "María González",
+#     "email_cli": "maria.gonzalez@example.com",
+#     "titulo": "Consulta sobre disponibilidad para grupo grande",
+#     "fecha_consulta": "2025-11-07T13:30:00.000Z"
+#   }
+# }
+
+
+### ===========================================================================
+### 2. CREAR CONSULTA - Sin título (opcional)
+### ===========================================================================
+
+POST {{baseUrl}}/consultas
+Content-Type: application/json
+
+{
+  "nomCli": "Carlos Mendoza",
+  "emailCli": "carlos.m@example.com",
+  "mensajeCli": "¿Aceptan mascotas en el resort? Tengo un perro de tamaño mediano."
+}
+
+### Respuesta esperada (201):
+# {
+#   "ok": true,
+#   "message": "Consulta creada exitosamente. Le responderemos a la brevedad.",
+#   "data": {
+#     "id_consulta": 2,
+#     "nom_cli": "Carlos Mendoza",
+#     "email_cli": "carlos.m@example.com",
+#     "titulo": null,
+#     "fecha_consulta": "2025-11-07T13:35:00.000Z"
+#   }
+# }
+
+
+### ===========================================================================
+### 3. CREAR CONSULTA - Validación: Email inválido
+### ===========================================================================
+
+POST {{baseUrl}}/consultas
+Content-Type: application/json
+
+{
+  "nomCli": "Juan Pérez",
+  "emailCli": "email-invalido",
+  "mensajeCli": "Quiero hacer una reserva"
+}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "errors": [
+#     {
+#       "field": "emailCli",
+#       "message": "El email no tiene un formato válido"
+#     }
+#   ]
+# }
+
+
+### ===========================================================================
+### 4. CREAR CONSULTA - Validación: Mensaje muy corto
+### ===========================================================================
+
+POST {{baseUrl}}/consultas
+Content-Type: application/json
+
+{
+  "nomCli": "Ana López",
+  "emailCli": "ana@example.com",
+  "mensajeCli": "Hola"
+}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "errors": [
+#     {
+#       "field": "mensajeCli",
+#       "message": "El mensaje debe tener al menos 10 caracteres"
+#     }
+#   ]
+# }
+
+
+### ===========================================================================
+### 5. CREAR CONSULTA - Validación: Campos faltantes
+### ===========================================================================
+
+POST {{baseUrl}}/consultas
+Content-Type: application/json
+
+{
+  "nomCli": "Pedro García"
+}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "errors": [
+#     {
+#       "field": "emailCli",
+#       "message": "El email es obligatorio"
+#     },
+#     {
+#       "field": "mensajeCli",
+#       "message": "El mensaje es obligatorio"
+#     }
+#   ]
+# }
+
+
+### ===========================================================================
+### 6. LISTAR CONSULTAS PENDIENTES (OPERADOR/ADMIN)
+### Por defecto muestra solo consultas PENDIENTES ordenadas por más recientes
+### Este es el comportamiento por defecto del endpoint sin parámetros
+### ===========================================================================
+
+GET {{baseUrl}}/consultas
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### Respuesta esperada (200):
+# {
+#   "ok": true,
+#   "data": [
+#     {
+#       "id_consulta": 1,
+#       "nom_cli": "María González",
+#       "email_cli": "maria.gonzalez@example.com",
+#       "titulo": "Consulta sobre disponibilidad para grupo grande",
+#       "mensaje_cli": "Hola, me gustaría saber...",
+#       "fecha_consulta": "2025-11-07T13:30:00.000Z",
+#       "esta_respondida": false,
+#       "respuesta_op": null,
+#       "fecha_respuesta": null,
+#       "id_usuario_respuesta": null,
+#       "nombre_operador": null
+#     },
+#     {
+#       "id_consulta": 2,
+#       "nom_cli": "Carlos Mendoza",
+#       "email_cli": "carlos.m@example.com",
+#       "titulo": null,
+#       "mensaje_cli": "¿Aceptan mascotas en el resort?...",
+#       "fecha_consulta": "2025-11-07T13:35:00.000Z",
+#       "esta_respondida": false,
+#       "respuesta_op": null,
+#       "fecha_respuesta": null,
+#       "id_usuario_respuesta": null,
+#       "nombre_operador": null
+#     }
+#   ],
+#   "total": 2,
+#   "filtros": {
+#     "estaRespondida": false,
+#     "periodo": "todo"
+#   }
+# }
+
+
+### ===========================================================================
+### 7. LISTAR CONSULTAS PENDIENTES EXPLÍCITAMENTE (OPERADOR/ADMIN)
+### Mismo resultado que el ejemplo #6, pero especificando el parámetro
+### ===========================================================================
+
+GET {{baseUrl}}/consultas?estaRespondida=false
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### Respuesta esperada (200):
+# {
+#   "ok": true,
+#   "data": [
+#     {
+#       "id_consulta": 5,
+#       "nom_cli": "Laura Fernández",
+#       "email_cli": "laura.f@example.com",
+#       "titulo": "Consulta sobre servicios",
+#       "mensaje_cli": "¿Qué servicios adicionales ofrecen?",
+#       "fecha_consulta": "2025-11-05T10:00:00.000Z",
+#       "esta_respondida": true,
+#       "respuesta_op": "Hola Laura, ofrecemos Gimnasio, SPA y Restaurante...",
+#       "fecha_respuesta": "2025-11-05T14:30:00.000Z",
+#       "id_usuario_respuesta": 2,
+#       "nombre_operador": "Juan Operador"
+#     }
+#   ],
+#   "total": 1,
+#   "filtros": {
+#     "estaRespondida": false,
+#     "periodo": "todo"
+#   }
+# }
+
+
+### ===========================================================================
+### 8. LISTAR CONSULTAS RESPONDIDAS (OPERADOR/ADMIN)
+### Solo las que YA han sido respondidas
+### ===========================================================================
+
+GET {{baseUrl}}/consultas?estaRespondida=true
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### Respuesta esperada (200): Similar a endpoint anterior pero con esta_respondida=true
+
+
+### ===========================================================================
+### 9. LISTAR CONSULTAS DE HOY (OPERADOR/ADMIN)
+### ===========================================================================
+
+GET {{baseUrl}}/consultas?periodo=hoy
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### Respuesta esperada (200): Similar a endpoint anterior
+
+
+### ===========================================================================
+### 10. LISTAR CONSULTAS DE LA ÚLTIMA SEMANA (OPERADOR/ADMIN)
+### ===========================================================================
+
+GET {{baseUrl}}/consultas?periodo=semana
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### Respuesta esperada (200): Similar a endpoint anterior
+
+
+### ===========================================================================
+### 11. LISTAR CONSULTAS DEL ÚLTIMO MES (OPERADOR/ADMIN)
+### ===========================================================================
+
+GET {{baseUrl}}/consultas?periodo=mes
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### Respuesta esperada (200): Similar a endpoint anterior
+
+
+### ===========================================================================
+### 12. COMBINAR FILTROS: Pendientes de hoy
+### ===========================================================================
+
+GET {{baseUrl}}/consultas?estaRespondida=false&periodo=hoy
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### Respuesta esperada (200): Solo consultas pendientes de hoy
+
+
+### ===========================================================================
+### 13. COMBINAR FILTROS: Respondidas de la semana
+### ===========================================================================
+
+GET {{baseUrl}}/consultas?estaRespondida=true&periodo=semana
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### Respuesta esperada (200): Solo consultas respondidas de los últimos 7 días
+
+
+### ===========================================================================
+### 14. LISTAR CONSULTAS CON BÚSQUEDA (OPERADOR/ADMIN)
+### Busca en nombre, email o título de la consulta
+### ===========================================================================
+
+GET {{baseUrl}}/consultas?busqueda=María
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### Respuesta esperada (200):
+# {
+#   "ok": true,
+#   "data": [
+#     {
+#       "id_consulta": 1,
+#       "nom_cli": "María González",
+#       "email_cli": "maria.gonzalez@example.com",
+#       "titulo": "Consulta sobre disponibilidad para grupo grande",
+#       "mensaje_cli": "Hola, me gustaría saber...",
+#       "fecha_consulta": "2025-11-07T13:30:00.000Z",
+#       "esta_respondida": false,
+#       "respuesta_op": null,
+#       "fecha_respuesta": null,
+#       "id_usuario_respuesta": null,
+#       "nombre_operador": null
+#     }
+#   ],
+#   "total": 1,
+#   "filtros": {
+#     "periodo": "todo",
+#     "busqueda": "María"
+#   }
+# }
+
+
+### ===========================================================================
+### 15. OBTENER DETALLE DE CONSULTA (OPERADOR/ADMIN)
+### ===========================================================================
+
+GET {{baseUrl}}/consultas/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### Respuesta esperada (200):
+# {
+#   "ok": true,
+#   "data": {
+#     "id_consulta": 1,
+#     "nom_cli": "María González",
+#     "email_cli": "maria.gonzalez@example.com",
+#     "titulo": "Consulta sobre disponibilidad para grupo grande",
+#     "mensaje_cli": "Hola, me gustaría saber si tienen disponibilidad para un grupo de 12 personas del 15 al 20 de diciembre. ¿Qué opciones de cabañas tienen para esas fechas?",
+#     "fecha_consulta": "2025-11-07T13:30:00.000Z",
+#     "esta_respondida": false,
+#     "respuesta_op": null,
+#     "fecha_respuesta": null,
+#     "id_usuario_respuesta": null,
+#     "nombre_operador": null,
+#     "email_operador": null
+#   }
+# }
+
+
+### ===========================================================================
+### 16. OBTENER DETALLE DE CONSULTA - Error: No existe
+### ===========================================================================
+
+GET {{baseUrl}}/consultas/999
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### Respuesta esperada (404):
+# {
+#   "ok": false,
+#   "error": "La consulta no existe"
+# }
+
+
+### ===========================================================================
+### 17. RESPONDER CONSULTA (OPERADOR/ADMIN)
+### Se envía automáticamente un email al cliente
+### ===========================================================================
+
+POST {{baseUrl}}/consultas/1/responder
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "respuestaOp": "Hola María, muchas gracias por contactarnos. Tenemos disponibilidad para su grupo de 12 personas del 15 al 20 de diciembre. Le recomendamos reservar 2 cabañas Premium (capacidad 6 personas cada una) en la zona principal. El precio por noche es de $250,000 por cabaña. También contamos con servicios adicionales como SPA, Gimnasio y Restaurante. ¿Le gustaría que le enviemos más información o proceder con la reserva?"
+}
+
+### Respuesta esperada (200):
+# {
+#   "ok": true,
+#   "message": "Consulta respondida exitosamente. Se ha enviado un email al cliente.",
+#   "data": {
+#     "id_consulta": 1,
+#     "nom_cli": "María González",
+#     "email_cli": "maria.gonzalez@example.com",
+#     "titulo": "Consulta sobre disponibilidad para grupo grande",
+#     "mensaje_cli": "Hola, me gustaría saber...",
+#     "fecha_consulta": "2025-11-07T13:30:00.000Z",
+#     "esta_respondida": true,
+#     "respuesta_op": "Hola María, muchas gracias por contactarnos...",
+#     "fecha_respuesta": "2025-11-07T14:00:00.000Z",
+#     "id_usuario_respuesta": 2
+#   }
+# }
+
+
+### ===========================================================================
+### 18. RESPONDER CONSULTA - Validación: Respuesta muy corta
+### ===========================================================================
+
+POST {{baseUrl}}/consultas/2/responder
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "respuestaOp": "Sí"
+}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "errors": [
+#     {
+#       "field": "respuestaOp",
+#       "message": "La respuesta debe tener al menos 10 caracteres"
+#     }
+#   ]
+# }
+
+
+### ===========================================================================
+### 19. RESPONDER CONSULTA - Error: Ya respondida
+### ===========================================================================
+
+POST {{baseUrl}}/consultas/1/responder
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "respuestaOp": "Esta es otra respuesta diferente"
+}
+
+### Respuesta esperada (400):
+# {
+#   "ok": false,
+#   "error": "Esta consulta ya ha sido respondida"
+# }
+
+
+### ===========================================================================
+### 20. RESPONDER CONSULTA - Error: Consulta no existe
+### ===========================================================================
+
+POST {{baseUrl}}/consultas/999/responder
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "respuestaOp": "Esta es mi respuesta"
+}
+
+### Respuesta esperada (404):
+# {
+#   "ok": false,
+#   "error": "La consulta no existe"
+# }
+
+
+### ===========================================================================
+### 21. OBTENER ESTADÍSTICAS DE CONSULTAS (OPERADOR/ADMIN)
+### ===========================================================================
+
+GET {{baseUrl}}/consultas/estadisticas
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### Respuesta esperada (200):
+# {
+#   "ok": true,
+#   "data": {
+#     "total_consultas": "25",
+#     "respondidas": "18",
+#     "pendientes": "7",
+#     "ultima_semana": "5",
+#     "ultimo_mes": "25"
+#   }
+# }
+
+
+### ===========================================================================
+### FLUJO COMPLETO: CLIENTE HACE CONSULTA Y RECIBE RESPUESTA
+### ===========================================================================
+
+### Paso 1: Cliente visita la página principal y va al formulario de contacto
+# (No requiere login)
+
+### Paso 2: Cliente envía su consulta
+POST {{baseUrl}}/consultas
+Content-Type: application/json
+
+{
+  "nomCli": "Roberto Sánchez",
+  "emailCli": "roberto.s@example.com",
+  "titulo": "Consulta sobre fechas navideñas",
+  "mensajeCli": "Buenos días, quisiera saber si tienen disponibilidad para 2 cabañas del 24 al 27 de diciembre. Somos 8 adultos y 2 niños. ¿Cuál sería el costo aproximado? Gracias."
+}
+
+### Paso 3: Sistema confirma que la consulta fue registrada
+# El cliente recibe un mensaje de confirmación en pantalla
+
+### Paso 4: Operador se loguea en el sistema interno
+POST {{baseUrl}}/users/login
+Content-Type: application/json
+
+{
+  "email": "operador@kallmaresort.com",
+  "password": "password123"
+}
+
+### Paso 5: Operador lista las consultas pendientes (comportamiento por defecto)
+GET {{baseUrl}}/consultas
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### Paso 6: Operador ve el detalle de la consulta
+GET {{baseUrl}}/consultas/3
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### Paso 7: Operador responde la consulta
+POST {{baseUrl}}/consultas/3/responder
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "respuestaOp": "Hola Roberto, gracias por su consulta. Tenemos disponibilidad para las fechas solicitadas. Para 8 adultos y 2 niños, le recomendamos 2 cabañas Confort (capacidad 4 personas c/u) o 2 cabañas Premium (capacidad 6 personas c/u). Precios por noche: Confort $130,000 y Premium $250,000. Para el período del 24 al 27 de diciembre (3 noches), el costo sería: Opción Confort: $780,000 total, Opción Premium: $1,500,000 total. Incluye seña del 25% al momento de reservar. ¿Le gustaría proceder con la reserva? Quedo atenta a su respuesta. Saludos, Equipo Kallma Resort"
+}
+
+### Paso 8: Sistema envía email automático al cliente
+# El cliente recibe un email con:
+# - Su consulta original
+# - La respuesta del operador
+# - Firma del equipo Kallma Resort
+
+### Paso 9: Verificar que la consulta fue respondida
+# Al listar pendientes ya no aparecerá (solo muestra no respondidas)
+# Para ver las respondidas, usar el parámetro:
+GET {{baseUrl}}/consultas?estaRespondida=true
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+### ===========================================================================
+### CONFIGURACIÓN DEL SERVICIO DE EMAIL
+### ===========================================================================
+# 
+# Para que el envío de emails funcione, debes configurar las siguientes
+# variables de entorno en tu archivo .env:
+# 
+# EMAIL_HOST=smtp.gmail.com
+# EMAIL_PORT=587
+# EMAIL_SECURE=false
+# EMAIL_USER=tu-email@gmail.com
+# EMAIL_PASSWORD=tu-password-de-aplicacion
+# EMAIL_FROM=tu-email@gmail.com
+# 
+# IMPORTANTE: Si usas Gmail, necesitas:
+# 1. Activar la verificación en 2 pasos
+# 2. Generar una "Contraseña de aplicación" específica
+# 3. Usar esa contraseña en EMAIL_PASSWORD (no tu contraseña normal)
+# 
+# Instrucciones para Gmail:
+# https://support.google.com/accounts/answer/185833
+# 
+### ===========================================================================
+
+
+### ===========================================================================
+### NOTAS IMPORTANTES
+### ===========================================================================
+# 
+# PERMISOS:
+# - POST /api/consultas: Público (sin autenticación)
+# - GET /api/consultas: Operador o Administrador
+# - GET /api/consultas/:id: Operador o Administrador
+# - POST /api/consultas/:id/responder: Operador o Administrador
+# - GET /api/consultas/estadisticas: Operador o Administrador
+# 
+# SISTEMA DE FILTROS COMBINABLES:
+# - El endpoint GET /api/consultas por defecto muestra solo CONSULTAS PENDIENTES
+# - Ordenadas por fecha más reciente primero
+# 
+# Filtros disponibles (todos combinables):
+# 
+# 1. Por estado de respuesta:
+#   * ?estaRespondida=true - Solo respondidas
+#   * ?estaRespondida=false - Solo pendientes (COMPORTAMIENTO POR DEFECTO)
+#   * Sin parámetro - Solo pendientes (mismo que false)
+# 
+# 2. Por período de tiempo:
+#   * ?periodo=hoy - Consultas de hoy desde las 00:00
+#   * ?periodo=semana - Últimos 7 días
+#   * ?periodo=mes - Últimos 30 días
+#   * ?periodo=todo - Todas las consultas (por defecto)
+# 
+# 3. Por búsqueda:
+#   * ?busqueda=texto - Busca en nombre, email o título
+# 
+# Ejemplos de combinaciones:
+#   * ?estaRespondida=false&periodo=hoy - Pendientes de hoy
+#   * ?estaRespondida=true&periodo=semana - Respondidas de la semana
+#   * ?periodo=mes&busqueda=María - Todas del mes que contengan "María"
+#   * ?estaRespondida=false&periodo=semana&busqueda=reserva - Pendientes de la semana sobre reservas
+# 
+# ENVÍO DE EMAILS:
+# - Al responder una consulta, se envía automáticamente un email al cliente
+# - El email incluye un template HTML profesional con la consulta original
+#   y la respuesta del operador
+# - Si el email falla, la respuesta igualmente se guarda en la base de datos
+# - Se registra en logs cualquier error del servicio de email
+# 
+### ===========================================================================

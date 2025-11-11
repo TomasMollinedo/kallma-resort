@@ -15,4 +15,12 @@ export const config = {
     user: process.env.PGUSER || "postgres",
     password: process.env.PGPASSWORD || "postgres",
   },
+  email: {
+    host: process.env.EMAIL_HOST || "smtp.gmail.com",
+    port: Number(process.env.EMAIL_PORT || 587),
+    secure: process.env.EMAIL_SECURE === "true",
+    user: process.env.EMAIL_USER,
+    password: process.env.EMAIL_PASSWORD,
+    from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+  },
 };
