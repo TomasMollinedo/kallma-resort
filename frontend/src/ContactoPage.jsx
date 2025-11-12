@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import emailjs from "@emailjs/browser";
+import { crearConsulta } from "./app/services/consultaService";
 import Fondo from "./assets/fondo.jpg";
 
 function Contacto() {
@@ -11,19 +11,40 @@ function Contacto() {
     reset,
   } = useForm();
 
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+
   const onSubmit = async (data) => {
+    setLoading(true);
+    setSuccess('');
+    setError('');
+
     try {
-      await emailjs.send(
-        "service_zfp766k",
-        "template_xc8w33j",
-        data,
-        "sgekDpnNSfwLcIszP"
-      );
-      alert("Mensaje enviado con éxito");
+      // Mapear campos del formulario a los esperados por el backend
+      const consultaData = {
+        nomCli: data.name,
+        emailCli: data.email,
+        titulo: data.subject || undefined, // Opcional
+        mensajeCli: data.message,
+      };
+
+      const response = await crearConsulta(consultaData);
+      
+      setSuccess(response.message || 'Consulta enviada exitosamente. Le responderemos a la brevedad.');
       reset();
+      
+      // Limpiar mensaje de éxito después de 5 segundos
+      setTimeout(() => setSuccess(''), 5000);
     } catch (error) {
-      console.error("Error al enviar:", error);
-      alert("Hubo un error al enviar el mensaje");
+      console.error("Error al enviar consulta:", error);
+      const errorMsg = error.message || 'Hubo un error al enviar la consulta. Por favor, intente nuevamente.';
+      setError(errorMsg);
+      
+      // Limpiar mensaje de error después de 5 segundos
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -53,6 +74,19 @@ function Contacto() {
             Contacto
           </h1>
 
+          {/* Mensajes de éxito y error */}
+          {success && (
+            <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-md">
+              {success}
+            </div>
+          )}
+          
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+              {error}
+            </div>
+          )}
+
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="flex flex-col gap-4 text-gray-800"
@@ -66,11 +100,19 @@ function Contacto() {
                     value: 2,
                     message: "El nombre debe tener al menos 2 caracteres",
                   },
+                  maxLength: {
+                    value: 200,
+                    message: "El nombre no puede exceder 200 caracteres",
+                  },
+                  validate: {
+                    notEmpty: (value) => value.trim().length > 0 || "El nombre no puede estar vacío"
+                  }
                 })}
-                placeholder="Nombre"
+                placeholder="Nombre completo *"
+                disabled={loading}
                 className={`w-full p-2 border rounded-md ${
                   errors.name ? "border-red-500" : "border-gray-300"
-                }`}
+                } ${loading ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               />
               {errors.name && (
                 <p className="text-red-500 text-sm mt-1">
@@ -85,14 +127,22 @@ function Contacto() {
                 {...register("email", {
                   required: "El correo es obligatorio",
                   pattern: {
-                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                    message: "Ingresa un correo válido",
+                    value: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
+                    message: "El email no tiene un formato válido",
                   },
+                  maxLength: {
+                    value: 320,
+                    message: "El email no puede exceder 320 caracteres",
+                  },
+                  validate: {
+                    notEmpty: (value) => value.trim().length > 0 || "El email no puede estar vacío"
+                  }
                 })}
-                placeholder="Correo"
+                placeholder="Correo electrónico *"
+                disabled={loading}
                 className={`w-full p-2 border rounded-md ${
                   errors.email ? "border-red-500" : "border-gray-300"
-                }`}
+                } ${loading ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               />
               {errors.email && (
                 <p className="text-red-500 text-sm mt-1">
@@ -102,14 +152,49 @@ function Contacto() {
             </div>
 
             <div>
+              <input
+                type="text"
+                {...register("subject", {
+                  maxLength: {
+                    value: 250,
+                    message: "El asunto no puede exceder 250 caracteres",
+                  },
+                })}
+                placeholder="Asunto (opcional)"
+                disabled={loading}
+                className={`w-full p-2 border rounded-md ${
+                  errors.subject ? "border-red-500" : "border-gray-300"
+                } ${loading ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              />
+              {errors.subject && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.subject.message}
+                </p>
+              )}
+            </div>
+
+            <div>
               <textarea
                 {...register("message", {
                   required: "El mensaje es obligatorio",
+                  minLength: {
+                    value: 10,
+                    message: "El mensaje debe tener al menos 10 caracteres",
+                  },
+                  maxLength: {
+                    value: 5000,
+                    message: "El mensaje no puede exceder 5000 caracteres",
+                  },
+                  validate: {
+                    notEmpty: (value) => value.trim().length >= 10 || "El mensaje debe tener al menos 10 caracteres"
+                  }
                 })}
-                placeholder="Mensaje"
+                placeholder="Mensaje *"
+                rows="5"
+                disabled={loading}
                 className={`w-full p-2 border rounded-md ${
                   errors.message ? "border-red-500" : "border-gray-300"
-                }`}
+                } ${loading ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               ></textarea>
               {errors.message && (
                 <p className="text-red-500 text-sm mt-1">
@@ -120,9 +205,20 @@ function Contacto() {
 
             <button
               type="submit"
-              className="bg-orange-600 text-white py-2 px-4 rounded-md hover:bg-orange-700 transition"
+              disabled={loading}
+              className="bg-orange-600 text-white py-2 px-4 rounded-md hover:bg-orange-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              Enviar
+              {loading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Enviando...
+                </>
+              ) : (
+                'Enviar Consulta'
+              )}
             </button>
           </form>
         </div>

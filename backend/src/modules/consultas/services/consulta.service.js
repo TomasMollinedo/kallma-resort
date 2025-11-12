@@ -70,13 +70,16 @@ export const listarConsultas = async (filtros = {}) => {
     const parametros = [];
     let contadorParam = 1;
 
-    // Filtro por estado de respuesta (por defecto muestra las no respondidas)
-    const estaRespondida = filtros.estaRespondida !== undefined
-      ? filtros.estaRespondida
-      : false;
+    // Filtro por estado de respuesta (opcional, por defecto muestra todas)
+    const shouldFilterByStatus =
+      (typeof filtros.aplicarFiltroEstado === "boolean" && filtros.aplicarFiltroEstado) ||
+      (filtros.aplicarFiltroEstado === undefined && filtros.estaRespondida !== undefined);
+
+    if (shouldFilterByStatus && typeof filtros.estaRespondida === "boolean") {
       query += ` AND c.esta_respondida = $${contadorParam}`;
-    parametros.push(estaRespondida);
-    contadorParam++;
+      parametros.push(filtros.estaRespondida);
+      contadorParam++;
+    }
 
     // Filtro por período de tiempo (por defecto: "todo")
     const periodo = filtros.periodo || "todo";
@@ -121,7 +124,7 @@ export const listarConsultas = async (filtros = {}) => {
     }
 
     // Ordenar por fecha de consulta (más recientes primero)
-    query += ` ORDER BY c.fecha_consulta DESC`;
+    query += ` ORDER BY c.fecha_consulta DESC, c.id_consulta DESC`;
 
     const resultado = await pool.query(query, parametros);
 

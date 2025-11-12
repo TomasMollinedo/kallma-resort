@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Wrench, LogOut, Home, Calendar, Building, CheckCircle, XCircle, Clock, DollarSign } from 'lucide-react';
+import { Wrench, LogOut, Home, Calendar, Building, CheckCircle, XCircle, Clock, DollarSign, MessageSquare } from 'lucide-react';
 import ReservationsManagement from '../admin/ReservationsManagement';
 import PagosManagement from './PagosManagement';
+import ConsultasManagement from './ConsultasManagement';
 
 export default function DashboardOperador() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState('dashboard'); // dashboard, reservations, pagos
+  const [activeSection, setActiveSection] = useState('dashboard'); // dashboard, reservations, pagos, consultas
 
   const handleLogout = () => {
     logout();
@@ -27,6 +28,11 @@ export default function DashboardOperador() {
   // Si estamos en la sección de pagos, mostrar el componente correspondiente
   if (activeSection === 'pagos') {
     return <PagosManagement onBack={() => setActiveSection('dashboard')} />;
+  }
+
+  // Si estamos en la sección de consultas, mostrar el componente correspondiente
+  if (activeSection === 'consultas') {
+    return <ConsultasManagement onBack={() => setActiveSection('dashboard')} />;
   }
 
   return (
@@ -184,13 +190,16 @@ export default function DashboardOperador() {
           {/* Consultas de Clientes */}
           <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
             <div className="bg-yellow-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
-              <Calendar size={24} className="text-yellow-600" />
+              <MessageSquare size={24} className="text-yellow-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Consultas</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Consultas de Clientes</h3>
             <p className="text-gray-600 mb-4">
-              Atiende y gestiona consultas de clientes
+              Atiende y responde consultas de clientes
             </p>
-            <button className="w-full bg-yellow-500 text-white py-2 rounded-md hover:bg-yellow-600 transition">
+            <button 
+              onClick={() => setActiveSection('consultas')}
+              className="w-full bg-yellow-500 text-white py-2 rounded-md hover:bg-yellow-600 transition"
+            >
               Ver Consultas
             </button>
           </div>

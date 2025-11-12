@@ -73,10 +73,10 @@ GET /api/consultas?estaRespondida=false&periodo=semana&busqueda=texto
 ```
 **Acceso:** Operador / Administrador  
 **Query Params:**
-- `estaRespondida`: `true` o `false` (opcional, **por defecto: `false`**)
+- `estaRespondida`: `true` o `false` (opcional, **por defecto: muestra TODAS**)
   - `true`: Solo consultas respondidas
-  - `false`: Solo consultas pendientes (valor por defecto)
-  - **Sin especificar**: Muestra solo pendientes (comportamiento por defecto)
+  - `false`: Solo consultas pendientes
+  - **Sin especificar**: Muestra TODAS las consultas (respondidas y pendientes)
 - `periodo`: `"hoy"`, `"semana"`, `"mes"`, `"todo"` (por defecto: `"todo"`)
   - `hoy`: Consultas de hoy desde las 00:00
   - `semana`: Últimos 7 días
@@ -367,9 +367,11 @@ npm install nodemailer
 2. **Respuestas privadas:** Solo staff autorizado
 3. **Una respuesta por consulta:** No se puede responder dos veces
 4. **Email automático:** Se envía al responder (con manejo de errores)
-5. **Filtro por defecto:** Muestra pendientes para optimizar workflow
-6. **Búsqueda inteligente:** Facilita encontrar consultas específicas
-7. **Auditoría:** Registra quién y cuándo respondió
+5. **Filtro por defecto backend:** Muestra TODAS las consultas (respondidas y pendientes)
+6. **Filtro por defecto frontend:** Muestra solo pendientes para optimizar workflow
+7. **Búsqueda inteligente:** Facilita encontrar consultas específicas
+8. **Auditoría:** Registra quién y cuándo respondió
+9. **Ordenamiento:** Siempre por más recientes primero (fecha_consulta DESC)
 
 ---
 
