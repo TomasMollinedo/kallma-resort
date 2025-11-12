@@ -5,11 +5,12 @@ import { Wrench, LogOut, Home, Calendar, Building, CheckCircle, XCircle, Clock, 
 import ReservationsManagement from '../admin/ReservationsManagement';
 import PagosManagement from './PagosManagement';
 import ConsultasManagement from './ConsultasManagement';
+import CabanasMap from './CabanasMap';
 
 export default function DashboardOperador() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState('dashboard'); // dashboard, reservations, pagos, consultas
+  const [activeSection, setActiveSection] = useState('dashboard'); // dashboard, reservations, pagos, consultas, cabanas
 
   const handleLogout = () => {
     logout();
@@ -33,6 +34,10 @@ export default function DashboardOperador() {
   // Si estamos en la sección de consultas, mostrar el componente correspondiente
   if (activeSection === 'consultas') {
     return <ConsultasManagement onBack={() => setActiveSection('dashboard')} />;
+  }
+
+  if (activeSection === 'cabanas') {
+    return <CabanasMap onBack={() => setActiveSection('dashboard')} />;
   }
 
   return (
@@ -168,7 +173,10 @@ export default function DashboardOperador() {
             <p className="text-gray-600 mb-4">
               Actualiza el estado y disponibilidad de cabañas
             </p>
-            <button className="w-full bg-purple-500 text-white py-2 rounded-md hover:bg-purple-600 transition">
+            <button
+              onClick={() => setActiveSection('cabanas')}
+              className="w-full bg-purple-500 text-white py-2 rounded-md hover:bg-purple-600 transition"
+            >
               Ver Cabañas
             </button>
           </div>

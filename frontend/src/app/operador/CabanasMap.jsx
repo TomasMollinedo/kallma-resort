@@ -1,0 +1,365 @@
+import { useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, Building2, Home, Loader2, MapPin, RefreshCw, AlertCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { getAllCabanas } from '../services/cabanaService';
+import { getAllZonas } from '../services/zonaService';
+
+const CABANA_STATUS_CONFIG = {
+  available: {
+    key: 'available',
+    label: 'Activa disponible',
+    description: 'Operativa y lista para check-in',
+    bubbleClasses: 'bg-green-500 border-green-600 text-white shadow-green-200',
+    tagClasses: 'bg-green-100 text-green-700 border-green-200'
+  },
+  reserved: {
+    key: 'reserved',
+    label: 'Reservada hoy',
+    description: 'Tiene huespedes asignados para la fecha actual',
+    bubbleClasses: 'bg-amber-400 border-amber-500 text-amber-900 shadow-amber-100',
+    tagClasses: 'bg-amber-100 text-amber-700 border-amber-200'
+  },
+  maintenance: {
+    key: 'maintenance',
+    label: 'En mantenimiento',
+    description: 'Bloqueada temporalmente por tareas operativas',
+    bubbleClasses: 'bg-amber-800 border-amber-900 text-white shadow-amber-200',
+    tagClasses: 'bg-amber-50 text-amber-900 border-amber-200'
+  },
+  inactive: {
+    key: 'inactive',
+    label: 'Inactiva',
+    description: 'Fuera de operacion hasta nuevo aviso',
+    bubbleClasses: 'bg-red-500 border-red-600 text-white shadow-red-100',
+    tagClasses: 'bg-red-100 text-red-700 border-red-200'
+  }
+};
+
+const currencyFormatter = new Intl.NumberFormat('es-AR', {
+  style: 'currency',
+  currency: 'ARS',
+  minimumFractionDigits: 0
+});
+
+/**
+ * Devuelve la configuracion visual correspondiente al estado de una cabana.
+ * @param {Object} cabana - Cabana obtenida desde el backend.
+ * @returns {Object} Configuracion del estado visual.
+ */
+const getCabanaStatus = (cabana) => {
+  if (!cabana?.esta_activo) {
+    return CABANA_STATUS_CONFIG.inactive;
+  }
+
+  if (cabana?.reservada_hoy) {
+    return CABANA_STATUS_CONFIG.reserved;
+  }
+
+  if (cabana?.en_mantenimiento) {
+    return CABANA_STATUS_CONFIG.maintenance;
+  }
+
+  return CABANA_STATUS_CONFIG.available;
+};
+
+/**
+ * Formatea un numero en pesos argentinos.
+ * @param {number} value - Valor numerico recibido desde la API.
+ * @returns {string} Valor formateado en moneda.
+ */
+const formatCurrency = (value) => currencyFormatter.format(value ?? 0);
+
+/**
+ * Vista de mapa por zonas para que el operador visualice rapidamente el estado de las cabanas.
+ * @param {Object} props - Propiedades del componente.
+ * @param {Function} props.onBack - Callback para volver al dashboard del operador.
+ * @returns {JSX.Element} Vista con selector de zona y mapa visual de cabanas.
+ */
+export default function CabanasMap({ onBack }) {
+  const { token } = useAuth();
+
+  const [zonas, setZonas] = useState([]);
+  const [cabanas, setCabanas] = useState([]);
+  const [selectedZonaId, setSelectedZonaId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  /**
+   * Obtiene el catalogo de zonas activas y todas las cabanas.
+   */
+  const fetchData = async () => {
+    if (!token) {
+      return;
+    }
+
+    setLoading(true);
+    setIsRefreshing(true);
+    setError(null);
+
+    try {
+      const [zonasResponse, cabanasResponse] = await Promise.all([
+        getAllZonas({ esta_activa: true }, token),
+        getAllCabanas({}, token)
+      ]);
+
+      const zonasData = zonasResponse.data || [];
+      const cabanasData = cabanasResponse.data || [];
+
+      setZonas(zonasData);
+      setCabanas(cabanasData);
+
+      if (!selectedZonaId && zonasData.length > 0) {
+        setSelectedZonaId(zonasData[0].id_zona);
+      }
+
+      if (
+        selectedZonaId &&
+        zonasData.length > 0 &&
+        !zonasData.some((zona) => zona.id_zona === selectedZonaId)
+      ) {
+        setSelectedZonaId(zonasData[0].id_zona);
+      }
+    } catch (err) {
+      const backendError = err?.response?.data?.error;
+      setError(backendError || 'No pudimos obtener la informacion de cabanas. Intenta nuevamente.');
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  /**
+   * Maneja el cambio de zona desde el selector del encabezado.
+   * @param {React.ChangeEvent<HTMLSelectElement>} event - Evento del selector.
+   */
+  const handleZonaChange = (event) => {
+    const nuevaZona = parseInt(event.target.value, 10);
+    setSelectedZonaId(Number.isNaN(nuevaZona) ? null : nuevaZona);
+  };
+
+  /**
+   * Ejecuta manualmente la recarga de informacion.
+   */
+  const handleRefresh = () => {
+    fetchData();
+  };
+
+  /**
+   * Devuelve las cabanas pertenecientes a la zona seleccionada.
+   */
+  const filteredCabanas = useMemo(() => {
+    if (!selectedZonaId) {
+      return [];
+    }
+    return cabanas.filter((cabana) => cabana.id_zona === selectedZonaId);
+  }, [cabanas, selectedZonaId]);
+
+  /**
+   * Calcula un resumen de estados para la zona activa.
+   */
+  const zonaResumen = useMemo(() => {
+    return filteredCabanas.reduce(
+      (summary, cabana) => {
+        const status = getCabanaStatus(cabana);
+        summary[status.key] = (summary[status.key] || 0) + 1;
+        summary.total += 1;
+        return summary;
+      },
+      {
+        total: 0,
+        available: 0,
+        reserved: 0,
+        maintenance: 0,
+        inactive: 0
+      }
+    );
+  }, [filteredCabanas]);
+
+  const selectedZona = zonas.find((zona) => zona.id_zona === selectedZonaId);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50">
+      <header className="bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex items-center gap-2 text-gray-600 hover:text-orange-600 transition font-semibold"
+            >
+              <ArrowLeft size={18} />
+              Volver al panel
+            </button>
+            <div className="flex items-center gap-2 text-gray-500">
+              <Building2 size={18} />
+              <span className="text-sm">Mapa operacional de cabanas</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleRefresh}
+            className="flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 text-sm font-medium text-gray-600 hover:text-blue-600 hover:border-blue-200 transition disabled:opacity-50"
+            disabled={isRefreshing}
+          >
+            <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+            Actualizar
+          </button>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+        <section className="bg-white rounded-2xl shadow-sm border border-gray-100">
+          <div className="border-b border-gray-100 px-6 py-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-wider text-gray-400">Zona seleccionada</p>
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <MapPin size={20} className="text-orange-500" />
+                {selectedZona?.nom_zona || 'Sin zonas disponibles'}
+              </h2>
+              {selectedZona && (
+                <p className="text-sm text-gray-500">
+                  Capacidad declarada: {selectedZona.capacidad_cabanas} cabana(s)
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <label htmlFor="zonaSelect" className="text-sm font-semibold text-gray-600">
+                Cambiar zona
+              </label>
+              <div className="relative">
+                <select
+                  id="zonaSelect"
+                  value={selectedZonaId ?? ''}
+                  onChange={handleZonaChange}
+                  className="appearance-none border border-gray-200 rounded-lg pl-4 pr-10 py-2 bg-gray-50 text-gray-700 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500"
+                >
+                  {zonas.length === 0 && <option value="">Sin zonas</option>}
+                  {zonas.map((zona) => (
+                    <option key={zona.id_zona} value={zona.id_zona}>
+                      {zona.nom_zona}
+                    </option>
+                  ))}
+                </select>
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  v
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {error && (
+            <div className="px-6 py-4 flex items-center gap-3 text-sm text-red-700 bg-red-50 border-t border-red-100">
+              <AlertCircle size={18} />
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="px-6 py-12 flex flex-col items-center justify-center text-gray-500">
+              <Loader2 size={32} className="animate-spin text-orange-500 mb-3" />
+              Cargando mapa de cabanas...
+            </div>
+          ) : (
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                {Object.values(CABANA_STATUS_CONFIG).map((status) => (
+                  <div
+                    key={status.key}
+                    className="bg-gray-50 rounded-xl border border-gray-100 p-4 flex flex-col items-center gap-2"
+                  >
+                    <div className={`w-10 h-10 rounded-full border ${status.bubbleClasses}`} />
+                    <p className="text-sm font-semibold text-gray-600">{status.label}</p>
+                    <p className="text-xl font-bold text-gray-900">
+                      {zonaResumen[status.key] || 0}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="relative border-2 border-dashed border-gray-200 rounded-2xl min-h-[380px] bg-gradient-to-br from-white to-slate-50 p-6 overflow-visible">
+                <div className="absolute top-6 right-6 bg-white border border-gray-100 rounded-xl shadow-sm p-4 space-y-2 w-56">
+                  <p className="text-sm font-semibold text-gray-700">Leyenda de colores</p>
+                  {Object.values(CABANA_STATUS_CONFIG).map((status) => (
+                    <div key={`legend-${status.key}`} className="flex items-center gap-2 text-sm text-gray-600">
+                      <span className={`w-3 h-3 rounded-full border ${status.bubbleClasses}`} />
+                      {status.label}
+                    </div>
+                  ))}
+                </div>
+
+                {filteredCabanas.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center text-gray-500">
+                    <Home size={36} className="text-gray-300 mb-3" />
+                    <p className="text-base font-semibold">
+                      Esta zona aun no tiene cabanas registradas.
+                    </p>
+                    <p className="text-sm">
+                      Revisa nuevamente mas tarde o verifica los filtros en el panel de administrador.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-12 place-items-center pt-6">
+                    {filteredCabanas.map((cabana) => {
+                      const status = getCabanaStatus(cabana);
+                      return (
+                        <div key={cabana.id_cabana} className="group relative flex flex-col items-center">
+                          <div
+                            className={`w-20 h-20 rounded-2xl border-4 ${status.bubbleClasses} flex items-center justify-center shadow-lg`}
+                          >
+                            <Home size={32} className="drop-shadow text-white" />
+                          </div>
+                          <p className="mt-3 text-sm font-semibold text-gray-700">
+                            {cabana.cod_cabana}
+                          </p>
+                          <span
+                            className={`mt-1 text-xs font-semibold px-3 py-1 rounded-full border ${status.tagClasses}`}
+                          >
+                            {status.label}
+                          </span>
+
+                          <div className="pointer-events-none opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto transition duration-200 absolute -bottom-4 translate-y-full w-64 bg-white border border-gray-100 rounded-2xl shadow-xl p-4 z-10">
+                            <p className="text-sm font-semibold text-gray-900 mb-2">
+                              {cabana.nom_tipo_cab} - {cabana.capacidad} personas
+                            </p>
+                            <p className="text-xs text-gray-500 mb-2">{status.description}</p>
+                            <div className="space-y-1 text-sm text-gray-600">
+                              <p>
+                                <span className="font-semibold">Precio noche:</span>{' '}
+                                {formatCurrency(cabana.precio_noche)}
+                              </p>
+                              <p>
+                                <span className="font-semibold">Mantenimiento:</span>{' '}
+                                {cabana.en_mantenimiento ? 'Si' : 'No'}
+                              </p>
+                              <p>
+                                <span className="font-semibold">Reservada hoy:</span>{' '}
+                                {cabana.reservada_hoy ? 'Si' : 'No'}
+                              </p>
+                              <p>
+                                <span className="font-semibold">Ultima actualizacion:</span>{' '}
+                                {cabana.fecha_modific
+                                  ? new Date(cabana.fecha_modific).toLocaleString()
+                                  : 'Sin cambios'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </section>
+      </main>
+    </div>
+  );
+}
