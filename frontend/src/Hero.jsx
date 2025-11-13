@@ -4,6 +4,7 @@ import axios from "axios";
 import LogoKallma from '/src/assets/icono-kallma-blanco.svg';
 import './index.css';
 import { Wind } from "lucide-react";
+import Snowfall from "./components/Snowfall";
 
 export default function Hero() {
   const navigate = useNavigate();
@@ -25,6 +26,8 @@ export default function Hero() {
       className="h-screen bg-cover bg-center relative font-kallma"
       style={{ backgroundImage: "url('/src/assets/fondo.jpg')" }}
     >
+      {/* Animación de nieve */}
+      <Snowfall />
       {/* Panel desenfocado */}
       <div className="hidden lg:block absolute top-0 left-0 w-[41.5%] h-full backdrop-blur-lg bg-black/30"></div>
 
