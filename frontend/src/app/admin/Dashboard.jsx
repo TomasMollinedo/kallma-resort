@@ -202,20 +202,6 @@ export default function DashboardAdministrador() {
               Gestionar Pagos
             </button>
           </div>
-
-          {/* Configuración del Sistema */}
-          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
-            <div className="bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
-              <Settings size={24} className="text-gray-600" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Configuración</h3>
-            <p className="text-gray-600 mb-4">
-              Ajusta parámetros y configuraciones generales
-            </p>
-            <button className="w-full bg-gray-500 text-white py-2 rounded-md hover:bg-gray-600 transition">
-              Configuración
-            </button>
-          </div>
         </div>
       </main>
     </div>

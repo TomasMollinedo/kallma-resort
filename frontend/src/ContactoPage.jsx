@@ -104,6 +104,10 @@ function Contacto() {
                     value: 200,
                     message: "El nombre no puede exceder 200 caracteres",
                   },
+                  pattern: {
+                    value: /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/,
+                    message: "Solo se permiten letras y espacios",
+                  },
                   validate: {
                     notEmpty: (value) => value.trim().length > 0 || "El nombre no puede estar vacío"
                   }

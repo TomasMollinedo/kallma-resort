@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { X, Save, User, Mail, Phone, CreditCard, Lock, Shield, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { createUser, updateUser, getRoles } from '../../services/userService';
@@ -38,43 +38,59 @@ export default function UserFormModal({ user, isEditing, onClose, onSuccess }) {
   }, [user, isEditing]);
 
   /**
-   * Validar formulario
+   * Valida cada campo del formulario y determina si se puede enviar.
+   * @returns {boolean} true cuando todos los campos cumplen con las reglas.
+   */
+  /**
+   * Valida todos los campos del formulario del modal de usuario.
+   * @returns {boolean} true cuando cada campo cumple con las reglas de negocio.
    */
   const validateForm = () => {
     const newErrors = {};
+    const trimmedName = (formData.nombre || '').trim();
+    const trimmedEmail = (formData.email || '').trim();
+    const trimmedPhone = (formData.telefono || '').trim();
+    const trimmedDni = (formData.dni || '').trim();
+    const passwordValue = formData.password || '';
     
     // Nombre obligatorio
-    if (!formData.nombre.trim()) {
+    if (!trimmedName) {
       newErrors.nombre = 'El nombre es obligatorio';
-    } else if (formData.nombre.trim().length < 2) {
-      newErrors.nombre = 'El nombre debe tener al menos 2 caracteres';
+    } else if (trimmedName.length < 3) {
+      newErrors.nombre = 'El nombre debe tener al menos 3 caracteres';
+    } else if (!/^[a-zA-Z\u00C0-\u00FF\s]+$/.test(trimmedName)) {
+      newErrors.nombre = 'El nombre solo puede contener letras y espacios';
     }
     
-    // Email obligatorio y formato válido
-    if (!formData.email.trim()) {
-      newErrors.email = 'El email es obligatorio';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Formato de email inválido';
+    // Email obligatorio y formato valido
+    if (!trimmedEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      newErrors.email = 'Ingresa un correo valido';
     }
     
-    // Contraseña obligatoria solo al crear
+    // Contrasena obligatoria solo al crear
     if (!isEditing) {
-      if (!formData.password) {
-        newErrors.password = 'La contraseña es obligatoria';
-      } else if (formData.password.length < 6) {
-        newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
+      if (!passwordValue) {
+        newErrors.password = 'La contrasena es obligatoria';
+      } else if (!/^(?=.*[a-z])(?=.*[A-Z]).{8,}$/.test(passwordValue)) {
+        newErrors.password = 'Debe tener al menos 8 caracteres, una mayuscula y una minuscula';
       }
-    } else {
-      // Al editar, validar solo si se proporcionó
-      if (formData.password && formData.password.length < 6) {
-        newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
-      }
+    } else if (passwordValue && !/^(?=.*[a-z])(?=.*[A-Z]).{8,}$/.test(passwordValue)) {
+      newErrors.password = 'Debe tener al menos 8 caracteres, una mayuscula y una minuscula';
+    }
+
+    // Telefono opcional pero con formato valido
+    if (trimmedPhone && !/^\+?(54)?\d{8,}$/.test(trimmedPhone)) {
+      newErrors.telefono = 'El telefono debe ser valido y puede incluir el prefijo +54';
+    }
+
+    // DNI opcional pero con longitud especifica
+    if (trimmedDni && !/^\d{7,8}$/.test(trimmedDni)) {
+      newErrors.dni = 'El DNI debe tener entre 7 y 8 digitos';
     }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   /**
    * Manejar cambios en el formulario
    */
@@ -267,6 +283,9 @@ export default function UserFormModal({ user, isEditing, onClose, onSuccess }) {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 transition"
                 placeholder="+54 9 11 1234-5678"
               />
+              {errors.telefono && (
+                <p className="mt-1 text-sm text-red-600">{errors.telefono}</p>
+              )}
             </div>
 
             {/* DNI */}
@@ -283,6 +302,9 @@ export default function UserFormModal({ user, isEditing, onClose, onSuccess }) {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 transition"
                 placeholder="12345678"
               />
+              {errors.dni && (
+                <p className="mt-1 text-sm text-red-600">{errors.dni}</p>
+              )}
             </div>
           </div>
 
@@ -367,3 +389,4 @@ export default function UserFormModal({ user, isEditing, onClose, onSuccess }) {
     </div>
   );
 }
+

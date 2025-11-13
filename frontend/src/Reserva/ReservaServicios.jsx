@@ -118,7 +118,7 @@ export default function ReservaServicios() {
         <div className="mb-8 flex justify-between items-center">
           <div>
             <h1 className="text-5xl font-extrabold text-gray-900 mb-2">
-              Servicios Adicionales <span className="text-3xl">✨</span>
+              Servicios Adicionales <span className="text-3xl"></span>
             </h1>
             <p className="text-gray-700 text-lg">Opcional - Mejorá tu experiencia</p>
           </div>
@@ -175,7 +175,7 @@ export default function ReservaServicios() {
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex items-start gap-4 flex-1">
-                        <div className="text-4xl">✨</div>
+                        <div className="text-4xl"></div>
                         <div className="flex-1">
                           <h3 className="text-xl font-bold text-gray-900 mb-2">
                             {servicio.nom_servicio}

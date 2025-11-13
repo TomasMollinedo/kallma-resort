@@ -190,20 +190,6 @@ export default function DashboardOperador() {
             </button>
           </div>
 
-          {/* Mantenimiento */}
-          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
-            <div className="bg-orange-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
-              <Wrench size={24} className="text-orange-600" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Mantenimiento</h3>
-            <p className="text-gray-600 mb-4">
-              Registra y gestiona tareas de mantenimiento
-            </p>
-            <button className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition">
-              Ver Tareas
-            </button>
-          </div>
-
           {/* Consultas de Clientes */}
           <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
             <div className="bg-yellow-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
