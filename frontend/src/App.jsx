@@ -35,11 +35,20 @@ function Layout({ children }) {
   // Rutas donde NO se debe mostrar Header y Footer
   const hideHeaderFooterRoutes = ['/login', '/register', '/dashboard/admin', '/dashboard/operador', '/dashboard/cliente'];
   const shouldHideHeaderFooter = hideHeaderFooterRoutes.includes(location.pathname);
+  const animatedPublicRoutes = ['/', '/servicios', '/actividades', '/cabanas', '/contacto', '/informacion'];
+  const shouldAnimatePage = animatedPublicRoutes.includes(location.pathname);
 
   return (
     <div className="min-h-screen">
       {!shouldHideHeaderFooter && <Header />}
-      <main>{children}</main>
+      <main className="relative overflow-hidden">
+        <div
+          key={location.pathname}
+          className={`page-transition-wrapper ${shouldAnimatePage ? 'page-transition' : ''}`}
+        >
+          {children}
+        </div>
+      </main>
       {!shouldHideHeaderFooter && <Footer />}
     </div>
   );

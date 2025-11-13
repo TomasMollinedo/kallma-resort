@@ -27,3 +27,32 @@
 body {
   font-family: 'Lora', serif;
 }
+
+/* Transicion sutil entre paginas publicas */
+.page-transition-wrapper {
+  width: 100%;
+  min-height: 100%;
+}
+
+.page-transition {
+  animation: pageFadeSlide 0.5s ease both;
+}
+
+@keyframes pageFadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition {
+    animation: none !important;
+  }
+}
