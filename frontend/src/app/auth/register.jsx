@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { registerUser } from '../services/api';
 import Fondo from '../../assets/fondo.jpg';
@@ -18,27 +18,40 @@ export default function Register() {
   
   const navigate = useNavigate();
 
+  /**
+   * Valida los datos ingresados en el formulario de registro.
+   * @returns {boolean} true si todos los campos cumplen los requisitos.
+   */
   const validate = () => {
     const newErrors = {};
+    const trimmedEmail = (formData.email || '').trim();
+    const trimmedPassword = formData.password || '';
+    const trimmedName = (formData.nombre || '').trim();
+    const trimmedPhone = (formData.telefono || '').trim();
+    const trimmedDni = (formData.dni || '').trim();
 
-    if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      newErrors.email = 'Ingresa un correo válido';
+    if (!trimmedEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      newErrors.email = 'Ingresa un correo valido';
     }
 
-    if (!formData.password.match(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/)) {
-      newErrors.password = 'Debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número';
+    if (!trimmedPassword.match(/^(?=.*[a-z])(?=.*[A-Z]).{8,}$/)) {
+      newErrors.password = 'Debe tener al menos 8 caracteres, una mayuscula y una minuscula';
     }
 
-    if (!formData.nombre.match(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/)) {
-      newErrors.nombre = 'El nombre debe tener al menos 2 caracteres y solo puede contener letras y espacios';
+    if (!trimmedName) {
+      newErrors.nombre = 'El nombre es obligatorio';
+    } else if (trimmedName.length < 3) {
+      newErrors.nombre = 'El nombre debe tener al menos 3 caracteres';
+    } else if (!/^[a-zA-Z\u00C0-\u00FF\s]+$/.test(trimmedName)) {
+      newErrors.nombre = 'El nombre solo puede contener letras y espacios';
     }
 
-    if (formData.telefono && !formData.telefono.match(/^\+?(54)?\d{8,}$/)) {
-      newErrors.telefono = 'El teléfono debe ser válido y puede incluir el prefijo +54';
+    if (trimmedPhone && !/^\+?(54)?\d{8,}$/.test(trimmedPhone)) {
+      newErrors.telefono = 'El telefono debe ser valido y puede incluir el prefijo +54';
     }
 
-    if (formData.dni && !formData.dni.match(/^\d{7,8}$/)) {
-      newErrors.dni = 'El DNI debe tener entre 7 y 8 dígitos';
+    if (trimmedDni && !/^\d{7,8}$/.test(trimmedDni)) {
+      newErrors.dni = 'El DNI debe tener entre 7 y 8 digitos';
     }
 
     setErrors(newErrors);
@@ -63,13 +76,13 @@ export default function Register() {
     try {
       // Preparar datos para enviar (solo enviar telefono y dni si tienen valor)
       const dataToSend = {
-        email: formData.email,
+        email: formData.email.trim(),
         password: formData.password,
-        nombre: formData.nombre,
+        nombre: formData.nombre.trim(),
       };
 
-      if (formData.telefono) dataToSend.telefono = formData.telefono;
-      if (formData.dni) dataToSend.dni = formData.dni;
+      if (formData.telefono.trim()) dataToSend.telefono = formData.telefono.trim();
+      if (formData.dni.trim()) dataToSend.dni = formData.dni.trim();
 
       // Llamar a la API de registro
       await registerUser(dataToSend);
@@ -117,7 +130,7 @@ export default function Register() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="w-full">
+        <form onSubmit={handleSubmit} className="w-full" noValidate>
           <input
             type="email"
             name="email"
@@ -195,5 +208,6 @@ export default function Register() {
     </div>
   );
 }
+
 
 
