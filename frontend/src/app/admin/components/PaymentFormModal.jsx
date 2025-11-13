@@ -86,13 +86,21 @@ export default function PaymentFormModal({ reserva, onClose, onSuccess }) {
 
     // Validar fecha
     if (formData.fecha_pago) {
-      const fechaPago = new Date(formData.fecha_pago + 'T12:00:00'); // Usar mediodía para evitar issues de timezone
+      const fechaPago = new Date(`${formData.fecha_pago}T00:00:00`);
+      fechaPago.setHours(0, 0, 0, 0);
       const hoy = new Date();
       hoy.setHours(0, 0, 0, 0);
-      
+      const checkInDate = reserva.check_in ? new Date(`${reserva.check_in}T00:00:00`) : null;
+      if (checkInDate) {
+        checkInDate.setHours(0, 0, 0, 0);
+      }
+
       if (fechaPago > hoy) {
         newErrors.fecha_pago = 'La fecha no puede ser en el futuro';
         errorList.push('La fecha de pago no puede ser en el futuro');
+      } else if (checkInDate && fechaPago < checkInDate) {
+        newErrors.fecha_pago = 'La fecha debe ser igual o posterior al check-in';
+        errorList.push('La fecha del pago debe ser igual o posterior al check-in de la reserva');
       }
     }
 
@@ -310,6 +318,7 @@ export default function PaymentFormModal({ reserva, onClose, onSuccess }) {
               name="fecha_pago"
               value={formData.fecha_pago}
               onChange={handleChange}
+              min={reserva.check_in ? reserva.check_in.split('T')[0] : undefined}
               max={new Date().toISOString().split('T')[0]}
               disabled={loading}
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition ${
