@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import { useAuth } from '../../context/AuthContext';
 
-import { obtenerMisReservas } from '../../../Reserva/reservaService';
+import { obtenerMisReservas, cancelarReserva } from '../../../Reserva/reservaService';
 
 import { Calendar, Search, Filter, X, Clock, Check, XCircle, Loader2, RefreshCw, Eye, ArrowLeft } from 'lucide-react';
 
 import ReservationDetailModal from '../../admin/components/ReservationDetailModal';
+import CancelReservationModal from '../../components/modals/CancelReservationModal';
 
 
 
@@ -35,6 +36,47 @@ export default function MisReservas({ onClose }) {
   const [selectedReservation, setSelectedReservation] = useState(null);
 
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [reservationToCancel, setReservationToCancel] = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [notification, setNotification] = useState(null);
+  const [cancelError, setCancelError] = useState(null);
+
+  /**
+   * Recupera las reservas del backend y normaliza la respuesta recibida.
+   */
+  const loadReservations = useCallback(async () => {
+    if (!token) {
+      setError('No hay token de autenticacion disponible.');
+      setLoading(false);
+      setReservas([]);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await obtenerMisReservas(token);
+
+      if (Array.isArray(data)) {
+        setReservas(data);
+      } else if (data && Array.isArray(data.data)) {
+        setReservas(data.data);
+      } else if (data && Array.isArray(data.reservas)) {
+        setReservas(data.reservas);
+      } else if (data && typeof data === 'object') {
+        setReservas([]);
+      } else {
+        setReservas([]);
+      }
+    } catch (err) {
+      console.error('Error al obtener reservas:', err);
+      setError('No se pudieron cargar las reservas. Intente nuevamente.');
+      setReservas([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
 
 
 
@@ -71,88 +113,16 @@ export default function MisReservas({ onClose }) {
   // Obtener reservas al cargar el componente
 
   useEffect(() => {
+    loadReservations();
+  }, [loadReservations]);
 
-    const fetchReservas = async () => {
-
-      try {
-
-        console.log('Iniciando carga de reservas...');
-
-        console.log('Token:', token);
-
-        setLoading(true);
-
-        const data = await obtenerMisReservas(token);
-
-        console.log('Reservas obtenidas:', data);
-
-        console.log('Tipo de data:', typeof data, 'Es array:', Array.isArray(data));
-
-        
-
-        // Asegurarnos de que siempre tengamos un array
-
-        if (Array.isArray(data)) {
-
-          setReservas(data);
-
-        } else if (data && Array.isArray(data.data)) {
-
-          // El backend devuelve { data: [...], ok: true, total: N }
-
-          console.log('Reservas encontradas:', data.data.length);
-
-          console.log('Primera reserva completa:', JSON.stringify(data.data[0], null, 2));
-
-          setReservas(data.data);
-
-        } else if (data && Array.isArray(data.reservas)) {
-
-          setReservas(data.reservas);
-
-        } else if (data && typeof data === 'object') {
-
-          console.log('Data es un objeto sin array, mostrando vacio');
-
-          setReservas([]);
-
-        } else {
-
-          setReservas([]);
-
-        }
-
-      } catch (err) {
-
-        console.error('Error al obtener reservas:', err);
-
-        setError('No se pudieron cargar las reservas. Intente nuevamente.');
-
-        setReservas([]);
-
-      } finally {
-
-        setLoading(false);
-
-      }
-
-    };
-
-
-
-    if (token) {
-
-      fetchReservas();
-
-    } else {
-
-      setError('No hay token de autenticacion disponible.');
-
-      setLoading(false);
-
+  useEffect(() => {
+    if (notification?.type === 'success') {
+      const timer = setTimeout(() => setNotification(null), 3000);
+      return () => clearTimeout(timer);
     }
-
-  }, [token]);
+    return undefined;
+  }, [notification]);
 
 
 
@@ -264,6 +234,59 @@ export default function MisReservas({ onClose }) {
 
     setSelectedReservation(null);
 
+  };
+
+  /**
+   * Abre el modal de cancelación con la reserva seleccionada.
+   * @param {object} reserva - Reserva que desea cancelarse.
+   */
+  const handleOpenCancelModal = (reserva) => {
+    setNotification(null);
+    setCancelError(null);
+    setReservationToCancel(reserva);
+    setShowCancelModal(true);
+  };
+
+  /**
+   * Cierra el modal de cancelación y limpia la selección almacenada.
+   */
+  const handleCloseCancelModal = () => {
+    setShowCancelModal(false);
+    setReservationToCancel(null);
+    setCancelError(null);
+  };
+
+  /**
+   * Oculta el mensaje de notificación activo.
+   */
+  const handleDismissNotification = () => {
+    setNotification(null);
+  };
+
+  /**
+   * Confirma la cancelación invocando el servicio del backend.
+   */
+  const handleConfirmCancellation = async () => {
+    if (!reservationToCancel) {
+      return;
+    }
+
+    try {
+      setIsCancelling(true);
+      setCancelError(null);
+      await cancelarReserva(reservationToCancel.id_reserva, token);
+      setNotification({
+        type: 'success',
+        message: 'La reserva se canceló correctamente.'
+      });
+      await loadReservations();
+      handleCloseCancelModal();
+    } catch (err) {
+      const message = err?.error || err?.message || 'No se pudo cancelar la reserva. Intente nuevamente.';
+      setCancelError(message);
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
 
@@ -466,7 +489,30 @@ export default function MisReservas({ onClose }) {
 
         </div>
 
-
+        {notification && (
+          <div
+            className={`mb-6 flex items-start gap-3 rounded-lg border px-4 py-3 ${
+              notification.type === 'success'
+                ? 'bg-green-50 border-green-200 text-green-800'
+                : 'bg-red-50 border-red-200 text-red-800'
+            }`}
+          >
+            <div className="mt-0.5">
+              {notification.type === 'success' ? <Check size={18} /> : <XCircle size={18} />}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium">{notification.message}</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleDismissNotification}
+              className="text-current hover:opacity-70 transition"
+              aria-label="Cerrar notificación"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
 
       {/* Filtros */}
 
@@ -756,9 +802,14 @@ export default function MisReservas({ onClose }) {
 
               <tbody className="bg-white divide-y divide-gray-200">
 
-                {filteredReservas.map((reserva) => (
+                {filteredReservas.map((reserva) => {
+                  const isConfirmedReservation = Number(reserva.id_est_op) === 1;
+                  const cabinsLabel = reserva.cantidad_cabanas
+                    ? `${reserva.cantidad_cabanas} cabana${reserva.cantidad_cabanas > 1 ? 's' : ''}`
+                    : 'No especificada';
 
-                  <tr key={reserva.id_reserva} className="hover:bg-gray-50 transition">
+                  return (
+                    <tr key={reserva.id_reserva} className="hover:bg-gray-50 transition">
 
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
 
@@ -768,11 +819,7 @@ export default function MisReservas({ onClose }) {
 
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
 
-                      {reserva.cantidad_cabanas
-
-                        ? `${reserva.cantidad_cabanas} cabana${reserva.cantidad_cabanas > 1 ? 's' : ''}`
-
-                        : 'No especificada'}
+                      {cabinsLabel}
 
                     </td>
 
@@ -856,27 +903,24 @@ export default function MisReservas({ onClose }) {
 
                         </button>
 
-                        <button
-
-                          type="button"
-
-                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
-
-                          title="Cancelar"
-
-                        >
-
-                          <X size={18} />
-
-                        </button>
+                        {isConfirmedReservation && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenCancelModal(reserva)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
+                            title="Cancelar reserva"
+                          >
+                            <X size={18} />
+                          </button>
+                        )}
 
                       </div>
 
                     </td>
 
-                  </tr>
-
-                ))}
+                    </tr>
+                  );
+                })}
 
               </tbody>
 
@@ -904,6 +948,24 @@ export default function MisReservas({ onClose }) {
 
       )}
 
+      {/* Modal de cancelación */}
+      <CancelReservationModal
+        isOpen={showCancelModal}
+        onClose={handleCloseCancelModal}
+        onConfirm={handleConfirmCancellation}
+        isLoading={isCancelling}
+        reservationCode={reservationToCancel?.cod_reserva}
+        checkInDate={reservationToCancel?.check_in}
+        cabinsDescription={
+          reservationToCancel?.cantidad_cabanas
+            ? `${reservationToCancel.cantidad_cabanas} cabana${
+                reservationToCancel.cantidad_cabanas > 1 ? 's' : ''
+              }`
+            : undefined
+        }
+        errorMessage={cancelError}
+      />
+
       </div>
 
     </div>
@@ -911,12 +973,3 @@ export default function MisReservas({ onClose }) {
   );
 
 }
-
-
-
-
-
-
-
-
-

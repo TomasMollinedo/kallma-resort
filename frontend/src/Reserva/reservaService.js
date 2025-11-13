@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_URL = 'http://localhost:4000/api';
+const CANCEL_STATE_ID = 2;
 
 /**
  * Consultar disponibilidad de cabañas
@@ -57,6 +58,29 @@ export const obtenerMisReservas = async (token) => {
     return response.data;
   } catch (error) {
     throw error.response?.data || { error: 'Error al obtener las reservas' };
+  }
+};
+
+/**
+ * Cancelar una reserva del cliente autenticado actualizando su estado operativo.
+ * @param {number} idReserva - Identificador de la reserva a cancelar.
+ * @param {string} token - Token de autenticación JWT.
+ * @returns {Promise} Respuesta del backend con la reserva actualizada.
+ */
+export const cancelarReserva = async (idReserva, token) => {
+  try {
+    const response = await axios.patch(
+      `${API_URL}/reservas/${idReserva}/status`,
+      { id_est_op: CANCEL_STATE_ID },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: 'Error al cancelar la reserva' };
   }
 };
 
