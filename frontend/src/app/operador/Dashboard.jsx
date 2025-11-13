@@ -84,6 +84,15 @@ export default function DashboardOperador() {
             </div>
           </div>
         </div>
+                {/* Nota Informativa */}
+        <div className="mt-8 mb-10 bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-xl">
+          <h3 className="text-lg font-bold text-gray-800 mb-2">Panel Operativo</h3>
+          <p className="text-gray-700">
+            Como operador, eres responsable de la gestión diaria del resort. 
+            Asegúrate de mantener actualizados los estados de las cabañas, 
+            procesar check-ins y check-outs a tiempo, y atender todas las consultas de los clientes.
+          </p>
+        </div>
 
         {/* Estadísticas del Día */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
@@ -211,35 +220,6 @@ export default function DashboardOperador() {
               Ver Consultas
             </button>
           </div>
-        </div>
-
-        {/* Tareas Pendientes */}
-        <div className="mt-8 bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">Tareas Pendientes del Día</h3>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-              <input type="checkbox" className="w-5 h-5 text-blue-600" />
-              <span className="text-gray-700">Preparar cabaña 1 para check-in de las 14:00</span>
-            </div>
-            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-              <input type="checkbox" className="w-5 h-5 text-blue-600" />
-              <span className="text-gray-700">Realizar check-out cabaña 3 - 10:00</span>
-            </div>
-            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-              <input type="checkbox" className="w-5 h-5 text-blue-600" />
-              <span className="text-gray-700">Revisar mantenimiento cabaña 2</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Nota Informativa */}
-        <div className="mt-8 bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-xl">
-          <h3 className="text-lg font-bold text-gray-800 mb-2">Panel Operativo</h3>
-          <p className="text-gray-700">
-            Como operador, eres responsable de la gestión diaria del resort. 
-            Asegúrate de mantener actualizados los estados de las cabañas, 
-            procesar check-ins y check-outs a tiempo, y atender todas las consultas de los clientes.
-          </p>
         </div>
       </main>
     </div>
