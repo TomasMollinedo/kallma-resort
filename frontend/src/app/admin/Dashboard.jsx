@@ -10,7 +10,7 @@ import PagosManagement from './PagosManagement';
 export default function DashboardAdministrador() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState('dashboard'); // dashboard, users, cabanas, reservations, pagos
+  const [activeSection, setActiveSection] = useState('dashboard'); 
 
   const handleLogout = () => {
     logout();
@@ -82,7 +82,15 @@ export default function DashboardAdministrador() {
             </div>
           </div>
         </div>
-
+         {/* Nota Importante */}
+        <div className="mt-8 mb-10 bg-purple-50 border-l-4 border-purple-500 p-6 rounded-r-xl">
+          <h3 className="text-lg font-bold text-gray-800 mb-2">Panel de Administración</h3>
+          <p className="text-gray-700">
+            Como administrador, tienes acceso completo a todas las funcionalidades del sistema. 
+            Puedes gestionar usuarios, cabañas, reservas, pagos y configuraciones generales. 
+            Usa este panel con responsabilidad.
+          </p>
+        </div>
         {/* Estadísticas Rápidas */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-lg p-6">
@@ -208,16 +216,6 @@ export default function DashboardAdministrador() {
               Configuración
             </button>
           </div>
-        </div>
-
-        {/* Nota Importante */}
-        <div className="mt-8 bg-purple-50 border-l-4 border-purple-500 p-6 rounded-r-xl">
-          <h3 className="text-lg font-bold text-gray-800 mb-2">Panel de Administración</h3>
-          <p className="text-gray-700">
-            Como administrador, tienes acceso completo a todas las funcionalidades del sistema. 
-            Puedes gestionar usuarios, cabañas, reservas, pagos y configuraciones generales. 
-            Usa este panel con responsabilidad.
-          </p>
         </div>
       </main>
     </div>
