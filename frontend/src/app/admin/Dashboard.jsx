@@ -172,16 +172,16 @@ export default function DashboardAdministrador() {
 
           {/* Gestión de Reservas */}
           <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
-            <div className="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
-              <Calendar size={24} className="text-green-600" />
+            <div className="bg-orange-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+              <Calendar size={24} className="text-orange-600" />
             </div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">Gestión de Reservas</h3>
             <p className="text-gray-600 mb-4">
-              Supervisa y administra todas las reservas
+              Supervisa, administra todas las reservas y registra nuevos pagos
             </p>
             <button 
               onClick={() => setActiveSection('reservations')}
-              className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition">
+              className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition">
               Ver Reservas
             </button>
           </div>
@@ -193,7 +193,7 @@ export default function DashboardAdministrador() {
             </div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">Gestión de Pagos</h3>
             <p className="text-gray-600 mb-4">
-              Consulta historial de pagos y registra nuevos pagos
+              Consulta historial de pagos y anula transacciones
             </p>
             <button 
               onClick={() => setActiveSection('pagos')}
