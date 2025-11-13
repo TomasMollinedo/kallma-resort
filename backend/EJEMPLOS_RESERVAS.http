@@ -412,63 +412,31 @@ Authorization: Bearer {{tokenOperador}}
   "id_est_op": 3
 }
 
-### 7.3 Admin marca como pagada
+### 7.3 Admin cancela la reserva (id_est_op = 1)
 PATCH {{baseUrl}}/reservas/1/status
 Content-Type: application/json
 Authorization: Bearer {{tokenAdmin}}
 
 {
-  "esta_pagada": true,
-  "monto_pagado": 700000.00
+  "id_est_op": 1
 }
 
-### 7.4 Admin actualiza estado operativo y financiero
-PATCH {{baseUrl}}/reservas/1/status
-Content-Type: application/json
-Authorization: Bearer {{tokenAdmin}}
-
-{
-  "id_est_op": 3,
-  "esta_pagada": true,
-  "monto_pagado": 700000.00
-}
-
-### 7.5 Operador registra pago parcial
+### 7.4 Error: Staff intenta modificar campos financieros (DEBE FALLAR - usar módulo Pagos)
 PATCH {{baseUrl}}/reservas/1/status
 Content-Type: application/json
 Authorization: Bearer {{tokenOperador}}
 
 {
-  "esta_pagada": false,
   "monto_pagado": 350000.00
 }
 
-### 7.6 Admin marca como no pagada
-PATCH {{baseUrl}}/reservas/1/status
-Content-Type: application/json
-Authorization: Bearer {{tokenAdmin}}
-
-{
-  "esta_pagada": false,
-  "monto_pagado": 0
-}
-
-### 7.7 Error: ID de estado no existe
+### 7.5 Error: ID de estado no existe
 PATCH {{baseUrl}}/reservas/1/status
 Content-Type: application/json
 Authorization: Bearer {{tokenOperador}}
 
 {
   "id_est_op": 999
-}
-
-### 7.8 Error: Monto pagado negativo
-PATCH {{baseUrl}}/reservas/1/status
-Content-Type: application/json
-Authorization: Bearer {{tokenOperador}}
-
-{
-  "monto_pagado": -100
 }
 
 ###############################################

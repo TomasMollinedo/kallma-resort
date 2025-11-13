@@ -306,40 +306,36 @@ export const validateActualizarEstado = (data, rol) => {
       });
     }
   } else if (rol === "Operador" || rol === "Administrador") {
-    // Operador y Admin pueden cambiar id_est_op y estado de pago
+    // Operador y Admin pueden cambiar únicamente el estado operativo
 
-    // Validar id_est_op si se proporciona
-    if (data.id_est_op !== undefined) {
-      if (
-        typeof data.id_est_op !== "number" ||
-        !Number.isInteger(data.id_est_op) ||
-        data.id_est_op <= 0
-      ) {
-        errors.push({
-          field: "id_est_op",
-          message: "El estado operativo debe ser un ID válido",
-        });
-      }
+    const camposPermitidos = ["id_est_op"];
+    const camposEnviados = Object.keys(data);
+    const camposNoPermitidos = camposEnviados.filter(
+      (campo) => !camposPermitidos.includes(campo)
+    );
+
+    if (camposNoPermitidos.length > 0) {
+      errors.push({
+        field: "general",
+        message: `El estado financiero se gestiona desde Pagos. Campos no permitidos: ${camposNoPermitidos.join(", ")}`,
+      });
     }
 
-    // Validar esta_pagada si se proporciona
-    if (data.esta_pagada !== undefined) {
-      if (typeof data.esta_pagada !== "boolean") {
-        errors.push({
-          field: "esta_pagada",
-          message: "El estado de pago debe ser un valor booleano",
-        });
-      }
-    }
-
-    // Validar monto_pagado si se proporciona
-    if (data.monto_pagado !== undefined) {
-      if (typeof data.monto_pagado !== "number" || data.monto_pagado < 0) {
-        errors.push({
-          field: "monto_pagado",
-          message: "El monto pagado debe ser un número positivo o cero",
-        });
-      }
+    // Validar id_est_op
+    if (data.id_est_op === undefined) {
+      errors.push({
+        field: "id_est_op",
+        message: "Debe proporcionar el estado operativo",
+      });
+    } else if (
+      typeof data.id_est_op !== "number" ||
+      !Number.isInteger(data.id_est_op) ||
+      data.id_est_op <= 0
+    ) {
+      errors.push({
+        field: "id_est_op",
+        message: "El estado operativo debe ser un ID válido",
+      });
     }
   }
 

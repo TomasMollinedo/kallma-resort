@@ -413,6 +413,10 @@ export const actualizarCabanaAdmin = async (idCabana, cabanaData, idUsuario) => 
       }
     }
 
+    if (cabanaData.esta_activo === false) {
+      throw new Error("CABANA_CANNOT_BE_DISABLED_VIA_PATCH");
+    }
+
     // Construir query dinámico para actualizar solo los campos proporcionados
     const campos = [];
     const valores = [];
@@ -433,12 +437,6 @@ export const actualizarCabanaAdmin = async (idCabana, cabanaData, idUsuario) => 
     if (cabanaData.id_zona !== undefined) {
       campos.push(`id_zona = $${paramCount}`);
       valores.push(cabanaData.id_zona);
-      paramCount++;
-    }
-
-    if (cabanaData.esta_activo !== undefined) {
-      campos.push(`esta_activo = $${paramCount}`);
-      valores.push(cabanaData.esta_activo);
       paramCount++;
     }
 
@@ -488,6 +486,11 @@ export const actualizarCabanaAdmin = async (idCabana, cabanaData, idUsuario) => 
     }
     if (error.message === "NO_FIELDS_TO_UPDATE") {
       throw error;
+    }
+    if (error.message === "CABANA_CANNOT_BE_DISABLED_VIA_PATCH") {
+      throw new Error(
+        "No puede desactivar una cabaña con PATCH. Use DELETE /api/cabanas/:id"
+      );
     }
 
     throw new Error("Error al actualizar la cabaña");

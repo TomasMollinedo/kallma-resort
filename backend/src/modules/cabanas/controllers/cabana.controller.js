@@ -225,11 +225,10 @@ export const crearCabana = async (req, res) => {
 
 /**
  * PATCH /api/cabanas/:id
- * Actualizar una cabaña
- * Admin: puede actualizar cualquier campo (incluido esta_activo y en_mantenimiento)
- * Operador: solo puede cambiar en_mantenimiento
+ * Actualizar una cabaña (Solo Admin)
+ * No permite realizar borrado lógico (esta_activo = false)
  */
-export const actualizarCabana = async (req, res) => {
+export const actualizarCabanaAdmin = async (req, res) => {
   try {
     const idCabana = parseInt(req.params.id);
 
@@ -240,54 +239,28 @@ export const actualizarCabana = async (req, res) => {
       });
     }
 
-    const esAdmin = req.user.nom_rol === "Administrador";
-    const esOperador = req.user.nom_rol === "Operador";
+    const validation = validateUpdateCabanaAdmin(req.body);
 
-    let cabana;
-
-    if (esAdmin) {
-      // Admin puede actualizar cualquier campo
-      const validation = validateUpdateCabanaAdmin(req.body);
-
-      if (!validation.isValid) {
-        return res.status(400).json({
-          ok: false,
-          errors: validation.errors,
-        });
-      }
-
-      // Validar que solo Admin puede cambiar esta_activo
-      if (req.body.esta_activo !== undefined && req.body.esta_activo === false) {
-        // Borrado lógico solo por admin - esto está permitido
-      }
-
-      cabana = await cabanaService.actualizarCabanaAdmin(
-        idCabana,
-        req.body,
-        req.user.id_usuario
-      );
-    } else if (esOperador) {
-      // Operador solo puede cambiar el mantenimiento
-      const validation = validateUpdateMantenimientoCabana(req.body);
-
-      if (!validation.isValid) {
-        return res.status(400).json({
-          ok: false,
-          errors: validation.errors,
-        });
-      }
-
-      cabana = await cabanaService.actualizarMantenimientoCabana(
-        idCabana,
-        req.body.en_mantenimiento,
-        req.user.id_usuario
-      );
-    } else {
-      return res.status(403).json({
+    if (!validation.isValid) {
+      return res.status(400).json({
         ok: false,
-        error: "No tiene permisos para actualizar cabañas",
+        errors: validation.errors,
       });
     }
+
+    if (req.body.esta_activo === false) {
+      return res.status(400).json({
+        ok: false,
+        error:
+          "Para desactivar una cabaña use el endpoint DELETE /api/cabanas/:id",
+      });
+    }
+
+    const cabana = await cabanaService.actualizarCabanaAdmin(
+      idCabana,
+      req.body,
+      req.user.id_usuario
+    );
 
     res.json({
       ok: true,
@@ -295,7 +268,7 @@ export const actualizarCabana = async (req, res) => {
       data: cabana,
     });
   } catch (error) {
-    console.error("Error en actualizarCabana:", error);
+    console.error("Error en actualizarCabanaAdmin:", error);
 
     if (error.message.includes("no existe")) {
       return res.status(404).json({
@@ -318,6 +291,70 @@ export const actualizarCabana = async (req, res) => {
     res.status(500).json({
       ok: false,
       error: error.message || "Error al actualizar la cabaña",
+    });
+  }
+};
+
+/**
+ * PATCH /api/cabanas/:id/mantenimiento
+ * Actualizar exclusivamente el estado de mantenimiento
+ * Acceso: Operador / Admin
+ */
+export const actualizarMantenimientoCabana = async (req, res) => {
+  try {
+    const idCabana = parseInt(req.params.id);
+
+    if (isNaN(idCabana)) {
+      return res.status(400).json({
+        ok: false,
+        error: "ID de cabaña inválido",
+      });
+    }
+
+    const validation = validateUpdateMantenimientoCabana(req.body);
+
+    if (!validation.isValid) {
+      return res.status(400).json({
+        ok: false,
+        errors: validation.errors,
+      });
+    }
+
+    const cabana = await cabanaService.actualizarMantenimientoCabana(
+      idCabana,
+      req.body.en_mantenimiento,
+      req.user.id_usuario
+    );
+
+    res.json({
+      ok: true,
+      message: "Estado de mantenimiento actualizado exitosamente",
+      data: cabana,
+    });
+  } catch (error) {
+    console.error("Error en actualizarMantenimientoCabana:", error);
+
+    if (error.message.includes("no existe")) {
+      return res.status(404).json({
+        ok: false,
+        error: error.message,
+      });
+    }
+
+    if (
+      error.message.includes("No se puede cambiar el mantenimiento") ||
+      error.message.includes("inválido")
+    ) {
+      return res.status(400).json({
+        ok: false,
+        error: error.message,
+      });
+    }
+
+    res.status(500).json({
+      ok: false,
+      error:
+        error.message || "Error al actualizar el estado de mantenimiento",
     });
   }
 };

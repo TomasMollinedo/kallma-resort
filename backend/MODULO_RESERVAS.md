@@ -321,7 +321,7 @@ Obtiene el detalle completo de una reserva, incluyendo cabañas, servicios y pag
 ---
 
 ### 6. **PATCH /api/reservas/:id/status**
-Actualiza el estado de una reserva (operativo y/o financiero).
+Actualiza únicamente el estado operativo de una reserva.
 
 **Autenticación:** Requerida (Cliente / Operador / Admin)
 
@@ -341,20 +341,14 @@ Actualiza el estado de una reserva (operativo y/o financiero).
 ```
 
 #### **Operador / Admin:**
-- Pueden cambiar estado operativo a:
-  - `id_est_op = 2` → "No aparecio"
-  - `id_est_op = 3` → "Finalizada"
-  - **NO pueden cambiar a "Cancelada"** (solo cliente)
-- Pueden modificar estado financiero:
-  - `esta_pagada`: `true`/`false`
-  - `monto_pagado`: monto numérico
+- Pueden cambiar el estado operativo a **cualquiera de los valores válidos** (`Cancelada`, `Confirmada`, `No aparecio`, `Finalizada`)
+- Pueden usar el endpoint también para marcar una reserva como cancelada (por ejemplo, por no-show)
+- **No** pueden modificar campos financieros (`esta_pagada`, `monto_pagado`). Toda la parte financiera se gestiona en el módulo de **Pagos**.
 
 **Body (Operador/Admin):**
 ```json
 {
-  "id_est_op": 3,
-  "esta_pagada": true,
-  "monto_pagado": 700000.00
+  "id_est_op": 3
 }
 ```
 
@@ -367,8 +361,8 @@ Actualiza el estado de una reserva (operativo y/o financiero).
     "id_reserva": 15,
     "cod_reserva": "RES-20251022-00001",
     "estado_operativo": "Finalizada",
-    "esta_pagada": true,
-    "monto_pagado": "700000.00",
+    "esta_pagada": false,
+    "monto_pagado": "175000.00",
     ...
   }
 }
@@ -412,7 +406,7 @@ Seña automática (25%): $175,000
 Saldo pendiente (75%): $525,000
 ```
 
-El campo `esta_pagada` permanece en `FALSE` hasta que el cliente complete el pago total de la reserva. El staff puede actualizar `monto_pagado` y `esta_pagada` mediante el endpoint `PATCH /api/reservas/:id/status`.
+El campo `esta_pagada` permanece en `FALSE` hasta que el cliente complete el pago total de la reserva. El ajuste de `monto_pagado` y `esta_pagada` se realiza exclusivamente desde el módulo de **Pagos**.
 
 ---
 
@@ -483,7 +477,7 @@ Según el esquema de base de datos:
 7. Staff gestiona check-in/check-out
    PATCH /api/reservas/:id/status
    - Marcar como "Finalizada" o "No aparecio"
-   - Actualizar estado de pago
+   - El estado financiero se actualiza mediante los endpoints del módulo de Pagos
 ```
 
 ---

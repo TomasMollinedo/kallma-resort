@@ -250,7 +250,10 @@ export const obtenerReserva = async (req, res) => {
 
 /**
  * PATCH /api/reservas/:id/status
- * Actualizar estado de una reserva
+ * Actualizar estado operativo de una reserva
+ * Cliente: solo puede cancelar +24h antes
+ * Operador/Admin: pueden asignar cualquier estado válido
+ * El estado financiero se gestiona exclusivamente desde el módulo de Pagos
  */
 export const actualizarEstadoReserva = async (req, res) => {
   try {

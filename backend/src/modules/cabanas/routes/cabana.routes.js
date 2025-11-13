@@ -10,7 +10,8 @@ import {
   listarCabanasReservadas,
   obtenerCabana,
   crearCabana,
-  actualizarCabana,
+  actualizarCabanaAdmin,
+  actualizarMantenimientoCabana,
   eliminarCabana,
   restaurarCabana,
 } from "../controllers/cabana.controller.js";
@@ -61,12 +62,21 @@ router.post("/", authenticate, requireAdmin, crearCabana);
 
 /**
  * PATCH /api/cabanas/:id
- * Actualizar cabaña
- * Admin: puede actualizar cualquier campo
- * Operador: solo puede cambiar estado entre Activa y Cerrada por Mantenimiento
- * Acceso: Operador / Admin
+ * Actualizar cabaña completa (Solo Admin)
+ * No permite cambiar esta_activo a FALSE (usar DELETE)
  */
-router.patch("/:id", authenticate, requireStaff, actualizarCabana);
+router.patch("/:id", authenticate, requireAdmin, actualizarCabanaAdmin);
+
+/**
+ * PATCH /api/cabanas/:id/mantenimiento
+ * Actualizar estado de mantenimiento (Operador/Admin)
+ */
+router.patch(
+  "/:id/mantenimiento",
+  authenticate,
+  requireStaff,
+  actualizarMantenimientoCabana
+);
 
 /**
  * DELETE /api/cabanas/:id

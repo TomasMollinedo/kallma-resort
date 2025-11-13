@@ -26,11 +26,10 @@ cabanas/
 | GET | `/api/cabanas/zona/:idZona` | Operador/Admin | Listar cabañas por zona |
 | GET | `/api/cabanas/:id` | Operador/Admin | Detalle de cabaña |
 | POST | `/api/cabanas` | Solo Admin | Crear cabaña |
-| PATCH | `/api/cabanas/:id` | Operador/Admin* | Actualizar cabaña |
+| PATCH | `/api/cabanas/:id` | Solo Admin | Actualizar cabaña (sin borrado lógico) |
+| PATCH | `/api/cabanas/:id/mantenimiento` | Operador/Admin | Cambiar estado de mantenimiento |
 | DELETE | `/api/cabanas/:id` | Solo Admin | Eliminar cabaña (borrado lógico) |
 | POST | `/api/cabanas/:id/restaurar` | Solo Admin | Restaurar cabaña eliminada |
-
-**Operador solo puede cambiar estado entre Activa ↔ Cerrada por Mantenimiento*
 
 ## Modelo de Datos
 
@@ -70,9 +69,9 @@ cabana (
 - Se validan referencias si se actualizan
 - Si se cambia `cod_cabana`, debe ser único
 
-### Actualizar Estado (Operador)
-- Solo puede modificar `id_est_cab`
-- Solo puede cambiar a estados: 1 o 3
+### Actualizar Estado de Mantenimiento (Operador)
+- Endpoint `PATCH /api/cabanas/:id/mantenimiento`
+- Solo puede enviar el campo booleano `en_mantenimiento`
 - No puede cambiar cabañas inactivas
 
 ## Reglas de Negocio
@@ -81,14 +80,14 @@ cabana (
 
 #### Administrador
 - ✅ Crear cabañas
-- ✅ Actualizar cualquier campo
-- ✅ Cambiar a cualquier estado (incluido Inactiva)
+- ✅ Actualizar cualquier campo desde `PATCH /api/cabanas/:id` (sin poder desactivar)
+- ✅ Cambiar a estado Inactiva usando `DELETE /api/cabanas/:id`
 - ✅ Eliminar cabañas (borrado lógico)
 - ✅ Restaurar cabañas eliminadas
 
 #### Operador
 - ✅ Ver todas las cabañas
-- ✅ Cambiar estado entre **Activa** ↔ **Cerrada por Mantenimiento**
+- ✅ Cambiar estado entre **Activa** ↔ **Cerrada por Mantenimiento** a través de `PATCH /api/cabanas/:id/mantenimiento`
 - ❌ No puede crear cabañas
 - ❌ No puede cambiar otros campos
 - ❌ No puede cambiar a estado Inactiva
@@ -169,12 +168,12 @@ Content-Type: application/json
 
 ### Cambiar Estado a Mantenimiento (Operador)
 ```http
-PATCH /api/cabanas/15
+PATCH /api/cabanas/15/mantenimiento
 Authorization: Bearer <operador_token>
 Content-Type: application/json
 
 {
-  "id_est_cab": 1
+  "en_mantenimiento": true
 }
 ```
 
@@ -182,14 +181,14 @@ Content-Type: application/json
 ```json
 {
   "ok": true,
-  "message": "Cabaña actualizada exitosamente",
+  "message": "Estado de mantenimiento actualizado exitosamente",
   "data": {
     "id_cabana": 15,
     "cod_cabana": "CAB-015",
     "id_tipo_cab": 2,
-    "id_est_cab": 1,
     "id_zona": 1,
     "esta_activo": true,
+    "en_mantenimiento": true,
     "fecha_modific": "2025-01-17T11:00:00.000Z"
   }
 }

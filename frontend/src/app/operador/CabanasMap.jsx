@@ -284,16 +284,6 @@ export default function CabanasMap({ onBack }) {
               </div>
 
               <div className="relative border-2 border-dashed border-gray-200 rounded-2xl min-h-[380px] bg-gradient-to-br from-white to-slate-50 p-6 overflow-visible">
-                <div className="absolute top-6 right-6 bg-white border border-gray-100 rounded-xl shadow-sm p-4 space-y-2 w-56">
-                  <p className="text-sm font-semibold text-gray-700">Leyenda de colores</p>
-                  {Object.values(CABANA_STATUS_CONFIG).map((status) => (
-                    <div key={`legend-${status.key}`} className="flex items-center gap-2 text-sm text-gray-600">
-                      <span className={`w-3 h-3 rounded-full border ${status.bubbleClasses}`} />
-                      {status.label}
-                    </div>
-                  ))}
-                </div>
-
                 {filteredCabanas.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center text-gray-500">
                     <Home size={36} className="text-gray-300 mb-3" />

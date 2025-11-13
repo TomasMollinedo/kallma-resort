@@ -583,18 +583,6 @@ export const actualizarEstadoReserva = async (idReserva, updateData, idUsuario, 
       paramCount++;
     }
 
-    if (updateData.esta_pagada !== undefined) {
-      campos.push(`esta_pagada = $${paramCount}`);
-      valores.push(updateData.esta_pagada);
-      paramCount++;
-    }
-
-    if (updateData.monto_pagado !== undefined) {
-      campos.push(`monto_pagado = $${paramCount}`);
-      valores.push(updateData.monto_pagado);
-      paramCount++;
-    }
-
     if (campos.length === 0) {
       throw new Error("NO_FIELDS_TO_UPDATE");
     }
@@ -638,6 +626,9 @@ export const actualizarEstadoReserva = async (idReserva, updateData, idUsuario, 
     }
     if (error.message === "ESTADO_NO_EXISTE") {
       throw new Error("El estado operativo no existe");
+    }
+    if (error.message === "NO_FIELDS_TO_UPDATE") {
+      throw new Error("Debe proporcionar un estado operativo para actualizar");
     }
 
     throw new Error("Error al actualizar el estado de la reserva");

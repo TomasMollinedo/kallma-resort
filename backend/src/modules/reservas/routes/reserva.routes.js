@@ -67,9 +67,10 @@ router.get("/:id", authenticate, obtenerReserva);
 
 /**
  * PATCH /api/reservas/:id/status
- * Actualizar estado de una reserva
+ * Actualizar estado operativo de una reserva
  * Cliente: solo puede cambiar a "Cancelada" con restricción de 24h
- * Operador/Admin: pueden cambiar a "No aparecio" o "Finalizada" y estado financiero
+ * Operador/Admin: pueden asignar cualquier estado válido
+ * Nota: la parte financiera se gestiona en el módulo de Pagos
  * Acceso: Cliente / Operador / Admin
  */
 router.patch("/:id/status", authenticate, actualizarEstadoReserva);

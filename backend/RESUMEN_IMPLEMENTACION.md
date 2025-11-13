@@ -70,17 +70,16 @@ backend/src/index.js                ✅ Montaje de módulos en API
 
 ### 🏠 Módulo de Cabañas
 
-#### Endpoints (8)
+#### Endpoints (9)
 1. `GET /api/cabanas` - Listar cabañas con filtros
 2. `GET /api/cabanas/reservadas` - Cabañas reservadas por fecha
 3. `GET /api/cabanas/zona/:idZona` - Listar cabañas por zona
 4. `GET /api/cabanas/:id` - Detalle de cabaña
 5. `POST /api/cabanas` - Crear cabaña (Solo Admin)
-6. `PATCH /api/cabanas/:id` - Actualizar cabaña (Admin/Operador*)
-7. `DELETE /api/cabanas/:id` - Eliminar cabaña (Solo Admin)
-8. `POST /api/cabanas/:id/restaurar` - Restaurar cabaña (Solo Admin)
-
-**Operador solo puede cambiar estado entre Activa ↔ Cerrada por Mantenimiento*
+6. `PATCH /api/cabanas/:id` - Actualizar cabaña (Solo Admin, sin borrar lógicamente)
+7. `PATCH /api/cabanas/:id/mantenimiento` - Cambiar estado de mantenimiento (Operador/Admin)
+8. `DELETE /api/cabanas/:id` - Eliminar cabaña (Solo Admin)
+9. `POST /api/cabanas/:id/restaurar` - Restaurar cabaña (Solo Admin)
 
 #### Características
 - ✅ CRUD completo con validación diferenciada por rol
@@ -240,7 +239,8 @@ Request → Route → Middleware → Controller → Service → Database
 - [x] GET /api/cabanas - Listar con filtros (estado, código, zona)
 - [x] GET /api/cabanas/:id - Detalle con indicador `reservada_hoy`
 - [x] POST /api/cabanas - Crear cabaña
-- [x] PATCH /api/cabanas/:id - Actualizar (diferenciado por rol)
+- [x] PATCH /api/cabanas/:id - Actualizar (Solo Admin, sin borrado lógico)
+- [x] PATCH /api/cabanas/:id/mantenimiento - Cambiar estado de mantenimiento (Operador/Admin)
 - [x] DELETE /api/cabanas/:id - Eliminar (borrado lógico)
 - [x] POST /api/cabanas/:id/restaurar - Restaurar cabaña
 - [x] GET /api/cabanas/zona/:idZona - Listar por zona
@@ -249,7 +249,7 @@ Request → Route → Middleware → Controller → Service → Database
 ### Requerimientos de Seguridad
 - [x] Solo Admin puede cambiar cabaña a Inactiva
 - [x] Solo Admin puede crear cabañas
-- [x] Solo Operador puede cambiar entre Activa ↔ Mantenimiento
+- [x] Solo Operador/Admin pueden cambiar entre Activa ↔ Mantenimiento mediante endpoint dedicado
 - [x] Admin puede editar todos los campos
 - [x] Cliente no interactúa directamente
 - [x] Solo Admin puede CRUD de zonas
