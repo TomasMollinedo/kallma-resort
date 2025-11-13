@@ -27,6 +27,12 @@ export default function ReservaPago() {
   const [success, setSuccess] = useState(false);
   const [tarjetaValida, setTarjetaValida] = useState(false);
   const [errores, setErrores] = useState({});
+  const [touched, setTouched] = useState({
+    numeroTarjeta: false,
+    nombreTitular: false,
+    fechaExpiracion: false,
+    cvv: false
+  });
 
   // Calcular totales
   const precioFinal = precioTotal + (precioServicios || 0);
@@ -64,10 +70,15 @@ export default function ReservaPago() {
     const fechaActual = new Date();
     const mesActual = fechaActual.getMonth() + 1;
     const anioActual = fechaActual.getFullYear() % 100;
-    if (!datosTarjeta.fechaExpiracion.match(/^\d{2}\/\d{2}$/) ||
-        parseInt(anio, 10) < anioActual ||
-        (parseInt(anio, 10) === anioActual && parseInt(mes, 10) <= mesActual)) {
-      nuevosErrores.fechaExpiracion = 'La fecha de vencimiento debe ser válida y posterior al día de hoy.';
+    const mesNumero = parseInt(mes, 10);
+    const anioNumero = parseInt(anio, 10);
+    
+    if (!datosTarjeta.fechaExpiracion.match(/^\d{2}\/\d{2}$/)) {
+      nuevosErrores.fechaExpiracion = 'El formato de la fecha debe ser MM/AA';
+    } else if (mesNumero < 1 || mesNumero > 12) {
+      nuevosErrores.fechaExpiracion = 'El mes debe estar entre 01 y 12';
+    } else if (anioNumero < anioActual || (anioNumero === anioActual && mesNumero <= mesActual)) {
+      nuevosErrores.fechaExpiracion = 'La fecha de vencimiento debe ser posterior al día de hoy.';
     }
 
     // Validar CVV
@@ -92,7 +103,59 @@ export default function ReservaPago() {
       valorFormateado = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '').toUpperCase();
     }
     
-    setDatosTarjeta(prev => ({ ...prev, [campo]: valorFormateado }));
+    setDatosTarjeta(prev => ({
+      ...prev,
+      [campo]: valorFormateado
+    }));
+    
+    // Mark field as touched and validate
+    setTouched(prev => ({
+      ...prev,
+      [campo]: true
+    }));
+    
+    // Validate the current field
+    const nuevosErrores = { ...errores };
+    
+    if (campo === 'numeroTarjeta') {
+      const numeroLimpio = valorFormateado.replace(/\s/g, '');
+      if (!numeroLimpio.match(/^\d{13,19}$/)) {
+        nuevosErrores.numeroTarjeta = 'El número de tarjeta debe tener entre 13 y 19 dígitos.';
+      } else {
+        delete nuevosErrores.numeroTarjeta;
+      }
+    } else if (campo === 'nombreTitular') {
+      if (!valorFormateado.match(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/)) {
+        nuevosErrores.nombreTitular = 'El nombre del titular debe tener al menos 2 caracteres y solo puede contener letras y espacios.';
+      } else {
+        delete nuevosErrores.nombreTitular;
+      }
+    } else if (campo === 'fechaExpiracion') {
+      const [mes, anio] = valorFormateado.split('/');
+      const fechaActual = new Date();
+      const mesActual = fechaActual.getMonth() + 1;
+      const anioActual = fechaActual.getFullYear() % 100;
+      const mesNumero = parseInt(mes, 10);
+      const anioNumero = parseInt(anio, 10);
+      
+      if (!valorFormateado.match(/^\d{2}\/\d{2}$/)) {
+        nuevosErrores.fechaExpiracion = 'El formato de la fecha debe ser MM/AA';
+      } else if (mesNumero < 1 || mesNumero > 12) {
+        nuevosErrores.fechaExpiracion = 'El mes debe estar entre 01 y 12';
+      } else if (anioNumero < anioActual || (anioNumero === anioActual && mesNumero <= mesActual)) {
+        nuevosErrores.fechaExpiracion = 'La fecha de vencimiento debe ser posterior al día de hoy.';
+      } else {
+        delete nuevosErrores.fechaExpiracion;
+      }
+    } else if (campo === 'cvv') {
+      if (!valorFormateado.match(/^\d{3,4}$/)) {
+        nuevosErrores.cvv = 'El CVV debe tener entre 3 y 4 dígitos.';
+      } else {
+        delete nuevosErrores.cvv;
+      }
+    }
+    
+    setErrores(nuevosErrores);
   };
   useEffect(() => {
   const numeroLimpio = datosTarjeta.numeroTarjeta.replace(/\s/g, '');
@@ -308,9 +371,14 @@ export default function ReservaPago() {
                     placeholder="1234 5678 9012 3456"
                     value={datosTarjeta.numeroTarjeta}
                     onChange={(e) => handleChangeTarjeta('numeroTarjeta', e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none transition text-lg tracking-wider"
+                    onBlur={() => setTouched(prev => ({ ...prev, numeroTarjeta: true }))}
+                    className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 outline-none transition text-lg tracking-wider ${
+                      errores.numeroTarjeta && touched.numeroTarjeta 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-200' 
+                        : 'border-gray-300 focus:border-orange-500 focus:ring-orange-200'
+                    }`}
                   />
-                  {errores.numeroTarjeta && (
+                  {errores.numeroTarjeta && touched.numeroTarjeta && (
                     <p className="text-red-500 text-xs mt-1">{errores.numeroTarjeta}</p>
                   )}
                 </div>
@@ -325,9 +393,14 @@ export default function ReservaPago() {
                     placeholder="NOMBRE APELLIDO"
                     value={datosTarjeta.nombreTitular}
                     onChange={(e) => handleChangeTarjeta('nombreTitular', e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none transition uppercase"
+                    onBlur={() => setTouched(prev => ({ ...prev, nombreTitular: true }))}
+                    className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 outline-none transition uppercase ${
+                      errores.nombreTitular && touched.nombreTitular 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-200' 
+                        : 'border-gray-300 focus:border-orange-500 focus:ring-orange-200'
+                    }`}
                   />
-                  {errores.nombreTitular && (
+                  {errores.nombreTitular && touched.nombreTitular && (
                     <p className="text-red-500 text-xs mt-1">{errores.nombreTitular}</p>
                   )}
                 </div>
@@ -343,9 +416,14 @@ export default function ReservaPago() {
                       placeholder="MM/AA"
                       value={datosTarjeta.fechaExpiracion}
                       onChange={(e) => handleChangeTarjeta('fechaExpiracion', e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none transition text-lg tracking-wider"
+                      onBlur={() => setTouched(prev => ({ ...prev, fechaExpiracion: true }))}
+                      className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 outline-none transition text-lg tracking-wider ${
+                        errores.fechaExpiracion && touched.fechaExpiracion 
+                          ? 'border-red-500 focus:border-red-500 focus:ring-red-200' 
+                          : 'border-gray-300 focus:border-orange-500 focus:ring-orange-200'
+                      }`}
                     />
-                    {errores.fechaExpiracion && (
+                    {errores.fechaExpiracion && touched.fechaExpiracion && (
                       <p className="text-red-500 text-xs mt-1">{errores.fechaExpiracion}</p>
                     )}
                   </div>
@@ -358,9 +436,14 @@ export default function ReservaPago() {
                       placeholder="123"
                       value={datosTarjeta.cvv}
                       onChange={(e) => handleChangeTarjeta('cvv', e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none transition text-lg tracking-wider"
+                      onBlur={() => setTouched(prev => ({ ...prev, cvv: true }))}
+                      className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 outline-none transition text-lg tracking-wider ${
+                        errores.cvv && touched.cvv 
+                          ? 'border-red-500 focus:border-red-500 focus:ring-red-200' 
+                          : 'border-gray-300 focus:border-orange-500 focus:ring-orange-200'
+                      }`}
                     />
-                    {errores.cvv && (
+                    {errores.cvv && touched.cvv && (
                       <p className="text-red-500 text-xs mt-1">{errores.cvv}</p>
                     )}
                   </div>
