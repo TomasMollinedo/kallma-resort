@@ -128,6 +128,12 @@ export const validateUpdateCabanaAdmin = (data) => {
         field: "esta_activo",
         message: "El estado activo debe ser un valor booleano",
       });
+    } else if (data.esta_activo === false) {
+      errors.push({
+        field: "esta_activo",
+        message:
+          "No puede desactivar la cabaña desde este endpoint. Use DELETE /api/cabanas/:id",
+      });
     }
   }
 

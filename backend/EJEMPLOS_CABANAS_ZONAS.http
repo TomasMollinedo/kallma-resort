@@ -128,7 +128,7 @@ Content-Type: application/json
   "en_mantenimiento": true
 }
 
-### 16c. Admin desactiva cabaña (borrado lógico)
+### 16c. Admin intenta desactivar cabaña via PATCH (DEBE FALLAR - usar DELETE)
 PATCH {{baseUrl}}/cabanas/1
 Authorization: Bearer {{adminToken}}
 Content-Type: application/json
@@ -138,7 +138,7 @@ Content-Type: application/json
 }
 
 ### 17. Poner cabaña en Mantenimiento (Operador o Admin)
-PATCH {{baseUrl}}/cabanas/1
+PATCH {{baseUrl}}/cabanas/1/mantenimiento
 Authorization: Bearer {{operadorToken}}
 Content-Type: application/json
 
@@ -147,7 +147,7 @@ Content-Type: application/json
 }
 
 ### 18. Quitar cabaña de Mantenimiento (Operador o Admin)
-PATCH {{baseUrl}}/cabanas/1
+PATCH {{baseUrl}}/cabanas/1/mantenimiento
 Authorization: Bearer {{operadorToken}}
 Content-Type: application/json
 
@@ -155,7 +155,7 @@ Content-Type: application/json
   "en_mantenimiento": false
 }
 
-### 19. Operador intenta modificar otros campos (DEBE FALLAR)
+### 19. Operador intenta acceder al endpoint de Admin (DEBE FALLAR - 403)
 PATCH {{baseUrl}}/cabanas/1
 Authorization: Bearer {{operadorToken}}
 Content-Type: application/json
@@ -187,8 +187,8 @@ Content-Type: application/json
   "capacidad_cabanas": 5
 }
 
-### 23. Operador intenta desactivar cabaña (DEBE FALLAR - 400)
-# Solo Admin puede cambiar esta_activo a false
+### 23. Operador intenta desactivar cabaña (DEBE FALLAR - 403)
+# Debe responder 403 por intentar usar el endpoint exclusivo de Admin
 PATCH {{baseUrl}}/cabanas/1
 Authorization: Bearer {{operadorToken}}
 Content-Type: application/json

@@ -403,14 +403,12 @@ La tabla `cabana` usa **dos campos booleanos** para manejar estados:
 
 ---
 
-#### 6. **PATCH /api/cabanas/:id**
-**Descripción:** Actualizar una cabaña.
+#### 6. **PATCH /api/cabanas/:id** (Solo Admin)
+**Descripción:** Actualizar una cabaña sin permitir el borrado lógico.
 
-**Acceso:** 
-- **Admin:** Puede actualizar cualquier campo (código, tipo, zona, mantenimiento, estado activo)
-- **Operador:** Solo puede cambiar `en_mantenimiento` entre `true` ↔ `false`
+**Acceso:** Solo Administrador.
 
-**Body Admin (puede actualizar cualquier combinación):**
+**Body (campos opcionales):**
 ```json
 {
   "cod_cabana": "CAB-002-PREMIUM",
@@ -421,12 +419,9 @@ La tabla `cabana` usa **dos campos booleanos** para manejar estados:
 }
 ```
 
-**Body Operador (SOLO puede cambiar mantenimiento):**
-```json
-{
-  "en_mantenimiento": true
-}
-```
+**Restricciones:**
+- No permite enviar `esta_activo: false` (para desactivar use `DELETE /api/cabanas/:id`).
+- Valida referencias (`id_tipo_cab`, `id_zona`) antes de actualizar.
 
 **Response:**
 ```json
@@ -445,10 +440,37 @@ La tabla `cabana` usa **dos campos booleanos** para manejar estados:
 }
 ```
 
-**Restricciones Operador:**
-- Solo puede modificar `en_mantenimiento` (true/false)
-- NO puede modificar: `cod_cabana`, `id_tipo_cab`, `id_zona`, `esta_activo`
-- No puede cambiar cabañas inactivas (`esta_activo=FALSE`)
+#### 6b. **PATCH /api/cabanas/:id/mantenimiento** (Operador/Admin)
+**Descripción:** Cambiar exclusivamente el estado de mantenimiento de una cabaña.
+
+**Body:**
+```json
+{
+  "en_mantenimiento": true
+}
+```
+
+**Restricciones:**
+- Solo acepta el campo booleano `en_mantenimiento`.
+- No permite modificar cabañas inactivas.
+- Registra auditoría (`fecha_modific`, `id_usuario_modific`).
+
+**Response:**
+```json
+{
+  "ok": true,
+  "message": "Estado de mantenimiento actualizado exitosamente",
+  "data": {
+    "id_cabana": 2,
+    "cod_cabana": "CAB-002-PREMIUM",
+    "id_tipo_cab": 3,
+    "id_zona": 2,
+    "esta_activo": true,
+    "en_mantenimiento": true,
+    "fecha_modific": "2025-01-17T11:00:00.000Z"
+  }
+}
+```
 
 ---
 
@@ -515,9 +537,9 @@ La tabla `cabana` usa **dos campos booleanos** para manejar estados:
 
 ### Cabañas (Modelo Real con Campos Booleanos)
 1. ✅ Solo Admin puede crear cabañas (con `esta_activo=TRUE` y `en_mantenimiento=FALSE` por defecto)
-2. ✅ Admin puede actualizar cualquier campo: `cod_cabana`, `id_tipo_cab`, `id_zona`, `esta_activo`, `en_mantenimiento`
-3. ✅ Admin puede hacer borrado lógico (`esta_activo` → FALSE)
-4. ✅ Operador solo puede cambiar `en_mantenimiento` entre TRUE ↔ FALSE (NO puede cambiar otros campos)
+2. ✅ Admin puede actualizar `cod_cabana`, `id_tipo_cab`, `id_zona`, `en_mantenimiento` y reactivar (`esta_activo=TRUE`) mediante `PATCH /api/cabanas/:id`
+3. ✅ El borrado lógico (`esta_activo` → FALSE) se realiza exclusivamente con `DELETE /api/cabanas/:id`
+4. ✅ Operador solo puede cambiar `en_mantenimiento` entre TRUE ↔ FALSE mediante `PATCH /api/cabanas/:id/mantenimiento` (NO puede cambiar otros campos)
 5. ✅ No se puede eliminar cabaña con reservas activas (check_out >= hoy)
 6. ✅ Los códigos de cabaña deben ser únicos (case-insensitive)
 7. ✅ Indicador `reservada_hoy`: verifica si la cabaña tiene una reserva activa para HOY
@@ -554,12 +576,12 @@ Authorization: Bearer <operador_token>
 
 ### 3. Cambiar Estado de Cabaña a Mantenimiento (Operador)
 ```http
-PATCH /api/cabanas/5
+PATCH /api/cabanas/5/mantenimiento
 Authorization: Bearer <operador_token>
 Content-Type: application/json
 
 {
-  "id_est_cab": 1
+  "en_mantenimiento": true
 }
 ```
 
@@ -572,7 +594,6 @@ Content-Type: application/json
 {
   "cod_cabana": "CAB-PREMIUM-005",
   "id_tipo_cab": 3,
-  "id_est_cab": 3,
   "id_zona": 2
 }
 ```

@@ -13,8 +13,7 @@ export default function CabanaFormModal({ cabana, isEditing, onClose, onSave }) 
     cod_cabana: '',
     id_tipo_cab: '',
     id_zona: '',
-    en_mantenimiento: false,
-    esta_activo: true
+    en_mantenimiento: false
   });
 
   // Estados auxiliares
@@ -40,8 +39,7 @@ export default function CabanaFormModal({ cabana, isEditing, onClose, onSave }) 
         cod_cabana: cabana.cod_cabana || '',
         id_tipo_cab: cabana.id_tipo_cab || '',
         id_zona: cabana.id_zona || '',
-        en_mantenimiento: cabana.en_mantenimiento || false,
-        esta_activo: cabana.esta_activo !== undefined ? cabana.esta_activo : true
+        en_mantenimiento: cabana.en_mantenimiento || false
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -118,8 +116,7 @@ export default function CabanaFormModal({ cabana, isEditing, onClose, onSave }) 
         formData.cod_cabana !== cabana.cod_cabana ||
         formData.id_tipo_cab !== cabana.id_tipo_cab ||
         formData.id_zona !== cabana.id_zona ||
-        formData.en_mantenimiento !== cabana.en_mantenimiento ||
-        formData.esta_activo !== cabana.esta_activo;
+        formData.en_mantenimiento !== cabana.en_mantenimiento;
 
       if (!hasChanges) {
         newErrors.general = 'Debe realizar al menos un cambio';
@@ -164,7 +161,6 @@ export default function CabanaFormModal({ cabana, isEditing, onClose, onSave }) 
         if (formData.id_tipo_cab !== cabana.id_tipo_cab) dataToSend.id_tipo_cab = parseInt(formData.id_tipo_cab);
         if (formData.id_zona !== cabana.id_zona) dataToSend.id_zona = parseInt(formData.id_zona);
         if (formData.en_mantenimiento !== cabana.en_mantenimiento) dataToSend.en_mantenimiento = formData.en_mantenimiento;
-        if (formData.esta_activo !== cabana.esta_activo) dataToSend.esta_activo = formData.esta_activo;
       } else {
         // Admin creando: enviar campos obligatorios
         dataToSend = {
@@ -347,26 +343,6 @@ export default function CabanaFormModal({ cabana, isEditing, onClose, onSave }) 
             </div>
           )}
 
-          {/* Estado activo (solo Admin al editar) */}
-          {!isOperador && isEditing && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="esta_activo"
-                  checked={formData.esta_activo}
-                  onChange={handleChange}
-                  className="w-5 h-5 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                />
-                <div>
-                  <span className="font-semibold text-gray-900">Cabaña Activa</span>
-                  <p className="text-sm text-gray-600">
-                    Desmarcar esta opción eliminará lógicamente la cabaña
-                  </p>
-                </div>
-              </label>
-            </div>
-          )}
 
           {/* Botones */}
           <div className="flex gap-3 pt-4 border-t border-gray-200">
