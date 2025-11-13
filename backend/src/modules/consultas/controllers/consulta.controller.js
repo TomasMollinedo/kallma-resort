@@ -74,13 +74,15 @@ export const listarConsultas = async (req, res) => {
     }
 
     // Parsear filtros
+    const estadoFilterProvided = req.query.estaRespondida !== undefined;
+
     const filtrosParsed = {
-      estaRespondida:
-        req.query.estaRespondida !== undefined
-          ? req.query.estaRespondida === "true"
-          : false, // Por defecto, mostrar solo consultas no respondidas
+      estaRespondida: estadoFilterProvided
+        ? req.query.estaRespondida === "true"
+        : undefined, // Por defecto, mostrar todas (sin filtro de estado)
       periodo: req.query.periodo || "todo",
       busqueda: req.query.busqueda,
+      aplicarFiltroEstado: estadoFilterProvided,
     };
 
     // Obtener consultas
