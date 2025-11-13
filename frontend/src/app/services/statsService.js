@@ -30,12 +30,13 @@ const BASE_URL = '/stats';
  */
 export const getAdminDashboardStats = async (token) => {
   try {
-    return await authenticatedRequest(
+    const response = await authenticatedRequest(
       `${BASE_URL}/admin-dashboard`,
       'GET',
       null,
       token
     );
+    return response?.data ?? response;
   } catch (error) {
     throw error;
   }
@@ -60,12 +61,13 @@ export const getAdminDashboardStats = async (token) => {
  */
 export const getOperatorDashboardStats = async (token) => {
   try {
-    return await authenticatedRequest(
+    const response = await authenticatedRequest(
       `${BASE_URL}/operator-dashboard`,
       'GET',
       null,
       token
     );
+    return response?.data ?? response;
   } catch (error) {
     throw error;
   }

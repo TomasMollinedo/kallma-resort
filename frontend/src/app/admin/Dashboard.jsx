@@ -60,8 +60,8 @@ export default function DashboardAdministrador() {
     try {
       setLoadingStats(true);
       setStatsError(null);
-      const response = await getAdminDashboardStats(token);
-      setStats(response?.data || null);
+      const metrics = await getAdminDashboardStats(token);
+      setStats(metrics || null);
     } catch (error) {
       console.error('Error al cargar estadísticas de admin:', error);
       setStatsError('No se pudieron cargar las estadísticas. Intenta nuevamente.');

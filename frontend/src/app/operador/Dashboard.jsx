@@ -1,16 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Wrench, LogOut, Home, Calendar, Building, CheckCircle, XCircle, Clock, DollarSign, MessageSquare } from 'lucide-react';
+import { 
+  Wrench, 
+  LogOut, 
+  Home, 
+  Calendar, 
+  Building, 
+  CheckCircle, 
+  XCircle, 
+  Clock, 
+  DollarSign, 
+  MessageSquare,
+  RefreshCw
+} from 'lucide-react';
 import ReservationsManagement from '../admin/ReservationsManagement';
 import PagosManagement from './PagosManagement';
 import ConsultasManagement from './ConsultasManagement';
 import CabanasMap from './CabanasMap';
+import { getOperatorDashboardStats } from '../services/statsService';
 
 export default function DashboardOperador() {
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('dashboard'); // dashboard, reservations, pagos, consultas, cabanas
+
+  const [stats, setStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [statsError, setStatsError] = useState(null);
 
   const handleLogout = () => {
     logout();
@@ -21,17 +38,40 @@ export default function DashboardOperador() {
     navigate('/');
   };
 
-  // Si estamos en la sección de reservas, mostrar el componente correspondiente
+  const loadStats = async () => {
+    try {
+      setLoadingStats(true);
+      setStatsError(null);
+      const data = await getOperatorDashboardStats(token);
+      setStats(data);
+    } catch (error) {
+      console.error('Error al cargar estadísticas de operador:', error);
+      setStatsError('No se pudieron cargar las estadísticas. Intenta nuevamente.');
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeSection === 'dashboard') {
+      loadStats();
+    }
+  }, [activeSection]);
+
+  const occupancyPercentage =
+    stats?.occupancyRate != null
+      ? Math.round(Number(stats.occupancyRate))
+      : null;
+
+  // Secciones hijas
   if (activeSection === 'reservations') {
     return <ReservationsManagement onBack={() => setActiveSection('dashboard')} />;
   }
 
-  // Si estamos en la sección de pagos, mostrar el componente correspondiente
   if (activeSection === 'pagos') {
     return <PagosManagement onBack={() => setActiveSection('dashboard')} />;
   }
 
-  // Si estamos en la sección de consultas, mostrar el componente correspondiente
   if (activeSection === 'consultas') {
     return <ConsultasManagement onBack={() => setActiveSection('dashboard')} />;
   }
@@ -84,7 +124,8 @@ export default function DashboardOperador() {
             </div>
           </div>
         </div>
-                {/* Nota Informativa */}
+
+        {/* Nota Informativa */}
         <div className="mt-8 mb-10 bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-xl">
           <h3 className="text-lg font-bold text-gray-800 mb-2">Panel Operativo</h3>
           <p className="text-gray-700">
@@ -95,44 +136,79 @@ export default function DashboardOperador() {
         </div>
 
         {/* Estadísticas del Día */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Reservas Hoy</p>
-                <p className="text-3xl font-bold text-blue-600">--</p>
-              </div>
-              <Calendar size={32} className="text-blue-600 opacity-50" />
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800">Estadísticas del día</h2>
+              {!loadingStats && occupancyPercentage != null && (
+                <p className="text-sm text-gray-500">
+                  Ocupación actual del resort: {occupancyPercentage}%
+                </p>
+              )}
             </div>
+            <button
+              onClick={loadStats}
+              disabled={loadingStats}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              <RefreshCw size={16} className={loadingStats ? 'animate-spin' : ''} />
+              <span>{loadingStats ? 'Actualizando...' : 'Actualizar'}</span>
+            </button>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Check-ins</p>
-                <p className="text-3xl font-bold text-green-600">--</p>
-              </div>
-              <CheckCircle size={32} className="text-green-600 opacity-50" />
+          {statsError && (
+            <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+              {statsError}
             </div>
-          </div>
+          )}
 
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Check-outs</p>
-                <p className="text-3xl font-bold text-orange-600">--</p>
+          <div className="grid md:grid-cols-4 gap-6">
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm">Hospedados Hoy</p>
+                  <p className="text-3xl font-bold text-blue-600">
+                    {loadingStats ? '--' : stats?.hostedToday ?? '--'}
+                  </p>
+                </div>
+                <Building size={32} className="text-blue-600 opacity-50" />
               </div>
-              <XCircle size={32} className="text-orange-600 opacity-50" />
             </div>
-          </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Mantenimientos</p>
-                <p className="text-3xl font-bold text-purple-600">--</p>
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm">Check-ins Hoy</p>
+                  <p className="text-3xl font-bold text-green-600">
+                    {loadingStats ? '--' : stats?.checkinsToday ?? '--'}
+                  </p>
+                </div>
+                <CheckCircle size={32} className="text-green-600 opacity-50" />
               </div>
-              <Clock size={32} className="text-purple-600 opacity-50" />
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm">Check-outs Hoy</p>
+                  <p className="text-3xl font-bold text-orange-600">
+                    {loadingStats ? '--' : stats?.checkoutsToday ?? '--'}
+                  </p>
+                </div>
+                <XCircle size={32} className="text-orange-600 opacity-50" />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm">Cabañas en Mantenimiento</p>
+                  <p className="text-3xl font-bold text-purple-600">
+                    {loadingStats ? '--' : stats?.cabinsInMaintenanceToday ?? '--'}
+                  </p>
+                </div>
+                <Clock size={32} className="text-purple-600 opacity-50" />
+              </div>
             </div>
           </div>
         </div>
@@ -157,21 +233,21 @@ export default function DashboardOperador() {
           </div>
 
           {/* Gestión de Pagos */}
-            <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
-              <div className="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
-                <DollarSign size={24} className="text-green-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Gestión de Pagos</h3>
-              <p className="text-gray-600 mb-4">
-                Consulta pagos e ingresos
-              </p>
-              <button 
-                onClick={() => setActiveSection('pagos')}
-                className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition"
-              >
-                Ver historial de pagos
-              </button>
+          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <div className="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+              <DollarSign size={24} className="text-green-600" />
             </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Gestión de Pagos</h3>
+            <p className="text-gray-600 mb-4">
+              Consulta pagos e ingresos
+            </p>
+            <button 
+              onClick={() => setActiveSection('pagos')}
+              className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition"
+            >
+              Ver historial de pagos
+            </button>
+          </div>
 
           {/* Estado de Cabañas */}
           <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
