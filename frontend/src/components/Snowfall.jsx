@@ -1,29 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 /**
- * Componente que genera una animación sutil de copos de nieve cayendo
- * Los copos tienen diferentes tamaños, velocidades y opacidades para un efecto natural
- * @returns {JSX.Element} Contenedor con animación de nieve
+ * Renderiza copos de nieve animados que caen de inmediato al ingresar al sitio.
+ * @returns {JSX.Element} Capa visual con copos de nieve animados.
  */
 export default function Snowfall() {
   const [snowflakes, setSnowflakes] = useState([]);
 
   useEffect(() => {
-    /**
-     * Genera un array de copos de nieve con propiedades aleatorias
-     * Cada copo tiene posición, tamaño, duración de animación y retraso únicos
-     */
     const generateSnowflakes = () => {
       const flakes = [];
-      // Generar 50 copos de nieve
-      for (let i = 0; i < 50; i++) {
+      for (let i = 0; i < 80; i++) {
+        const animationDuration = Math.random() * 5 + 5;
         flakes.push({
           id: i,
-          left: Math.random() * 100, // Posición horizontal aleatoria (0-100%)
-          animationDuration: Math.random() * 3 + 5, // Duración entre 5-8 segundos
-          opacity: Math.random() * 0.3 + 0.1, // Opacidad entre 0.1-0.4 para sutileza
-          size: Math.random() * 3 + 2, // Tamaño entre 2-5px
-          animationDelay: Math.random() * 5, // Retraso inicial aleatorio
+          left: Math.random() * 100,
+          animationDuration,
+          opacity: Math.random() * 0.6 + 0.4,
+          size: Math.random() * 6 + 3,
+          animationDelay: -Math.random() * animationDuration, // arranca en pleno descenso
         });
       }
       setSnowflakes(flakes);
@@ -45,10 +40,12 @@ export default function Snowfall() {
             height: `${flake.size}px`,
             animationDuration: `${flake.animationDuration}s`,
             animationDelay: `${flake.animationDelay}s`,
+            animationTimingFunction: "linear",
+            animationIterationCount: "infinite",
+            willChange: "transform",
           }}
         >
-          {/* Copo de nieve con forma circular y blur sutil */}
-          <div className="w-full h-full bg-white rounded-full blur-[0.5px]" />
+          <div className="w-full h-full bg-white rounded-full shadow-sm" />
         </div>
       ))}
     </div>
