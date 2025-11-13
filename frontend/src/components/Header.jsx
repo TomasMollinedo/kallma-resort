@@ -19,7 +19,7 @@ export default function Header() {
       case "Operador":
         return "/dashboard/operador";
       case "Administrador":
-        return "/dashboard/administrador";
+        return "/dashboard/admin";
       default:
         return "/";
     }
