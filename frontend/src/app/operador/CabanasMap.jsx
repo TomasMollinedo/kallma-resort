@@ -1,8 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Building2, Home, Loader2, MapPin, RefreshCw, AlertCircle } from 'lucide-react';
+import {
+  AlertCircle,
+  ArrowLeft,
+  Building2,
+  ChevronDown,
+  Home,
+  Loader2,
+  MapPin,
+  RefreshCw
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getAllCabanas } from '../services/cabanaService';
 import { getAllZonas } from '../services/zonaService';
+import CabanaDetailModal from './components/CabanaDetailModal';
 
 const CABANA_STATUS_CONFIG = {
   available: {
@@ -84,6 +94,7 @@ export default function CabanasMap({ onBack }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedCabana, setSelectedCabana] = useState(null);
 
   /**
    * Obtiene el catalogo de zonas activas y todas las cabanas.
@@ -151,6 +162,40 @@ export default function CabanasMap({ onBack }) {
   };
 
   /**
+   * Abre el modal con la cabaña seleccionada por el operador.
+   * @param {Object} cabanaData - Cabaña clickeada dentro del mapa.
+   */
+  const handleCabanaClick = (cabanaData) => {
+    setSelectedCabana(cabanaData);
+  };
+
+  /**
+   * Cierra el modal de cabaña y limpia la selección.
+   */
+  const handleCloseCabanaModal = () => {
+    setSelectedCabana(null);
+  };
+
+  /**
+   * Actualiza el listado en memoria cuando cambian datos de mantenimiento.
+   * @param {Object} updatedCabana - Payload devuelto por el backend.
+   */
+  const handleMaintenanceUpdated = (updatedCabana) => {
+    setCabanas((prev) =>
+      prev.map((item) =>
+        item.id_cabana === updatedCabana.id_cabana
+          ? {
+              ...item,
+              en_mantenimiento: updatedCabana.en_mantenimiento,
+              esta_activo: updatedCabana.esta_activo,
+              fecha_modific: updatedCabana.fecha_modific
+            }
+          : item
+      )
+    );
+  };
+
+  /**
    * Devuelve las cabanas pertenecientes a la zona seleccionada.
    */
   const filteredCabanas = useMemo(() => {
@@ -184,48 +229,55 @@ export default function CabanasMap({ onBack }) {
   const selectedZona = zonas.find((zona) => zona.id_zona === selectedZonaId);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50">
-      <header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={onBack}
-              className="inline-flex items-center gap-2 text-gray-600 hover:text-orange-600 transition font-semibold"
-            >
-              <ArrowLeft size={18} />
-              Volver al panel
-            </button>
-            <div className="flex items-center gap-2 text-gray-500">
-              <Building2 size={18} />
-              <span className="text-sm">Mapa operacional de cabanas</span>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex items-center gap-2 text-gray-700 hover:text-orange-500 font-medium transition"
+          >
+            <ArrowLeft size={20} />
+            Volver al Dashboard
+          </button>
+        )}
+
+        <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-orange-500 rounded-xl text-white">
+              <Building2 size={32} />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Mapa Operativo de Cabañas</h1>
+              <p className="text-gray-600">
+                Visualiza el estado de cada zona y gestiona el mantenimiento rápidamente
+              </p>
             </div>
           </div>
-
           <button
             type="button"
             onClick={handleRefresh}
-            className="flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 text-sm font-medium text-gray-600 hover:text-blue-600 hover:border-blue-200 transition disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-700 font-semibold shadow-sm hover:border-orange-200 hover:text-orange-600 disabled:opacity-50"
             disabled={isRefreshing}
           >
-            <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+            <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
             Actualizar
           </button>
-        </div>
-      </header>
+        </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100">
-          <div className="border-b border-gray-100 px-6 py-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="border-b border-gray-100 px-6 py-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-wider text-gray-400">Zona seleccionada</p>
-              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                <MapPin size={20} className="text-orange-500" />
+              <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold">
+                Zona seleccionada
+              </p>
+              <h2 className="mt-1 text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <MapPin size={22} className="text-orange-500" />
                 {selectedZona?.nom_zona || 'Sin zonas disponibles'}
               </h2>
               {selectedZona && (
                 <p className="text-sm text-gray-500">
-                  Capacidad declarada: {selectedZona.capacidad_cabanas} cabana(s)
+                  Capacidad declarada: {selectedZona.capacidad_cabanas} cabaña(s)
                 </p>
               )}
             </div>
@@ -238,7 +290,7 @@ export default function CabanasMap({ onBack }) {
                   id="zonaSelect"
                   value={selectedZonaId ?? ''}
                   onChange={handleZonaChange}
-                  className="appearance-none border border-gray-200 rounded-lg pl-4 pr-10 py-2 bg-gray-50 text-gray-700 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="appearance-none border border-gray-200 rounded-xl pl-4 pr-10 py-2.5 bg-gray-50 text-gray-700 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500"
                 >
                   {zonas.length === 0 && <option value="">Sin zonas</option>}
                   {zonas.map((zona) => (
@@ -247,9 +299,7 @@ export default function CabanasMap({ onBack }) {
                     </option>
                   ))}
                 </select>
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  v
-                </span>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
               </div>
             </div>
           </div>
@@ -262,9 +312,9 @@ export default function CabanasMap({ onBack }) {
           )}
 
           {loading ? (
-            <div className="px-6 py-12 flex flex-col items-center justify-center text-gray-500">
-              <Loader2 size={32} className="animate-spin text-orange-500 mb-3" />
-              Cargando mapa de cabanas...
+            <div className="px-6 py-16 flex flex-col items-center justify-center text-gray-500">
+              <Loader2 size={36} className="animate-spin text-orange-500 mb-3" />
+              Cargando mapa de cabañas...
             </div>
           ) : (
             <div className="p-6 space-y-6">
@@ -272,21 +322,21 @@ export default function CabanasMap({ onBack }) {
                 {Object.values(CABANA_STATUS_CONFIG).map((status) => (
                   <div
                     key={status.key}
-                    className="bg-gray-50 rounded-xl border border-gray-100 p-4 flex flex-col items-center gap-2"
+                    className="bg-gray-50 rounded-xl border border-gray-100 p-5 flex flex-col items-center gap-3"
                   >
-                    <div className={`w-10 h-10 rounded-full border ${status.bubbleClasses}`} />
+                    <div className={`w-12 h-12 rounded-full border ${status.bubbleClasses}`} />
                     <p className="text-sm font-semibold text-gray-600">{status.label}</p>
-                    <p className="text-xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-gray-900">
                       {zonaResumen[status.key] || 0}
                     </p>
                   </div>
                 ))}
               </div>
 
-              <div className="relative border-2 border-dashed border-gray-200 rounded-2xl min-h-[380px] bg-gradient-to-br from-white to-slate-50 p-6 overflow-visible">
+              <div className="relative border-2 border-dashed border-gray-200 rounded-2xl min-h-[420px] bg-gradient-to-br from-white to-slate-50 p-6">
                 {filteredCabanas.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center text-gray-500">
-                    <Home size={36} className="text-gray-300 mb-3" />
+                  <div className="flex flex-col items-center justify-center text-center text-gray-500 min-h-[320px]">
+                    <Home size={40} className="text-gray-300 mb-3" />
                     <p className="text-base font-semibold">
                       Esta zona aun no tiene cabanas registradas.
                     </p>
@@ -295,24 +345,30 @@ export default function CabanasMap({ onBack }) {
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-12 place-items-center pt-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-12 place-items-center pt-4">
                     {filteredCabanas.map((cabana) => {
                       const status = getCabanaStatus(cabana);
                       return (
                         <div key={cabana.id_cabana} className="group relative flex flex-col items-center">
-                          <div
-                            className={`w-20 h-20 rounded-2xl border-4 ${status.bubbleClasses} flex items-center justify-center shadow-lg`}
+                          <button
+                            type="button"
+                            onClick={() => handleCabanaClick(cabana)}
+                            className="flex flex-col items-center focus:outline-none"
                           >
-                            <Home size={32} className="drop-shadow text-white" />
-                          </div>
-                          <p className="mt-3 text-sm font-semibold text-gray-700">
-                            {cabana.cod_cabana}
-                          </p>
-                          <span
-                            className={`mt-1 text-xs font-semibold px-3 py-1 rounded-full border ${status.tagClasses}`}
-                          >
-                            {status.label}
-                          </span>
+                            <div
+                              className={`w-20 h-20 rounded-2xl border-4 ${status.bubbleClasses} flex items-center justify-center shadow-lg transition-transform group-hover:scale-105`}
+                            >
+                              <Home size={32} className="drop-shadow text-white" />
+                            </div>
+                            <p className="mt-3 text-sm font-semibold text-gray-700">
+                              {cabana.cod_cabana}
+                            </p>
+                            <span
+                              className={`mt-1 text-xs font-semibold px-3 py-1 rounded-full border ${status.tagClasses}`}
+                            >
+                              {status.label}
+                            </span>
+                          </button>
 
                           <div className="pointer-events-none opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto transition duration-200 absolute -bottom-4 translate-y-full w-64 bg-white border border-gray-100 rounded-2xl shadow-xl p-4 z-10">
                             <p className="text-sm font-semibold text-gray-900 mb-2">
@@ -349,7 +405,15 @@ export default function CabanasMap({ onBack }) {
             </div>
           )}
         </section>
-      </main>
+
+        {selectedCabana && (
+          <CabanaDetailModal
+            cabana={selectedCabana}
+            onClose={handleCloseCabanaModal}
+            onMaintenanceChange={handleMaintenanceUpdated}
+          />
+        )}
+      </div>
     </div>
   );
 }

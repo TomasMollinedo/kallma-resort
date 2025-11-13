@@ -119,6 +119,26 @@ export const updateCabana = async (id, cabanaData, token) => {
 };
 
 /**
+ * Actualiza exclusivamente el estado de mantenimiento de una cabaña (Operador/Admin).
+ * @param {number} id - ID de la cabaña.
+ * @param {boolean} enMantenimiento - Nuevo estado de mantenimiento.
+ * @param {string} token - Token JWT.
+ * @returns {Promise<Object>} Respuesta del backend con la cabaña actualizada.
+ */
+export const updateCabanaMaintenance = async (id, enMantenimiento, token) => {
+  try {
+    return await authenticatedRequest(
+      `${BASE_URL}/${id}/mantenimiento`,
+      'PATCH',
+      { en_mantenimiento: enMantenimiento },
+      token
+    );
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
  * Eliminar una cabaña (borrado lógico - solo Admin)
  * Cambia esta_activo a FALSE
  * @param {number} id - ID de la cabaña
