@@ -16,7 +16,7 @@ export default function DashboardCliente() {
     <div
       className={`min-h-screen ${
         showReservas
-          ? 'bg-gradient-to-br from-blue-50 to-blue-100'
+          ? 'bg-gray-50'
           : showPagos
           ? 'bg-gray-50'
           : 'bg-gradient-to-br from-orange-50 to-orange-100'
@@ -79,13 +79,6 @@ export default function DashboardCliente() {
         {/* Sección de Reservas */}
         {!showPagos && showReservas ? (
           <div className="space-y-4">
-            <button
-              onClick={() => setShowReservas(false)}
-              className="flex items-center text-blue-600 hover:text-blue-800 font-medium mb-4"
-            >
-              <ArrowLeft size={18} className="mr-2" />
-              Volver al panel
-            </button>
             <MisReservas onClose={() => setShowReservas(false)} />
           </div>
         ) : !showPagos && (
