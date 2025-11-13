@@ -147,7 +147,7 @@ export default function PagosManagement({ onBack }) {
             className="mb-6 flex items-center gap-2 text-gray-700 hover:text-green-500 font-medium transition"
           >
             <ArrowLeft size={20} />
-            Volver al Dashboard
+            Volver al Panel
           </button>
         )}
 
