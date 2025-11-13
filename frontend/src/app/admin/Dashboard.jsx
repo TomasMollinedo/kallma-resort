@@ -1,16 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Shield, LogOut, Home, Users, Building, Calendar, DollarSign, Settings, CreditCard } from 'lucide-react';
+import { 
+  Shield, 
+  LogOut, 
+  Home, 
+  Users, 
+  Building, 
+  Calendar, 
+  DollarSign, 
+  Settings, 
+  CreditCard,
+  RefreshCw
+} from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from 'recharts';
+
 import UsersManagement from './UsersManagement';
 import CabanasZonasManagement from './CabanasZonasManagement';
 import ReservationsManagement from './ReservationsManagement';
 import PagosManagement from './PagosManagement';
+import { getAdminDashboardStats } from '../services/statsService';
+
+const PAYMENT_COLORS = ['#7c3aed', '#0ea5e9', '#22c55e', '#f97316', '#e11d48', '#6366f1'];
 
 export default function DashboardAdministrador() {
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState('dashboard'); 
+  const [activeSection, setActiveSection] = useState('dashboard'); // dashboard, users, cabanas, reservations, pagos
+
+  const [stats, setStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [statsError, setStatsError] = useState(null);
 
   const handleLogout = () => {
     logout();
@@ -20,6 +51,44 @@ export default function DashboardAdministrador() {
   const handleGoHome = () => {
     navigate('/');
   };
+
+  /**
+   * Obtiene las métricas del dashboard de administración desde el backend.
+   * Alineamos la forma de consumo con el resto de los servicios (response.data).
+   */
+  const loadStats = async () => {
+    try {
+      setLoadingStats(true);
+      setStatsError(null);
+      const response = await getAdminDashboardStats(token);
+      setStats(response?.data || null);
+    } catch (error) {
+      console.error('Error al cargar estadísticas de admin:', error);
+      setStatsError('No se pudieron cargar las estadísticas. Intenta nuevamente.');
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeSection === 'dashboard') {
+      loadStats();
+    }
+  }, [activeSection]);
+
+  // Preparar datos para el gráfico de barras (ingresos últimos 12 meses)
+  const revenueData =
+    stats?.revenueLast12Months?.map((item) => ({
+      name: `${item.month}/${item.year}`,
+      total: Number(item.total) || 0
+    })) || [];
+
+  // Preparar datos para el gráfico de torta (métodos de pago)
+  const paymentData =
+    stats?.currentMonthPaymentMethodsDistribution?.map((item) => ({
+      name: item.method,
+      value: Number(item.count) || 0
+    })) || [];
 
   // Si estamos en una sección específica, mostrar el componente correspondiente
   if (activeSection === 'users') {
@@ -82,54 +151,156 @@ export default function DashboardAdministrador() {
             </div>
           </div>
         </div>
-         {/* Nota Importante */}
-        <div className="mt-8 mb-10 bg-purple-50 border-l-4 border-purple-500 p-6 rounded-r-xl">
-          <h3 className="text-lg font-bold text-gray-800 mb-2">Panel de Administración</h3>
-          <p className="text-gray-700">
-            Como administrador, tienes acceso completo a todas las funcionalidades del sistema. 
-            Puedes gestionar usuarios, cabañas, reservas, pagos y configuraciones generales. 
-            Usa este panel con responsabilidad.
-          </p>
-        </div>
+
         {/* Estadísticas Rápidas */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Total Usuarios</p>
-                <p className="text-3xl font-bold text-purple-600">--</p>
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-800">Estadísticas rápidas</h2>
+            <button
+              onClick={loadStats}
+              disabled={loadingStats}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-purple-500 text-white rounded-md hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              <RefreshCw size={16} className={loadingStats ? 'animate-spin' : ''} />
+              <span>{loadingStats ? 'Actualizando...' : 'Actualizar'}</span>
+            </button>
+          </div>
+
+          {statsError && (
+            <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+              {statsError}
+            </div>
+          )}
+
+          {/* KPI Cards */}
+          <div className="grid md:grid-cols-4 gap-6 mb-6">
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm">Total Usuarios</p>
+                  <p className="text-3xl font-bold text-purple-600">
+                    {loadingStats ? '--' : stats?.totalUsers ?? '--'}
+                  </p>
+                </div>
+                <Users size={32} className="text-purple-600 opacity-50" />
               </div>
-              <Users size={32} className="text-purple-600 opacity-50" />
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm">Cabañas</p>
+                  <p className="text-3xl font-bold text-blue-600">
+                    {loadingStats ? '--' : stats?.totalCabins ?? '--'}
+                  </p>
+                </div>
+                <Building size={32} className="text-blue-600 opacity-50" />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm">Zonas</p>
+                  <p className="text-3xl font-bold text-green-600">
+                    {loadingStats ? '--' : stats?.totalZones ?? '--'}
+                  </p>
+                </div>
+                <Calendar size={32} className="text-green-600 opacity-50" />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm">Ingresos Mes Actual</p>
+                  <p className="text-3xl font-bold text-orange-600">
+                    {loadingStats
+                      ? '--'
+                      : stats?.currentMonthRevenue != null
+                        ? `$ ${Number(stats.currentMonthRevenue).toLocaleString('es-AR', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })}`
+                        : '--'}
+                  </p>
+                </div>
+                <DollarSign size={32} className="text-orange-600 opacity-50" />
+              </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Cabañas</p>
-                <p className="text-3xl font-bold text-blue-600">--</p>
+          {/* Gráficos dentro de estadísticas rápidas */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Ingresos últimos 12 meses */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm text-gray-500">Ingresos</p>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Ingresos últimos 12 meses
+                  </h3>
+                </div>
               </div>
-              <Building size={32} className="text-blue-600 opacity-50" />
+              {revenueData.length === 0 && !loadingStats ? (
+                <p className="text-sm text-gray-500">Sin datos de ingresos.</p>
+              ) : (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={revenueData}>
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip
+                        formatter={(value) =>
+                          `$ ${Number(value).toLocaleString('es-AR', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })}`
+                        }
+                      />
+                      <Bar dataKey="total" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
-          </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Reservas Activas</p>
-                <p className="text-3xl font-bold text-green-600">--</p>
+            {/* Distribución métodos de pago */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm text-gray-500">Pagos</p>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Métodos de pago más utilizados
+                  </h3>
+                </div>
               </div>
-              <Calendar size={32} className="text-green-600 opacity-50" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Ingresos Mes</p>
-                <p className="text-3xl font-bold text-orange-600">--</p>
-              </div>
-              <DollarSign size={32} className="text-orange-600 opacity-50" />
+              {paymentData.length === 0 && !loadingStats ? (
+                <p className="text-sm text-gray-500">Sin datos de métodos de pago.</p>
+              ) : (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={paymentData}
+                        dataKey="value"
+                        nameKey="name"
+                        outerRadius={90}
+                        paddingAngle={3}
+                      >
+                        {paymentData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={PAYMENT_COLORS[index % PAYMENT_COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
           </div>
         </div>
