@@ -90,6 +90,27 @@ export default function DashboardAdministrador() {
       value: Number(item.count) || 0
     })) || [];
 
+  const totalPaymentValue = paymentData.reduce((sum, method) => sum + method.value, 0);
+  const paymentChartData = paymentData.map((item) => ({
+    ...item,
+    percentage:
+      totalPaymentValue > 0 ? Number(((item.value / totalPaymentValue) * 100).toFixed(1)) : 0
+  }));
+
+  /**
+   * Formatea el texto del legend del gráfico de métodos de pago agregando el porcentaje del total.
+   * @param {string} label - Nombre del método de pago que se mostrará en el legend.
+   * @param {object} entry - Entrada del legend que contiene los datos del sector seleccionado.
+   * @returns {string} Etiqueta formateada con el porcentaje agregado.
+   */
+  const formatPaymentLegend = (label, entry) => {
+    const methodPercentage = entry?.payload?.percentage ?? 0;
+    const percentageText = Number.isInteger(methodPercentage)
+      ? methodPercentage.toString()
+      : methodPercentage.toFixed(1);
+    return `${label} (${percentageText}%)`;
+  };
+
   // Si estamos en una sección específica, mostrar el componente correspondiente
   if (activeSection === 'users') {
     return <UsersManagement onBack={() => setActiveSection('dashboard')} />;
@@ -275,20 +296,20 @@ export default function DashboardAdministrador() {
                   </h3>
                 </div>
               </div>
-              {paymentData.length === 0 && !loadingStats ? (
+              {paymentChartData.length === 0 && !loadingStats ? (
                 <p className="text-sm text-gray-500">Sin datos de métodos de pago.</p>
               ) : (
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={paymentData}
+                        data={paymentChartData}
                         dataKey="value"
                         nameKey="name"
                         outerRadius={90}
                         paddingAngle={3}
                       >
-                        {paymentData.map((entry, index) => (
+                        {paymentChartData.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={PAYMENT_COLORS[index % PAYMENT_COLORS.length]}
@@ -296,7 +317,7 @@ export default function DashboardAdministrador() {
                         ))}
                       </Pie>
                       <Tooltip />
-                      <Legend />
+                      <Legend formatter={formatPaymentLegend} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
