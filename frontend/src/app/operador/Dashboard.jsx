@@ -140,11 +140,6 @@ export default function DashboardOperador() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-lg font-semibold text-gray-800">Estadísticas del día</h2>
-              {!loadingStats && occupancyPercentage != null && (
-                <p className="text-sm text-gray-500">
-                  Ocupación actual del resort: {occupancyPercentage}%
-                </p>
-              )}
             </div>
             <button
               onClick={loadStats}
@@ -161,6 +156,34 @@ export default function DashboardOperador() {
               {statsError}
             </div>
           )}
+
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
+            <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 flex items-start justify-between">
+              <div>
+                <p className="text-gray-600 text-sm">Ocupación actual</p>
+                <p className="text-4xl font-bold text-blue-600">
+                  {loadingStats ? '--' : occupancyPercentage != null ? `${occupancyPercentage}%` : '--'}
+                </p>
+                <p className="text-xs text-gray-500 mt-3">Porcentaje de cabañas ocupadas hoy</p>
+              </div>
+              <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center">
+                <Home size={34} className="text-blue-500" />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 flex items-start justify-between">
+              <div>
+                <p className="text-gray-600 text-sm">Reservas pendientes de pago</p>
+                <p className="text-4xl font-bold text-rose-600">
+                  {loadingStats ? '--' : stats?.reservationsPendingPayment ?? '--'}
+                </p>
+                <p className="text-xs text-gray-500 mt-3">Regulariza estos cobros para evitar retrasos</p>
+              </div>
+              <div className="w-14 h-14 rounded-full bg-rose-50 flex items-center justify-center">
+                <DollarSign size={34} className="text-rose-500" />
+              </div>
+            </div>
+          </div>
 
           <div className="grid md:grid-cols-4 gap-6">
             <div className="bg-white rounded-xl shadow-lg p-6">
